@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "esp32-hal.h": "c",
+        "esp32-hal-i2c.h": "c",
+        "freertos.h": "c"
+    }
+}
