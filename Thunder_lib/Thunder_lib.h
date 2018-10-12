@@ -63,10 +63,10 @@
 #include <Thunder_BLE.h>
 #include <Thunder_Display.h>
 #include <Thunder_Motor.h>
-#include <common_mesg.h>
+#include <Task_Mesg.h>
 
 // 固件版本
-#define VERSION            0.21   // version
+#define VERSION            0.30   // version
 
 // I2C
 #define SDA_PIN            21   // SDA_PIN
@@ -240,7 +240,12 @@ class THUNDER
     void Reset_Rx_Data(void);       // 清空接收数据
 
     // I2C端口选通
+    uint8_t I2C_channel_opened;
     uint8_t Set_I2C_Chanel(uint8_t channelData);
+
+    // 传感器端口选择
+    uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
+    uint8_t Select_Sensor_AllChannel();
 };
 
 extern THUNDER Thunder;

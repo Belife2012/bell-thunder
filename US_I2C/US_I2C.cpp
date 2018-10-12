@@ -132,7 +132,7 @@ byte US_I2C::read(unsigned char memory_address, unsigned char *data, int size)
     lastMillis = millis();
     while(1){
       currentMillis = millis();
-      if(currentMillis > lastMillis+4){
+      if(currentMillis > lastMillis+3){
         break;
       }
     }

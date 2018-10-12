@@ -1,5 +1,5 @@
-#ifndef _COMMON_MESG_
-#define _COMMON_MESG_
+#ifndef _TASK_MESG_
+#define _TASK_MESG_
 
 #include <Arduino.h>
 
@@ -7,16 +7,22 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
-#define MAX_APPS_TASK_COUNTER   5
+#define MAX_APPS_TASK_COUNTER   1
 
-class Common_Mesg
+void setup_1(void);
+void loop_1(void);
+
+class TASK_MESG
 {
 public:
-    Common_Mesg();
-    ~Common_Mesg();
+    TASK_MESG();
+    ~TASK_MESG();
 
     void Suspend_Others_AppsTask();
     void Resume_Others_AppsTask();
+
+    uint8_t Create_New_Loop();
+    void Create_Deamon_Threads();
 
     // 串口“示波器”的数据队列
     QueueHandle_t Queue_encoder_left;
@@ -26,8 +32,11 @@ public:
     // TaskHandle_t current_Task;
 
     UBaseType_t former_Priority;
+private:
+
+    uint8_t tasks_num;
 };
 
-extern Common_Mesg commonMesg;
+extern TASK_MESG Task_Mesg;
 
 #endif

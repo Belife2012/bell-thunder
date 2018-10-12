@@ -49,7 +49,7 @@
 #define _THUNDER_MOTOR_H_
 
 #include <Arduino.h>
-#include <common_mesg.h>
+#include <Task_Mesg.h>
 
 // 电机
 // TB6612驱动驱动直流无刷电机
@@ -126,9 +126,6 @@ class THUNDER_MOTOR
     void All_PID_Init();                                                    // 按默认PID参数初始化左右电机
     void Setup_Motor_PID(void);                                             // 配置左右两个电机编码器
     void PID_Speed(void);                                                   // 按PID输出控制左右两个电机
-    
-    // 获取编码器的计数器数值
-    void Get_Encoder_Value(void);
 
     void Set_L_Target(float target);  // 设定左轮目标速度(编码器计数值)
     void Set_R_Target(float target);  // 设定右轮目标速度(编码器计数值)
@@ -138,16 +135,17 @@ class THUNDER_MOTOR
 
     int16_t Get_L_Target(void);  // 获取左轮目标(编码器计数值)
     int16_t Get_R_Target(void);  // 获取右轮目标(编码器计数值)
+
+    int32_t Get_L_RotateValue(void); // 获取左轮旋转量（这个值是累积的，调用清零接口时才会清零）
+    int32_t Get_R_RotateValue(void); // 获取右轮旋转量（这个值是累积的，调用清零接口时才会清零）
+    void Clear_L_RotateValue(void); // 清零左轮旋转量
+    void Clear_R_RotateValue(void); // 清零右轮旋转量
    
   private:
     // 电机
     boolean inPin1 = LOW;
     boolean inPin2 = HIGH;
     uint8_t valueMax = 255;
-
-    // 编码器计数器数值
-    int16_t Encoder_Counter_Left;
-    int16_t Encoder_Counter_Right;
 
     struct PID_Struct_t Motor_L_Speed_PID;
     struct PID_Struct_t Motor_R_Speed_PID;
@@ -158,8 +156,6 @@ class THUNDER_MOTOR
     void set_speed(uint8_t channel, uint32_t value);
     float motor_PID(struct PID_Struct_t *pid);      // PID计算
 
-    //
-    void Encoder_Counter_Clear();
 };
 
 #endif

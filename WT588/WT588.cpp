@@ -29,7 +29,7 @@
 
 #include "WT588.h"
 #include <Arduino.h>
-#include <common_mesg.h>
+#include <Task_Mesg.h>
 
 // #include "freertos/FreeRTOS.h"
 // #include "freertos/task.h"
@@ -135,7 +135,7 @@ void WT588::send_data(int data)
 #if ENABLE_WT588_SPINLOCK
 	//enter critical
 	//taskENTER_CRITICAL(&spinlockMUX_WT588);
-	commonMesg.Suspend_Others_AppsTask();
+	Task_Mesg.Suspend_Others_AppsTask();
 #endif
     for(int i=0;i<16;i++)
 	{
@@ -146,7 +146,7 @@ void WT588::send_data(int data)
 		#if ENABLE_WT588_SPINLOCK
 			//exit critical
 			//taskEXIT_CRITICAL(&spinlockMUX_WT588);
-			commonMesg.Resume_Others_AppsTask();
+			Task_Mesg.Resume_Others_AppsTask();
 		#endif
 			//delay(2);
 			lastTime = millis();
@@ -165,7 +165,7 @@ void WT588::send_data(int data)
 		#if ENABLE_WT588_SPINLOCK
 			//enter critical
 			//taskENTER_CRITICAL(&spinlockMUX_WT588);
-			commonMesg.Suspend_Others_AppsTask();
+			Task_Mesg.Suspend_Others_AppsTask();
 		#endif
 		}
 		
@@ -190,7 +190,7 @@ void WT588::send_data(int data)
 #if ENABLE_WT588_SPINLOCK
 	//exit critical
 	// taskEXIT_CRITICAL(&spinlockMUX_WT588);
-	commonMesg.Resume_Others_AppsTask();
+	Task_Mesg.Resume_Others_AppsTask();
 #endif
 	//Serial.println("unlock");
 }

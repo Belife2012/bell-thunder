@@ -110,25 +110,36 @@ void ISR_Encoder_R2(void)
   }
 }
 #else
-void THUNDER_MOTOR::Encoder_Counter_Clear()
-{
-  pcnt_counter_clear(PCNT_UNIT_0); // Left
-  pcnt_counter_clear(PCNT_UNIT_1); // Right
-}
+
+void Encoder_Counter_Clear(void);
+
+// 编码器计数器数值
+int16_t Encoder_Counter_Left;
+int16_t Encoder_Counter_Right;
+
 #endif
+
+void Update_Rotate_Value();
+void Get_Encoder_Value();
 
 // PID时间中断
 volatile SemaphoreHandle_t Timer_PID_Flag;
 volatile uint32_t lastIsrAt = 0;
 
+// 
+volatile int32_t rotate_RawValue_Left;
+volatile int32_t rotate_RawValue_Right;
+
 // timer中断
 void IRAM_ATTR PID_Timer_Handle()
 {
   lastIsrAt = millis();
+  Get_Encoder_Value();
+  Update_Rotate_Value();
   xSemaphoreGiveFromISR(Timer_PID_Flag, NULL);
 }
 
-// 配置PID用定时器
+// 配置PID定时器
 void THUNDER_MOTOR::Setup_PID_Timer()
 {
   Timer_PID_Flag = xSemaphoreCreateBinary();
@@ -138,7 +149,7 @@ void THUNDER_MOTOR::Setup_PID_Timer()
   timerAlarmEnable(PID_Timer);  // 使能
 }
 
-// 移除PID用定时器(会影响其它用到此定时器的功能)
+// 移除PID定时器(会影响其它用到此定时器的功能)
 void THUNDER_MOTOR::Uninstall_PID_Timer(void)
 {
   timerDetachInterrupt(PID_Timer);  //Detach中断Handle
@@ -360,14 +371,15 @@ void THUNDER_MOTOR::Setup_Motor_PID()
 // 按PID输出控制左右两个电机
 void THUNDER_MOTOR::PID_Speed()
 {
-  Get_Encoder_Value();
+  // 在定时器里面获取了 计数器的数值，存在Encoder_Counter_Left Encoder_Counter_Right
+  // Get_Encoder_Value(); 
 
   Motor_L_Speed_PID.Fdb = Encoder_Counter_Left;
   Motor_R_Speed_PID.Fdb = Encoder_Counter_Right;
 
 #ifdef PRINT_DEBUG_INFO
-  xQueueSend(commonMesg.Queue_encoder_left, &Motor_L_Speed_PID.Fdb, 0);
-  xQueueSend(commonMesg.Queue_encoder_right, &Motor_R_Speed_PID.Fdb, 0);
+  xQueueSend(Task_Mesg.Queue_encoder_left, &Motor_L_Speed_PID.Fdb, 0);
+  xQueueSend(Task_Mesg.Queue_encoder_right, &Motor_R_Speed_PID.Fdb, 0);
 #endif
 
   //SSSSSSSSSS ___ 左轮 ___ SSSSSSSSSS
@@ -412,10 +424,21 @@ void THUNDER_MOTOR::PID_Speed()
 }
 
 /* 
+ * 清零电机编码器，在初始化或者获取完计数器数值 等等情况之后可以调用此函数
+ * 
+ * 
+ */
+inline void Encoder_Counter_Clear()
+{
+  pcnt_counter_clear(PCNT_UNIT_0); // Left
+  pcnt_counter_clear(PCNT_UNIT_1); // Right
+}
+
+/* 
  * 获取编码器计数器数值，保存到相应变量里面
  * 每次获取都会清零计数器
  */
-void THUNDER_MOTOR::Get_Encoder_Value()
+inline void Get_Encoder_Value()
 {
   
   pcnt_get_counter_value(PCNT_UNIT_0, &Encoder_Counter_Left);
@@ -423,18 +446,6 @@ void THUNDER_MOTOR::Get_Encoder_Value()
   
   Encoder_Counter_Clear();
 
-#ifdef PRINT_DEBUG_INFO
-  float F_encoder_left;
-  float F_encoder_right;
-
-  // Serial.printf("left: %d\n", (int)Encoder_Counter_Left);
-  F_encoder_left = Encoder_Counter_Left;
-  xQueueSend(commonMesg.Queue_encoder_left, &F_encoder_left, 0);
-
-  // Serial.printf("right: %d\n\n", (int)Encoder_Counter_Right);
-  F_encoder_right = Encoder_Counter_Right;
-  xQueueSend(commonMesg.Queue_encoder_right, &F_encoder_right, 0);
-#endif
 }
 
 // 设定左轮目标速度(编码器计数值)
@@ -457,16 +468,20 @@ void THUNDER_MOTOR::Set_R_Target(float target)
   }
 }
 
-// 获取左轮速度(编码器计数值)
+// 获取左轮速度(编码器计数值), 这个数值是每个PID周期采集到的计数器数值
+// 获取这个值，需要打开PID定时器
+// 在一个PID周期内获取的值是相同的
 int16_t THUNDER_MOTOR::Get_L_Speed(void)
 {
-  return Motor_L_Speed_PID.Fdb;
+  return Encoder_Counter_Left;
 }
 
-// 获取右轮速度(编码器计数值)
+// 获取右轮速度(编码器计数值), 这个数值是每个PID周期采集到的计数器数值
+// 获取这个值，需要打开PID定时器
+// 在一个PID周期内获取的值是相同的
 int16_t THUNDER_MOTOR::Get_R_Speed(void)
 {
-  return Motor_R_Speed_PID.Fdb;
+  return Encoder_Counter_Right;
 }
 
 // 获取左轮目标(编码器计数值)
@@ -479,4 +494,35 @@ int16_t THUNDER_MOTOR::Get_L_Target(void)
 int16_t THUNDER_MOTOR::Get_R_Target(void)
 {
   return Motor_R_Speed_PID.Ref;
+}
+
+/*
+ * 在Encoder_Counter_Left Encoder_Counter_Right更新之后才能调用此更新过程
+ *   不然会产生重复累积，导致数据错误
+ * 
+ */
+inline void Update_Rotate_Value()
+{
+  rotate_RawValue_Left += Encoder_Counter_Left;
+  rotate_RawValue_Right += Encoder_Counter_Right;
+}
+
+int32_t THUNDER_MOTOR::Get_L_RotateValue()
+{
+  return rotate_RawValue_Left;
+}
+
+int32_t THUNDER_MOTOR::Get_R_RotateValue()
+{
+  return rotate_RawValue_Right;
+}
+
+void THUNDER_MOTOR::Clear_L_RotateValue()
+{
+  rotate_RawValue_Left = 0;
+}
+
+void THUNDER_MOTOR::Clear_R_RotateValue()
+{
+  rotate_RawValue_Right = 0;
 }

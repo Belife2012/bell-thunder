@@ -74,18 +74,22 @@ uint8_t Rx_Data[6] = {0};
 uint8_t Tx_Data[6] = {0};
 bool deviceConnected = false;
 
+// 固件版本号 2 bytes, 分别为整数和小数，
+// 要同时修改头文件的 宏 VERSION
+const uint8_t Version_FW[2] = {0,30};
+
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
+  // delay(1000);
   Serial.begin(115200);
   while (!Serial);
 
   Serial.printf("\nSSS___ 雷霆固件版本 : V%.2f ___SSS\n",VERSION);
-
   Serial.printf("\nSSSSSSSSSS___ 各模块初始化 ___SSSSSSSSSS\n");
   
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
-  Set_I2C_Chanel(0xff); //全选通
+  Select_Sensor_AllChannel();
   
   Thunder_BLE.Setup_EEPROM();         // 配置EEPROM
   Thunder_BLE.Setup_BLE();            // 配置BLE
@@ -152,18 +156,6 @@ void THUNDER::En_Motor(void)
       // Serial.printf("%d  %d  %d  %d  \n",Thunder_Motor.Get_L_Speed(),Thunder_Motor.Get_R_Speed(),Thunder_Motor.Get_L_Target(),Thunder_Motor.Get_R_Target());
       // Serial.printf("%d\n",Thunder_Motor.Get_L_Speed());
     }
-  }
-}
-/* 
- * 开环控制电机时，获取编码器数据，用于测试电机编码器(一个PID控制周期获取一次)
- * 数据在 Thunder_Motor.Get_Queue_Encoder 通过队列发到打印线程
- *   打印线程在loop里面
- */
-void THUNDER::Get_Queue_Encoder(void)
-{
-  if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY ) == pdTRUE)  // 控制周期PID_dt[ms]
-  {
-    Thunder_Motor.Get_Encoder_Value();
   }
 }
 
@@ -874,6 +866,17 @@ void THUNDER::Check_Protocol(void)
       Tx_Data[2] = ADC_Battery;
       break;
 
+    case 0x55:    //获取固件版本号
+      Tx_Data[0] = 0x55;
+
+      // 复制版本号的“整数”和“小数” 到 发送Buffer 
+      Tx_Data[1] = Version_FW[0]; 
+      Tx_Data[2] = Version_FW[1]; 
+      Tx_Data[3] = 0x00;
+      Tx_Data[4] = 0x00;
+
+      break;
+
     case 0xA1:  //蓝牙命名  //仅限通过蓝牙，串口不支持重命名
         Thunder_BLE.Write_BLE_Name(0);  //从地址0开始写入命名的蓝牙
         break;
@@ -1038,19 +1041,128 @@ void THUNDER::Reset_Rx_Data()
     }
 }
 
+/* 
+ * 开环控制电机时，获取编码器数据，用于测试电机编码器(一个PID控制周期才能获取一次)
+ * 数据 通过队列发到打印线程
+ *   打印线程在loop里面
+ */
+void THUNDER::Get_Queue_Encoder(void)
+{
+  if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY ) == pdTRUE)  // 控制周期PID_dt[ms]
+  {
+    #ifdef PRINT_DEBUG_INFO
+      float F_encoder_left;
+      float F_encoder_right;
 
-// I2C端口选通，变量channelData相应位为1 是 选通，可以多通道选通
+      // Serial.printf("left: %d\n", (int)Encoder_Counter_Left);
+      F_encoder_left = Encoder_Counter_Left;
+      xQueueSend(Task_Mesg.Queue_encoder_left, &F_encoder_left, 0);
+
+      // Serial.printf("right: %d\n\n", (int)Encoder_Counter_Right);
+      F_encoder_right = Encoder_Counter_Right;
+      xQueueSend(Task_Mesg.Queue_encoder_right, &F_encoder_right, 0);
+    #endif
+  }
+}
+
+/* 
+ * I2C端口选通，变量channelData 相应位(每一bit代表一个通道) 为1 是 选通，可以多通道选通
+ * 
+ * @parameter: 
+ * @return: 返回的是IIC 操作状态码，0 为成功， 非0 为其他状态
+ */
 uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
 {
   uint8_t ret;
+  uint8_t regValue;
 
-  // TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
-  Wire.beginTransmission(0x70);
-  Wire.write(channelData);
-  ret = Wire.endTransmission(true);
-  if(ret != 0){
-    Serial.printf("TCA9548 Write I2C Channel Error: %d \n", ret);
+  // 重复连接 IIC 扩展芯片
+  for(uint8_t i=0; i < 2; i++){
+    // TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
+    Wire.beginTransmission(0x70);
+    Wire.write(channelData);
+    ret = Wire.endTransmission(true);
+    if(ret != 0){
+      I2C_channel_opened = 0x00;
+      Serial.printf("### TCA9548 Write I2C Channel Error: %d \n", ret);
+      delay(100);
+    }else{
+      // read TCA9548
+      Wire.requestFrom(0x70, 1, true);
+      while(Wire.available()){
+        regValue = Wire.read();
+      }
+
+      if(regValue == channelData){
+        Serial.println("*** TCA9548 Read equal to Write");
+        I2C_channel_opened = channelData;
+        break;
+      }else{
+        Serial.println("### TCA9548 Read is not Write");
+        delay(200);
+      }
+    }
   }
 
   return ret;
+}
+
+/*
+ * 
+ * @parameter：需要使用的传感器接口号
+ * @return: 设置成功返回0，发生错误返回非0 的错误码
+ *          错误码1：没有相应的传感器端口号
+ *          错误码2：硬件不支持选择传感器端口号
+ */
+uint8_t THUNDER::Select_Sensor_Channel(uint8_t sensorChannel)
+{
+  uint8_t ret;
+
+  switch(sensorChannel){
+    case 1:
+      ret = Set_I2C_Chanel(0x39);
+      break;
+    case 2:
+      ret = Set_I2C_Chanel(0x3a);
+      break;
+    case 3:
+      ret = Set_I2C_Chanel(0x3c);
+      break;
+    default:
+      Serial.printf("### No Sensor Channel! ###");
+      return 1;
+      break;
+  }
+
+  if(ret != 0){
+    return 2;
+  }
+  
+  return 0;
+}
+
+/* 
+ * 选择全部的传感器通道，这时候不管是否支持选择传感器端口号，所以没有返回值
+ * 
+ * @parameter:
+ * @return: 0 表示操作成功， 1 为初始化 IIC 失败
+ */
+uint8_t THUNDER::Select_Sensor_AllChannel()
+{
+  uint8_t ret;
+
+  // reset 
+  pinMode(15, OUTPUT);
+  digitalWrite(15, LOW);
+  delay(10);
+  digitalWrite(15,HIGH);
+  delay(10);
+
+  ret = Set_I2C_Chanel(0x3f); //全选通
+
+  if(ret != 0){
+    return 1;
+  }
+
+  return 0;
 }
