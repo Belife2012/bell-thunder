@@ -50,6 +50,12 @@ TASK_MESG::~TASK_MESG()
     
 }
 
+/* 
+ * 用于硬件驱动，阻止其他线程占用CPU，恢复前不允许delay
+ * 
+ * @parameters:
+ * @return
+ */
 void TASK_MESG::Suspend_Others_AppsTask()
 {
     former_Priority = uxTaskPriorityGet( NULL );
@@ -57,6 +63,12 @@ void TASK_MESG::Suspend_Others_AppsTask()
     // highese Priority in the AppTasks
     vTaskPrioritySet(NULL, 12);
 }
+/* 
+ * 用于硬件驱动，恢复其他线程
+ * 
+ * @parameters:
+ * @return
+ */
 void TASK_MESG::Resume_Others_AppsTask()
 {
     if(former_Priority == 0){
@@ -88,7 +100,7 @@ void TASK_MESG::Resume_Others_AppsTask()
 // }
 
 /*
- * 创建新的Loop函数 和 setup函数
+ * 创建多一个线程，新的loop_1和 setup_1就可以使用了
  * 
  * @parameters: 
  * @return: 返回0表示创建成功
@@ -108,7 +120,7 @@ uint8_t TASK_MESG::Create_New_Loop()
 }
 
 /*
- * 创建后台线程：
+ * 创建后台线程，守护电机PID控制和检测通信数据/屏幕刷新控制：
  * 一个用于需要定时刷新的功能，要求实时性不高
  * 另外一个用于电机PID固定调节周期使用
  * 

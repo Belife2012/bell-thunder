@@ -56,6 +56,8 @@ class XT1511_I2C
     void LED_Updata(void);              // 0xA1  按照现有数据刷新
     void LED_Show(uint8_t number);      // 0xA2  刷新预存数据 (指令预留)
 
+    void Set_LED_Dynamic(uint8_t dynamicMode);
+
   private:
       int _device_address = 0x11;
 

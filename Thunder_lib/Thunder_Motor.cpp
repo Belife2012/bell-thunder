@@ -423,31 +423,6 @@ void THUNDER_MOTOR::PID_Speed()
   }
 }
 
-/* 
- * 清零电机编码器，在初始化或者获取完计数器数值 等等情况之后可以调用此函数
- * 
- * 
- */
-inline void Encoder_Counter_Clear()
-{
-  pcnt_counter_clear(PCNT_UNIT_0); // Left
-  pcnt_counter_clear(PCNT_UNIT_1); // Right
-}
-
-/* 
- * 获取编码器计数器数值，保存到相应变量里面
- * 每次获取都会清零计数器
- */
-inline void Get_Encoder_Value()
-{
-  
-  pcnt_get_counter_value(PCNT_UNIT_0, &Encoder_Counter_Left);
-  pcnt_get_counter_value(PCNT_UNIT_1, &Encoder_Counter_Right);
-  
-  Encoder_Counter_Clear();
-
-}
-
 // 设定左轮目标速度(编码器计数值)
 void THUNDER_MOTOR::Set_L_Target(float target)
 {
@@ -496,6 +471,31 @@ int16_t THUNDER_MOTOR::Get_R_Target(void)
   return Motor_R_Speed_PID.Ref;
 }
 
+/* 
+ * 清零电机编码器，在初始化或者获取完计数器数值 等等情况之后可以调用此函数
+ * 
+ * 
+ */
+inline void Encoder_Counter_Clear()
+{
+  pcnt_counter_clear(PCNT_UNIT_0); // Left
+  pcnt_counter_clear(PCNT_UNIT_1); // Right
+}
+
+/* 
+ * 获取编码器计数器数值，保存到相应变量里面
+ * 每次获取都会清零计数器
+ */
+inline void Get_Encoder_Value()
+{
+  
+  pcnt_get_counter_value(PCNT_UNIT_0, &Encoder_Counter_Left);
+  pcnt_get_counter_value(PCNT_UNIT_1, &Encoder_Counter_Right);
+  
+  Encoder_Counter_Clear();
+
+}
+
 /*
  * 在Encoder_Counter_Left Encoder_Counter_Right更新之后才能调用此更新过程
  *   不然会产生重复累积，导致数据错误
@@ -507,21 +507,42 @@ inline void Update_Rotate_Value()
   rotate_RawValue_Right += Encoder_Counter_Right;
 }
 
+/*
+ * 获取左轮旋转量
+ * 
+ * @parameters: 
+ * @return: 
+ */
 int32_t THUNDER_MOTOR::Get_L_RotateValue()
 {
   return rotate_RawValue_Left;
 }
-
+/*
+ * 获取右轮旋转量
+ * 
+ * @parameters: 
+ * @return: 
+ */
 int32_t THUNDER_MOTOR::Get_R_RotateValue()
 {
   return rotate_RawValue_Right;
 }
-
+/*
+ * 清零左轮旋转量记录
+ * 
+ * @parameters: 
+ * @return: 
+ */
 void THUNDER_MOTOR::Clear_L_RotateValue()
 {
   rotate_RawValue_Left = 0;
 }
-
+/*
+ * 清零右轮旋转量记录
+ * 
+ * @parameters: 
+ * @return: 
+ */
 void THUNDER_MOTOR::Clear_R_RotateValue()
 {
   rotate_RawValue_Right = 0;

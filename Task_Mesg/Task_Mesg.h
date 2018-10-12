@@ -18,21 +18,20 @@ public:
     TASK_MESG();
     ~TASK_MESG();
 
-    void Suspend_Others_AppsTask();
-    void Resume_Others_AppsTask();
-
     uint8_t Create_New_Loop();
     void Create_Deamon_Threads();
+
+    void Suspend_Others_AppsTask();
+    void Resume_Others_AppsTask();
 
     // 串口“示波器”的数据队列
     QueueHandle_t Queue_encoder_left;
     QueueHandle_t Queue_encoder_right;
 
-    TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
-    // TaskHandle_t current_Task;
-
-    UBaseType_t former_Priority;
 private:
+
+    TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
+    UBaseType_t former_Priority;
 
     uint8_t tasks_num;
 };

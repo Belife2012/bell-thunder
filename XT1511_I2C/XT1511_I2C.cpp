@@ -130,3 +130,15 @@ byte XT1511_I2C::write(unsigned char memory_address, unsigned char *data, unsign
   return (rc);
 }
 
+/* 
+ * 设置彩灯的动态显示模式，有四种模式，
+ *   当设置好模式后，编辑好的彩灯显示将一直以该模式显示直到自行改变
+ * 
+ * @parameters: 动态模式的参数，有四种 0：静态 1：闪烁 2：滚动 3：呼吸
+ * @return: 
+ */
+void XT1511_I2C::Set_LED_Dynamic(uint8_t dynamicMode)
+{
+
+}
+

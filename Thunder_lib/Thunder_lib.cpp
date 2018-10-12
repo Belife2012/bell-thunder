@@ -1108,6 +1108,7 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
 }
 
 /*
+ * 选择传感器通道1/2/3，选择后只有当前通道可使用，可用多个相同模块
  * 
  * @parameter：需要使用的传感器接口号
  * @return: 设置成功返回0，发生错误返回非0 的错误码
@@ -1142,7 +1143,8 @@ uint8_t THUNDER::Select_Sensor_Channel(uint8_t sensorChannel)
 }
 
 /* 
- * 选择全部的传感器通道，这时候不管是否支持选择传感器端口号，所以没有返回值
+ * 选通所有传感器通道，初始化时一定要调用后才能使用屏幕等等IIC接口的模块。
+ *   调用后，不能使用多个相同模块。
  * 
  * @parameter:
  * @return: 0 表示操作成功， 1 为初始化 IIC 失败

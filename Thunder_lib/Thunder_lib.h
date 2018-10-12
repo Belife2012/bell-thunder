@@ -189,6 +189,10 @@ class THUNDER
     unsigned short RGBC[4] = {0};
     float HSV[3] = {0};
     uint8_t Colour_Num = 0;
+    
+    // I2C端口选通
+    uint8_t I2C_channel_opened;
+    uint8_t Set_I2C_Chanel(uint8_t channelData);
 
   public:
     // 单色图案
@@ -238,10 +242,6 @@ class THUNDER
     void Check_Communication(void); // 通信确认，蓝牙/串口
     void Check_Protocol(void);      // 协议解析
     void Reset_Rx_Data(void);       // 清空接收数据
-
-    // I2C端口选通
-    uint8_t I2C_channel_opened;
-    uint8_t Set_I2C_Chanel(uint8_t channelData);
 
     // 传感器端口选择
     uint8_t Select_Sensor_Channel(uint8_t sensorChannel);

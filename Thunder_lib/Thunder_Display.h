@@ -46,6 +46,7 @@ class DOT_MATRIX_LED
     void Setup(void);                               // 初始化单色点阵灯驱动
     void Play_LED_HT16F35B(void);                   // 跑马灯
     void Play_LED_HT16F35B_Show(int LED_Show_No);   // 内置单色点阵图案
+    void Play_LED_String(char *playString);         // 显示字符，长字符串以滚动方式呈现
 };
 
 #endif

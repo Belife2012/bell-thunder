@@ -1240,3 +1240,14 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
       break; 
   }
 }
+
+/* 
+ * 显示字符，长字符串以滚动方式呈现，循环显示 直到 修改显示内容
+ * 
+ * @parameters: 传入字符串首地址，字符串最长30字节，NULL 表示清空显示
+ * @return: 
+ */
+void DOT_MATRIX_LED::Play_LED_String(char *playString)
+{
+
+}
