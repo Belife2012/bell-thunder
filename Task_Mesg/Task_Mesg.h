@@ -20,6 +20,11 @@ public:
 
     uint8_t Create_New_Loop();
     void Create_Deamon_Threads();
+    void Remove_Deamon_Threads();
+    void Set_Flush_Task(byte flushType);
+    void Remove_Flush_Task(byte flushType);
+
+    UBaseType_t Get_flush_Tasks();
 
     void Suspend_Others_AppsTask();
     void Resume_Others_AppsTask();
@@ -32,6 +37,8 @@ private:
 
     TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
     UBaseType_t former_Priority;
+
+    UBaseType_t flush_Tasks;
 
     uint8_t tasks_num;
 };

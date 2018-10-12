@@ -508,7 +508,7 @@ inline void Update_Rotate_Value()
 }
 
 /*
- * 获取左轮旋转量
+ * 获取左轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 
  * @parameters: 
  * @return: 
@@ -518,7 +518,7 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
   return rotate_RawValue_Left;
 }
 /*
- * 获取右轮旋转量
+ * 获取右轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 
  * @parameters: 
  * @return: 
@@ -528,7 +528,7 @@ int32_t THUNDER_MOTOR::Get_R_RotateValue()
   return rotate_RawValue_Right;
 }
 /*
- * 清零左轮旋转量记录
+ * 清零左轮旋转量记录，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 
  * @parameters: 
  * @return: 
@@ -538,7 +538,7 @@ void THUNDER_MOTOR::Clear_L_RotateValue()
   rotate_RawValue_Left = 0;
 }
 /*
- * 清零右轮旋转量记录
+ * 清零右轮旋转量记录，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 
  * @parameters: 
  * @return: 

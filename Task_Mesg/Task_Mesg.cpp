@@ -8,8 +8,12 @@ TASK_MESG Task_Mesg;
 void Driver_Flush(void *pvParameters)
 {
   for(;;) {
-    Thunder.Check_Communication();
-    Thunder.LED_Show();
+    if(Task_Mesg.Get_flush_Tasks() & 0x00000001){
+        Thunder.Check_Communication();
+    }
+    if(Task_Mesg.Get_flush_Tasks() & 0x00000002){
+        Thunder.LED_Show();
+    }
     // LED 屏最低刷新时间 100ms
     vTaskDelay(pdMS_TO_TICKS(100));
   }
@@ -43,6 +47,7 @@ TASK_MESG::TASK_MESG()
 
     former_Priority = 0;
     tasks_num = 0;
+    flush_Tasks = 0;
 }
 
 TASK_MESG::~TASK_MESG()
@@ -132,4 +137,53 @@ void TASK_MESG::Create_Deamon_Threads()
   // deamon Tasks , Priority: 8~10
   xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 4096, NULL, 9, NULL, 1);
   xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 10, NULL, 1);
+}
+
+/*
+ * 
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void TASK_MESG::Remove_Deamon_Threads()
+{
+  
+}
+
+UBaseType_t TASK_MESG::Get_flush_Tasks()
+{
+    return flush_Tasks;
+}
+
+/*
+ * 设置某个刷新线程 在后台守护线程运行
+ * 
+ * @parameters: 
+ *      0 通信检查，Thunder.Check_Communication();
+ *      1 LED点阵显示刷新，Thunder.LED_Show();
+ * @return: 
+ */
+void TASK_MESG::Set_Flush_Task(byte flushType)
+{
+    if(flushType > 1){
+        return;
+    }else{
+        flush_Tasks |= (0x00000001 << flushType);
+    }
+}
+/*
+ * 移除某个刷新线程 在后台守护线程运行
+ * 
+ * @parameters: 
+ *      0 通信检查，Thunder.Check_Communication();
+ *      1 LED点阵显示刷新，Thunder.LED_Show();
+ * @return: 
+ */
+void TASK_MESG::Remove_Flush_Task(byte flushType)
+{
+    if(flushType > 1){
+        return;
+    }else{
+        flush_Tasks &= ~(0x00000001 << flushType);
+    }
 }

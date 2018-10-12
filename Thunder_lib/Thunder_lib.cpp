@@ -1094,7 +1094,6 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
       }
 
       if(regValue == channelData){
-        Serial.println("*** TCA9548 Read equal to Write");
         I2C_channel_opened = channelData;
         break;
       }else{

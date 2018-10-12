@@ -3,14 +3,25 @@
 
 void setup() {
   // put your setup code here, to run once:
-  Thunder.Setup_All();
+  
+  Serial.begin(115200);
+  while (!Serial);
+  
+  Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
+  // 1.9版的电路板增加了IIC扩展芯片，初始化需要调用此函数进行IIC初始化
+  Thunder.Select_Sensor_AllChannel();
 
-  // 舵机位置初始化
-  Thunder.Servo_Turn(1, 90);  //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Thunder.Servo_Turn(2, 90);  //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  // 一定要有调用配置 Setup_Motor_PID()，电机旋转量记录才有效
+  Thunder_Motor.Setup_Motor_PID();
 
-  // 新建 loop 和 启动后台线程
+  // 初始化单色LED驱动IC配置，才有LED点阵显示
+  Dot_Matrix_LED.Setup();   // 初始化单色LED驱动IC配置
+
+  // 新建 loop 后 函数setup_1() loop_1()才有效
   Task_Mesg.Create_New_Loop();
+
+  // 开启后台守护线程
+  Task_Mesg.Set_Flush_Task(1);
   Task_Mesg.Create_Deamon_Threads();
 }
 
@@ -19,10 +30,12 @@ void loop() {
   Serial.printf("left rotate: %d\n", Thunder_Motor.Get_L_RotateValue());
   Serial.printf("Right rotate: %d\n\n", Thunder_Motor.Get_R_RotateValue());
 
+  Thunder.Set_LED_Show_No(5);
+
   delay(3000);
 }
 
-/***********************************new loop**************************************/
+/****************************setup_1()、loop_1()**************************************/
 void setup_1()
 {
 
@@ -32,6 +45,7 @@ void setup_1()
 float US_Data_cm = 0;
 void loop_1()
 {
+  // 获取两个超声波模块的数据
   Thunder.Select_Sensor_Channel(1);
   Serial.println("Port 1: ");
   US_Data_cm = US.Get_US_cm();
