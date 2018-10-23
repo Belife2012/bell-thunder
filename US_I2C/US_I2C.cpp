@@ -30,6 +30,8 @@
 #include <Wire.h>
 #include <US_I2C.h>
 
+// #define DELAY_BEFORE_READ_US
+
 // 配置I2C地址
 US_I2C::US_I2C(int slave_address)
 {
@@ -129,6 +131,7 @@ byte US_I2C::read(unsigned char memory_address, unsigned char *data, int size)
   uint32_t lastMillis;
   uint32_t currentMillis;
     Wire.beginTransmission(_device_address); // 开启发送
+  #ifdef DELAY_BEFORE_READ_US
     lastMillis = millis();
     while(1){
       currentMillis = millis();
@@ -136,6 +139,7 @@ byte US_I2C::read(unsigned char memory_address, unsigned char *data, int size)
         break;
       }
     }
+  #endif
     Wire.write(memory_address);
     rc = Wire.endTransmission(false);        // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
     if (rc != 0) 

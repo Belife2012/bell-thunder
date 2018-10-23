@@ -59,6 +59,12 @@
 // 颜色识别
 #include <BH1745NUC.h>
 
+// 触碰传感器
+#include <Touch_I2C.h>
+
+// 光电传感器
+#include <LightDetect_I2C.h>
+
 // 雷霆
 #include <Thunder_BLE.h>
 #include <Thunder_Display.h>
@@ -66,7 +72,7 @@
 #include <Task_Mesg.h>
 
 // 固件版本
-#define VERSION            0.30   // version
+#define VERSION            0.21   // version
 
 // I2C
 #define SDA_PIN            21   // SDA_PIN
@@ -103,6 +109,12 @@
 // 颜色识别模块
 #define ADD_I2C_COLOUR      0x38   //颜色识别模块I2C器件地址
 
+// 触碰模块
+#define TOUCH_ADDR_DEVICE   0x10   //触碰模块I2C器件地址
+
+// 光电模块
+#define LIGHT_ADDR_DEVICE   0x52   //光电模块I2C器件地址
+
 // 雷霆
 extern THUNDER_BLE Thunder_BLE;
 extern THUNDER_MOTOR Thunder_Motor;
@@ -118,6 +130,12 @@ extern BH1745NUC Colour_Sensor;
 
 // 彩色LED
 extern XT1511_I2C I2C_LED;
+
+// 触碰传感器
+extern TOUCH_I2C Touch_Sensor;
+
+// 光电传感器
+extern LIGHTDETECT_I2C Light_Sensor;
 
 // 单色LED
 extern DOT_MATRIX_LED Dot_Matrix_LED;

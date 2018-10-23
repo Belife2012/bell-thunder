@@ -7,21 +7,38 @@ TASK_MESG Task_Mesg;
 /**************************************Deamon Thread*******************************************/
 void Driver_Flush(void *pvParameters)
 {
+  uint32_t current_time;
+  uint32_t character_roll_time;
+
+  character_roll_time = millis();
   for(;;) {
-    if(Task_Mesg.Get_flush_Tasks() & 0x00000001){
+    current_time = millis();
+
+    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS) ){
         Thunder.Check_Communication();
     }
-    if(Task_Mesg.Get_flush_Tasks() & 0x00000002){
+    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED) ){
         Thunder.LED_Show();
     }
+    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED) ){
+        I2C_LED.LED_Flush();
+    }
+    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL) ){
+      if(current_time - character_roll_time > 150){
+        Dot_Matrix_LED.Play_String_NextFrame();
+        character_roll_time = millis();
+      }
+    }
     // LED 屏最低刷新时间 100ms
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(30));
   }
 }
 void Deamon_Motor(void *pvParameters)
 {
   for(;;) {
-    Thunder.En_Motor();
+    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MOTOR_PID_CTRL) ){
+        Thunder.En_Motor();
+    }
     // 电机 PID运算周期为 50ms
     vTaskDelay(pdMS_TO_TICKS(50));
   }
@@ -165,7 +182,7 @@ UBaseType_t TASK_MESG::Get_flush_Tasks()
  */
 void TASK_MESG::Set_Flush_Task(byte flushType)
 {
-    if(flushType > 1){
+    if(flushType >= FLUSH_MAX_NUM){
         return;
     }else{
         flush_Tasks |= (0x00000001 << flushType);

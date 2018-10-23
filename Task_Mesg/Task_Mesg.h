@@ -9,6 +9,15 @@
 
 #define MAX_APPS_TASK_COUNTER   1
 
+typedef enum{
+    FLUSH_COMMUNICATIONS = 0,
+    FLUSH_MATRIX_LED,
+    FLUSH_COLOR_LED,
+    FLUSH_MOTOR_PID_CTRL,
+    FLUSH_CHARACTER_ROLL,
+    FLUSH_MAX_NUM
+} enum_Flush_Type;
+
 void setup_1(void);
 void loop_1(void);
 

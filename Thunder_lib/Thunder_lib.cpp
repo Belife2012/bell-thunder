@@ -69,6 +69,12 @@ XT1511_I2C I2C_LED(0x11);
 // 单色色LED
 DOT_MATRIX_LED Dot_Matrix_LED;
 
+// 触碰传感器
+TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
+
+// 光电传感器
+LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
+
 // 蓝牙
 uint8_t Rx_Data[6] = {0};
 uint8_t Tx_Data[6] = {0};
@@ -76,12 +82,13 @@ bool deviceConnected = false;
 
 // 固件版本号 2 bytes, 分别为整数和小数，
 // 要同时修改头文件的 宏 VERSION
-const uint8_t Version_FW[2] = {0,30};
+const uint8_t Version_FW[2] = {0,21};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
-  // delay(1000);
+  // delay(3000);
+
   Serial.begin(115200);
   while (!Serial);
 
@@ -231,10 +238,11 @@ void THUNDER::Line_Tracing(void)
   Line_last_sound_time = millis();
   LED_counter = 99;
 
+  Speaker.Play_Song(131);
   while(Rx_Data[1] == 1)
   {
     Get_IR_Data(IR_Data);  //更新IR数据 //0-->白; 1-->黑
-    // Serial.printf("SSSSSSSSSS IR_Data[0] : %d ___ IR_Data[1] : %d SSSSSSSSSS\n",IR_Data[0],IR_Data[1]);
+    Serial.printf("SSSSSSSSSS IR_Data[0] : %d ___ IR_Data[1] : %d SSSSSSSSSS\n",IR_Data[0],IR_Data[1]);
 
     current_time = millis();
     
@@ -257,7 +265,7 @@ void THUNDER::Line_Tracing(void)
         while((current_time - 200) < Line_last_time)
         {
           current_time = millis();
-          En_Motor();
+          // En_Motor();
         }
       }
       else if(line_state == 1)
@@ -354,9 +362,9 @@ void THUNDER::Line_Tracing(void)
       Speaker.Play_Song(139);
       Line_last_sound_time = millis();
     }
-    
-    En_Motor();
+    // En_Motor();
   }
+  Speaker.Play_Song(130);
 }
 
 // 开机动画/声效
@@ -382,25 +390,70 @@ void THUNDER::Start_Show(void)
 }
 
 // 等待蓝牙连接动画 (有串口数据也跳出)
+#if 1 // 测试超声波 连续IIC 读取出错 问题
 void THUNDER::Wait_BLE(void)
 {
+  float US_Data_cm = 0;
   while((deviceConnected == false) & (Usart_Communication == 0))
   {
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(6);   //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
+    
+  US_Data_cm = US.Get_US_cm();
+  if(US_Data_cm < 1.0){
+    Serial.printf("### US_Data_cm : %.1f [cm]################1###############\n", US_Data_cm);
+  }else{
+    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
+  }
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(7);   //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
+  delay(5);
+  US_Data_cm = US.Get_US_cm();
+  if(US_Data_cm < 1.0){
+    Serial.printf("### US_Data_cm : %.1f [cm]#################2##############\n", US_Data_cm);
+  }else{
+    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
+  }
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(8);   //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
+    
+  US_Data_cm = US.Get_US_cm();
+  if(US_Data_cm < 1.0){
+    Serial.printf("### US_Data_cm : %.1f [cm]#################3##############\n", US_Data_cm);
+  }else{
+    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
+  }
+
+  // uint16_t lightValue = 0;
+  // while((deviceConnected == false) & (Usart_Communication == 0))
+  // {
+  //   Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
+    
+  // lightValue = Light_Sensor.Get_Light_Value();
+  // Serial.printf("light Value: %d \n", lightValue);
+
+  //   delay(200);
+  //   Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
+
+  // delay(5);
+  // lightValue = Light_Sensor.Get_Light_Value();
+  // Serial.printf("light Value: %d \n", lightValue);
+
+  //   delay(200);
+  //   Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
+
+  // lightValue = Light_Sensor.Get_Light_Value();
+  // Serial.printf("light Value: %d \n", lightValue);
+
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(9);   //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(10);  //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(11);  //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(12);  //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
     delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(13);  //单色点阵图案
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
     delay(200);
 
     if(Serial.available())
@@ -409,6 +462,35 @@ void THUNDER::Wait_BLE(void)
     }  
   }
 }
+#else
+void THUNDER::Wait_BLE(void)
+{
+  while((deviceConnected == false) & (Usart_Communication == 0))
+  {
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
+    delay(200);
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
+    delay(200);
+
+    if(Serial.available())
+    {
+      Usart_Communication = 1;
+    }  
+  }
+}
+#endif
 
 // 设置将要播放的内置动画编号
 void THUNDER::Set_LED_Show_No(uint8_t Show_No)

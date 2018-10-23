@@ -29,6 +29,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <HT16D35B.h>
+#include <Thunder_Display.h>
 
 #define PRINT_DEBUG_INFO
 
@@ -64,7 +65,7 @@ byte HT16D35B::Setup(void)
   }
 
 
-  rc = write(HT16D35B_CONTROL_ROW, ROW_BUFF, sizeof(ROW_BUFF));  //最后一个ROW不用
+  rc = write(HT16D35B_CONTROL_ROW, ROW_BUFF, sizeof(ROW_BUFF));  // 最后一个ROW不用
   if (rc != 0) 
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_CONTROL_ROW 配置失败 ___SSS"));
@@ -72,7 +73,15 @@ byte HT16D35B::Setup(void)
   }
 
   reg = 0x01;
-  rc = write(HT16D35B_MODE_GRAY, &reg, sizeof(reg));    //灰度模式: 0x00; 二进制模式0x01
+  rc = write(HT16D35B_MODE_GRAY, &reg, sizeof(reg));    // 选择模式：灰度模式: 0x00; 二进制模式0x01
+  if (rc != 0) 
+  {
+    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_MODE_GRAY 配置失败 ___SSS"));
+    return (rc);
+  }
+  
+  reg = 10;
+  rc = write(HT16D35B_GLOBAL_BRIGHT, &reg, sizeof(reg));    // 全局亮度设置：该命令用于控制 64 级 PWM 亮度
   if (rc != 0) 
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_MODE_GRAY 配置失败 ___SSS"));
@@ -100,7 +109,7 @@ byte HT16D35B::Setup(void)
 // 显示图案
 // 参数*data --> 灯数据
 // 参数size --> 数据长度
-byte HT16D35B::LED_Show(unsigned char *data, int size)
+byte HT16D35B::LED_Show(const unsigned char *data, int size)
 {
   byte rc;
   

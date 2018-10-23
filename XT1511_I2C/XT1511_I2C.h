@@ -57,11 +57,20 @@ class XT1511_I2C
     void LED_Show(uint8_t number);      // 0xA2  刷新预存数据 (指令预留)
 
     void Set_LED_Dynamic(uint8_t dynamicMode);
+    void LED_Flush(void);
 
   private:
       int _device_address = 0x11;
+      byte LEDs_Data[36];
+      byte LEDs_DataResult[36];
+
+      byte LED_Dynamic;
+      unsigned int ledDynamicIndex;
 
       byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
+      void LED_Flush_Breath(void);
+      void LED_Flush_Blink(void);
+      void LED_Flush_Roll(void);
 };
 
 #endif // _XT1511_I2C_H_
