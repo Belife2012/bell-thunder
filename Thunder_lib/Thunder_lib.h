@@ -72,7 +72,7 @@
 #include <Task_Mesg.h>
 
 // 固件版本
-#define VERSION            0.31   // version
+#define VERSION            0.21   // version
 
 // I2C
 #define SDA_PIN            21   // SDA_PIN
@@ -145,9 +145,9 @@ class THUNDER
 {
   private:
     // 舵机
-    // 20000[us] / 8191 * 计数值 = 输出[us]
-    int Servo_MIN = 290;
-    int Servo_Range = 650; 
+    // 20000[us] * 计数值 / 8191 = 输出[us]
+    int Servo_MIN = 205;
+    int Servo_Range = 819; 
 
     // 编码电机
     uint8_t En_Motor_Flag = 0;

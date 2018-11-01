@@ -298,8 +298,11 @@ void THUNDER_BLE::Setup_BLE()
   pServer->setCallbacks(new MyServerCallbacks()); // 如果连接上蓝牙，deviceConnected置1
 
   BLEService *pService = pServer->createService(SERVICE_UUID);  // 创建BLE服务
-
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV,ESP_PWR_LVL_P7);    // 改蓝牙功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+  
+  // 改蓝牙广播功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);      
+  // 改蓝牙默认功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P7);  
 
   // 增加广播内容
   pAdvertising = pServer->getAdvertising();

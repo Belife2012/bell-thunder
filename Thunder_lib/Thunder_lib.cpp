@@ -82,7 +82,7 @@ bool deviceConnected = false;
 
 // 固件版本号 2 bytes, 分别为整数和小数，
 // 要同时修改头文件的 宏 VERSION
-const uint8_t Version_FW[2] = {0, 31};
+const uint8_t Version_FW[2] = {0, 21};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
@@ -99,8 +99,8 @@ void THUNDER::Setup_All(void)
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
   Select_Sensor_AllChannel();
 
-  // Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
-  // Thunder_BLE.Setup_BLE();    // 配置BLE
+  Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
+  Thunder_BLE.Setup_BLE();    // 配置BLE
 
   Colour_Sensor.Setup();           // 配置颜色传感器
   Thunder_Motor.Setup_Motor();     // 配置电机
@@ -427,7 +427,7 @@ void Wait_Line_Location()
     // Speaker.Play_Song(103); // 播放声音：oh, no
     delay(2000);
   }
-  // Speaker.Play_Song(101); // 播放声音：lets go
+  Speaker.Play_Song(101); // 播放声音：lets go
   delay(2000);
 }
 
@@ -799,7 +799,7 @@ float LINE_TRACE_SPEED_D = 10.0;          // PI 控制速度的偏差改变量�
 
 float LINE_DEVIATION_P = 10.0;            // PI 控制偏差的参数 Kp
 float LINE_DEVIATION_I = 0.28;            // PI 控制偏差的参数 Ki
-float LINE_DEVIATION_D = 0.08;            // PI 控制偏差的参数 Kd
+float LINE_DEVIATION_D = 0.10;            // PI 控制偏差的参数 Kd
 
 float DEVIATION_VALUE = 1;           
 float DEVIATION_DEEP_VALUE = 3;      
@@ -973,26 +973,26 @@ void THUNDER::Line_Tracing(void)
   history_data[0] = 0xFF;
   history_data[1] = 0xFF;
 
-  uint32_t beginWaitTime;
-  beginWaitTime = millis();
-  Serial.print("Kp Ki Ki Kd Kp Ki Kd: ");
-  //5.000 0.100 0.010 10.00 10.00 0.500 0.200
-  while( Serial.available() < 41){
-    current_time = millis();
-    if(current_time > beginWaitTime + 5000){
-      break;
-    }
-  }
-  if(Serial.available() >= 41){
-    LINE_TRACE_P = Serial.parseFloat();
-    LINE_TRACE_ACCE_I = Serial.parseFloat();
-    LINE_TRACE_DECE_I = Serial.parseFloat();
-    LINE_TRACE_SPEED_D = Serial.parseFloat();
-    LINE_DEVIATION_P = Serial.parseFloat();
-    LINE_DEVIATION_I = Serial.parseFloat();
-    LINE_DEVIATION_D = Serial.parseFloat();
-  }
-  Serial.printf("\nK: %f %f\n", LINE_TRACE_P, LINE_DEVIATION_D);
+  // uint32_t beginWaitTime;
+  // beginWaitTime = millis();
+  // Serial.print("Kp Ki Ki Kd Kp Ki Kd: ");
+  // //5.000 0.100 0.010 10.00 10.00 0.500 0.200
+  // while( Serial.available() < 41){
+  //   current_time = millis();
+  //   if(current_time > beginWaitTime + 5000){
+  //     break;
+  //   }
+  // }
+  // if(Serial.available() >= 41){
+  //   LINE_TRACE_P = Serial.parseFloat();
+  //   LINE_TRACE_ACCE_I = Serial.parseFloat();
+  //   LINE_TRACE_DECE_I = Serial.parseFloat();
+  //   LINE_TRACE_SPEED_D = Serial.parseFloat();
+  //   LINE_DEVIATION_P = Serial.parseFloat();
+  //   LINE_DEVIATION_I = Serial.parseFloat();
+  //   LINE_DEVIATION_D = Serial.parseFloat();
+  // }
+  // Serial.printf("\nK: %f %f\n", LINE_TRACE_P, LINE_DEVIATION_D);
 
   Line_last_time = millis();
   Line_last_led_time = millis();
@@ -1002,7 +1002,7 @@ void THUNDER::Line_Tracing(void)
   Wait_Line_Location();
   line_state = LINE_STATE_START;
 
-  // Speaker.Play_Song(131);
+  Speaker.Play_Song(131);
   while (Rx_Data[1] == 1)
   {
     Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
