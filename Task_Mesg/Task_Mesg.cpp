@@ -3,7 +3,6 @@
 
 TASK_MESG Task_Mesg;
 
-
 /**************************************Deamon Thread*******************************************/
 void Driver_Flush(void *pvParameters)
 {
@@ -11,20 +10,27 @@ void Driver_Flush(void *pvParameters)
   uint32_t character_roll_time;
 
   character_roll_time = millis();
-  for(;;) {
+  for (;;)
+  {
     current_time = millis();
 
-    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS) ){
-        Thunder.Check_Communication();
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
+    {
+      Thunder.Check_Communication();
     }
-    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED) ){
-        Thunder.LED_Show();
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
+    {
+      Thunder.LED_Show();
     }
-    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED) ){
-        I2C_LED.LED_Flush();
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED))
+    {
+      I2C_LED.LED_Flush();
+      // delay(1);
     }
-    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL) ){
-      if(current_time - character_roll_time > 150){
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))
+    {
+      if (current_time - character_roll_time > 150)
+      {
         Dot_Matrix_LED.Play_String_NextFrame();
         character_roll_time = millis();
       }
@@ -35,9 +41,11 @@ void Driver_Flush(void *pvParameters)
 }
 void Deamon_Motor(void *pvParameters)
 {
-  for(;;) {
-    if(Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MOTOR_PID_CTRL) ){
-        Thunder.En_Motor();
+  for (;;)
+  {
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MOTOR_PID_CTRL))
+    {
+      Thunder.En_Motor();
     }
     // 电机 PID运算周期为 50ms
     vTaskDelay(pdMS_TO_TICKS(50));
@@ -47,31 +55,44 @@ void Deamon_Motor(void *pvParameters)
 /************************************new app Thread*****************************************/
 void New_Loop_Task(void *pvParameters)
 {
-    setup_1();
-    for(;;) {
-        loop_1();
-    }
+  setup_1();
+  for (;;)
+  {
+    loop_1();
+  }
 }
 
 TASK_MESG::TASK_MESG()
 {
-    Queue_encoder_left = xQueueCreate( 3, sizeof(float) );
-    Queue_encoder_right = xQueueCreate( 3, sizeof(float) );
+  Queue_encoder_left = xQueueCreate(3, sizeof(float));
+  Queue_encoder_right = xQueueCreate(3, sizeof(float));
 
-    for(uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++){
-        Task_Apps[i] = NULL;
+  for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
+  {
+    Task_Apps[i] = NULL;
+  }
+
+  // 创建 IIC互斥体
+  xSemaphore_IIC = xSemaphoreCreateMutex();
+  if (xSemaphore_IIC == NULL)
+  {
+    while (1)
+    {
+      Serial.println("Mutex_IIC create fail");
     }
+  }
 
-    former_Priority = 0;
-    tasks_num = 0;
-    flush_Tasks = 0;
+  former_Priority = 0;
+  tasks_num = 0;
+  flush_Tasks = 0;
+  deamon_task_running = 0;
 }
 
 TASK_MESG::~TASK_MESG()
 {
-    
 }
 
+#if 1
 /* 
  * 用于硬件驱动，阻止其他线程占用CPU，恢复前不允许delay
  * 
@@ -80,10 +101,10 @@ TASK_MESG::~TASK_MESG()
  */
 void TASK_MESG::Suspend_Others_AppsTask()
 {
-    former_Priority = uxTaskPriorityGet( NULL );
+  // former_Priority = uxTaskPriorityGet( NULL );
 
-    // highese Priority in the AppTasks
-    vTaskPrioritySet(NULL, 12);
+  // // highese Priority in the AppTasks
+  // vTaskPrioritySet(NULL, 12);
 }
 /* 
  * 用于硬件驱动，恢复其他线程
@@ -93,33 +114,68 @@ void TASK_MESG::Suspend_Others_AppsTask()
  */
 void TASK_MESG::Resume_Others_AppsTask()
 {
-    if(former_Priority == 0){
-        return;
-    }
-    
-    vTaskPrioritySet(NULL, former_Priority);
+  // // No suspend any one, then no resume
+  // if(former_Priority == 0){
+  //     return;
+  // }
+
+  // vTaskPrioritySet(NULL, former_Priority);
 }
+#endif
 
-// void TASK_MESG::Suspend_Others_AppsTask()
-// {
-//     current_Task = xTaskGetCurrentTaskHandle();
+/* 
+ * 用于IIC硬件驱动，阻止其他线程占用IIC，恢复前 不建议使用delay
+ * 
+ * @parameters:
+ * @return
+ */
+void TASK_MESG::Take_Semaphore_IIC()
+{
+  do
+  {
+  } while (xSemaphoreTake(xSemaphore_IIC, portMAX_DELAY) != pdPASS);
+}
+/* 
+ * 用于硬件驱动，恢复其他线程使用IIC
+ * 
+ * @parameters:
+ * @return
+ */
+void TASK_MESG::Give_Semaphore_IIC()
+{
+  xSemaphoreGive(xSemaphore_IIC);
+}
+/* 
+ * 用于硬件驱动(如 语音芯片时序控制)，提升当前task 的优先级别Priority为所有应用线程的最高级别，
+ * clear 前不能使用delay，不然其他低级别的线程会占用CPU，干扰到硬件操作的完整性
+ * 
+ * @parameters:
+ * @return
+ */
 
-//     for(uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++){
-//         if(Task_Apps[i] != current_Task && Task_Apps[i] != NULL){
-//             vTaskSuspend(Task_Apps[i]);
-//         }
-//     }
-// }
-// void TASK_MESG::Resume_Others_AppsTask()
-// {
-//     current_Task = xTaskGetCurrentTaskHandle();
+void TASK_MESG::Set_Current_Task_Supreme()
+{
+  former_Priority = uxTaskPriorityGet(NULL);
 
-//     for(uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++){
-//         if(Task_Apps[i] != current_Task && Task_Apps[i] != NULL){
-//             vTaskResume(Task_Apps[i]);
-//         }
-//     }
-// }
+  // highese Priority in the AppTasks
+  vTaskPrioritySet(NULL, APP_TASK_PRIORITY_MAX);
+}
+/* 
+ * 用于硬件驱动，恢复当前线程的Priority
+ * 
+ * @parameters:
+ * @return
+ */
+void TASK_MESG::Clear_Current_Task_Supreme()
+{
+  // No suspend any one, then no resume
+  if (former_Priority == 0)
+  {
+    return;
+  }
+
+  vTaskPrioritySet(NULL, former_Priority);
+}
 
 /*
  * 创建多一个线程，新的loop_1和 setup_1就可以使用了
@@ -130,15 +186,16 @@ void TASK_MESG::Resume_Others_AppsTask()
  */
 uint8_t TASK_MESG::Create_New_Loop()
 {
-    if(tasks_num >= MAX_APPS_TASK_COUNTER){
-        return 1;
-    }
+  if (tasks_num >= MAX_APPS_TASK_COUNTER)
+  {
+    return 1;
+  }
 
-    /***create New tasks, Priority: 1~7 ***/
-    xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, NULL, 1, &Task_Apps[0], 1);
-    tasks_num++;
+  /***create New tasks, Priority: 1~7 ***/
+  xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, NULL, 1, &Task_Apps[0], 1);
+  tasks_num++;
 
-    return 0;
+  return 0;
 }
 
 /*
@@ -151,9 +208,15 @@ uint8_t TASK_MESG::Create_New_Loop()
  */
 void TASK_MESG::Create_Deamon_Threads()
 {
+  // deamon task已经开始，不能重复创建
+  if (deamon_task_running == 1)
+  {
+    return;
+  }
   // deamon Tasks , Priority: 8~10
   xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 4096, NULL, 9, NULL, 1);
   xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 10, NULL, 1);
+  deamon_task_running = 1;
 }
 
 /*
@@ -164,12 +227,11 @@ void TASK_MESG::Create_Deamon_Threads()
  */
 void TASK_MESG::Remove_Deamon_Threads()
 {
-  
 }
 
 UBaseType_t TASK_MESG::Get_flush_Tasks()
 {
-    return flush_Tasks;
+  return flush_Tasks;
 }
 
 /*
@@ -182,11 +244,14 @@ UBaseType_t TASK_MESG::Get_flush_Tasks()
  */
 void TASK_MESG::Set_Flush_Task(byte flushType)
 {
-    if(flushType >= FLUSH_MAX_NUM){
-        return;
-    }else{
-        flush_Tasks |= (0x00000001 << flushType);
-    }
+  if (flushType >= FLUSH_MAX_NUM)
+  {
+    return;
+  }
+  else
+  {
+    flush_Tasks |= (0x00000001 << flushType);
+  }
 }
 /*
  * 移除某个刷新线程 在后台守护线程运行
@@ -198,9 +263,12 @@ void TASK_MESG::Set_Flush_Task(byte flushType)
  */
 void TASK_MESG::Remove_Flush_Task(byte flushType)
 {
-    if(flushType > 1){
-        return;
-    }else{
-        flush_Tasks &= ~(0x00000001 << flushType);
-    }
+  if (flushType > 1)
+  {
+    return;
+  }
+  else
+  {
+    flush_Tasks &= ~(0x00000001 << flushType);
+  }
 }

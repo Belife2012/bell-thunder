@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Touch_I2C.h>
+#include <Task_Mesg.h>
 
 /* 
  * 构造函数
@@ -14,7 +15,7 @@ TOUCH_I2C::TOUCH_I2C(int slave_address)
 }
 
 /* 
- * 获取触碰状态，0为未按下状态，1为按下状态，其他的过程值 可以通过连续获取状态再做判断
+ * 获取触碰状态，0为未按下状态，1为按下状态，其他的过程值 可以通过连续获取状态做判断触碰过程
  * 
  * @parameters: 
  *      0 未按下状态
@@ -61,10 +62,16 @@ byte TOUCH_I2C::write(unsigned char memory_address, unsigned char *data, unsigne
 {
   byte rc;
 
+  Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address);
   Wire.write(memory_address);
   Wire.write(data, size);
   rc = Wire.endTransmission();
+  if (rc == I2C_ERROR_BUSY)
+  {
+    Wire.reset();
+  }
+  Task_Mesg.Give_Semaphore_IIC();
   return (rc);
 }
 
@@ -74,25 +81,30 @@ byte TOUCH_I2C::read(unsigned char memory_address, unsigned char *data, int size
   byte rc;
   unsigned char cnt = 0;
 
+  Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(memory_address);
-  rc = Wire.endTransmission(false);        // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  if (rc != 0) 
+  rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  if (!(rc == 0 || rc == 7))
   {
-      return rc;
+    if(rc == I2C_ERROR_BUSY){
+      Wire.reset();
+    }
+    Task_Mesg.Give_Semaphore_IIC();
+    return rc;
   }
 
-  Wire.requestFrom(_device_address, size, true);  //地址，长度，停止位
+  Wire.requestFrom(_device_address, size, true); //地址，长度，停止位
   cnt = 0;
-  while(Wire.available()) 
+  while (Wire.available())
   {
     data[cnt] = Wire.read();
     cnt++;
   }
+  Task_Mesg.Give_Semaphore_IIC();
 
-  if(cnt == size)
+  if (cnt == size)
     return 0;
-  else 
+  else
     return 0xFF;
 }
-

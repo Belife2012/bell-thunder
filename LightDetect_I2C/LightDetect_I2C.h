@@ -4,15 +4,15 @@
 class LIGHTDETECT_I2C
 {
 public:
-    LIGHTDETECT_I2C(int slave_address);
+  LIGHTDETECT_I2C(int slave_address);
 
-    byte Set_Operate_Mode(byte optMode);
-    byte Get_Light_Value(unsigned short* readValue);
+  byte Set_Operate_Mode(byte optMode);
+  byte Get_Light_Value(unsigned short *readValue);
 
 private:
-    int _device_address;
-    byte write(unsigned char memory_address, unsigned char *data, unsigned char size);
-    byte read(unsigned char memory_address, unsigned char *data, int size);
+  int _device_address;
+  byte write(unsigned char memory_address, unsigned char *data, unsigned char size);
+  byte read(unsigned char memory_address, unsigned char *data, int size);
 };
 
 #endif

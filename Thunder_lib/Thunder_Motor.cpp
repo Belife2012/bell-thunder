@@ -187,7 +187,7 @@ void THUNDER_MOTOR::set_speed(uint8_t channel, uint32_t value)
 // 开环电机控制函数
 // 参数1-->电机编号；1或者2
 // 参数2-->速度；范围为0-255
-// 参数3-->方向
+// 参数3-->方向, 0为反向，1为正向
 void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
 {
   if(direction == 1)
@@ -220,6 +220,25 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
     // digitalWrite(MOTOR_R_IN2, inPin2);
 
     set_speed(MOTOR_CHANNEL_3, speed);
+  }
+}
+
+// 参数1-->功率；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
+void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
+
+  if( Lpower >= 0 ){
+    Motor_Move(1, Lpower, 1);
+  }else{
+    Motor_Move(1, -1*Lpower, 0);
+  }
+}
+// 参数1-->功率；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
+void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
+
+  if( Rpower >= 0 ){
+    Motor_Move(2, Rpower, 1);
+  }else{
+    Motor_Move(2, -1*Rpower, 0);
   }
 }
 
@@ -423,7 +442,7 @@ void THUNDER_MOTOR::PID_Speed()
   }
 }
 
-// 设定左轮目标速度(编码器计数值)
+// 设定左轮目标速度(编码器计数值) 目前范围暂定 -40~40，负数为方向转
 void THUNDER_MOTOR::Set_L_Target(float target)
 {
   if(Motor_L_Speed_PID.Ref != target)
@@ -433,7 +452,7 @@ void THUNDER_MOTOR::Set_L_Target(float target)
   }
 }
 
-// 设定右轮目标速度(编码器计数值)
+// 设定右轮目标速度(编码器计数值) 目前范围暂定 -40~40，负数为方向转
 void THUNDER_MOTOR::Set_R_Target(float target)
 {
   if(Motor_R_Speed_PID.Ref != target)

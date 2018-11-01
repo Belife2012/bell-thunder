@@ -42,6 +42,13 @@
 #define XT1511_I2C_COM_UODATA                (0xA1)    // 按照现有数据刷新
 #define XT1511_I2C_COM_SHOW                  (0xA2)    // 刷新预存数据
 
+typedef enum{
+  COLOR_MODE_STATIC = 0,
+  COLOR_MODE_BLINK,
+  COLOR_MODE_ROLL,
+  COLOR_MODE_BREATH
+}enum_ColorLED_Mode_Type;
+
 class XT1511_I2C
 {
   public:
@@ -68,6 +75,7 @@ class XT1511_I2C
       unsigned int ledDynamicIndex;
 
       byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
+      void LED_Flush_Static(void);
       void LED_Flush_Breath(void);
       void LED_Flush_Blink(void);
       void LED_Flush_Roll(void);

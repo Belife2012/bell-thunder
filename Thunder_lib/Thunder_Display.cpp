@@ -1273,7 +1273,7 @@ const uint8_t LED_SHOW1_100[29] =
 void DOT_MATRIX_LED::Setup()
 {
   HT16D35B.Setup();
-  string_row_dots_num = 0;
+  display_string_len = 0;
 }
 
 // 跑马灯
@@ -1635,7 +1635,7 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
 
 /* 
  * 显示字符，长字符串以滚动方式呈现，循环显示 直到 修改显示内容
- * 可输入字符为 '0'~'9' 'A'~'Z' 'a'~'z'，小写字母显示的是大写
+ * 可输入字符为 '0'~'9' 'A'~'Z' 'a'~'z'，小写字母显示的是大写, 其他字符显示为井号 #
  * 如果显示内容不超过显示范围，将是居中静态显示
  * 最长可以支持40个字符
  * 
@@ -1677,6 +1677,13 @@ void DOT_MATRIX_LED::Play_LED_String(char *playString)
   
 }
 
+/* 
+ * 滚动显示字符时，每次调用此函数，会刷新LED点阵屏为滚动显示的下一帧
+ * 建议使用后台守护线程进行刷新
+ * 
+ * @parameters: 
+ * @return: 
+ */
 void DOT_MATRIX_LED::Play_String_NextFrame()
 {
   uint8_t i;

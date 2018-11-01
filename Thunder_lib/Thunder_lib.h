@@ -72,7 +72,7 @@
 #include <Task_Mesg.h>
 
 // 固件版本
-#define VERSION            0.21   // version
+#define VERSION            0.31   // version
 
 // I2C
 #define SDA_PIN            21   // SDA_PIN
@@ -158,19 +158,18 @@ class THUNDER
     uint16_t ADC_Battery = 0;
 
     // 巡线IR
+    // [0]是左边数据，[1]是右边数据
     uint8_t IR_Data[2];
-
-    uint8_t line_state = 5;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
     
     unsigned long Line_current_time = 0;
     unsigned long Line_last_time = 0;
     unsigned long Line_last_led_time = 0;
     unsigned long Line_last_sound_time = 0;
 
-    int8_t Line_H_Speed = 5;    //5
-    int8_t Line_M_Speed = 5;    //4
-    int8_t Line_L_Speed = 4;    //3
-    int8_t Line_B_Speed = -4;   //-3
+    int Line_H_Speed = 150;    //5
+    int Line_M_Speed = 100;    //4
+    int Line_L_Speed = 50;    //3
+    int Line_B_Speed = -50;   //-3
 
     // 串口通信标志位
     uint8_t Usart_Communication = 0;
@@ -225,6 +224,10 @@ class THUNDER
     // 彩色灯图案
     uint8_t I2C_LED_BUFF1[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     uint8_t I2C_LED_BUFF2[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    uint8_t line_state;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
+  // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
+    uint8_t history_data[2]; 
 
     void Setup_All(void); // 所有模块初始化
     void Stop_All(void);  // 全部终止(电机)

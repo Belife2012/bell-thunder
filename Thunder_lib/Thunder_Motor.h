@@ -119,6 +119,8 @@ class THUNDER_MOTOR
     // 开环电机
     void Setup_Motor(void);                                 // 配置电机
     void Motor_Move(int motor, int speed, int direction);   // 开环电机控制函数
+    void Set_L_Motor_Power( int Lpower );
+    void Set_R_Motor_Power( int Rpower );
 
     // 闭环电机
     void PID_Reset(struct PID_Struct_t *pid);                               // 重置PID计算过程值

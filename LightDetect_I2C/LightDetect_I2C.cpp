@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <LightDetect_I2C.h>
+#include <Task_Mesg.h>
 
 LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address)
 {
@@ -14,6 +15,8 @@ LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address)
  *      0 为环境光模式，不点亮灯
  *      1 为反射光模式，需要点亮灯
  * @return: 
+ *      0 写数据正常
+ *      非0 写数据出错
  */
 byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
 {
@@ -26,19 +29,21 @@ byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
 /* 
  * 获取光电传感器的值
  * 
- * @parameters: 返回未处理过的亮度值
+ * @parameters: 获取未处理过的采集量
  * @return: 
+ *      0 获取数据正常
+ *      非0 获取数据出错
  */
-byte LIGHTDETECT_I2C::Get_Light_Value(unsigned short* readValue)
+byte LIGHTDETECT_I2C::Get_Light_Value(unsigned short *readValue)
 {
-    unsigned short retValue;
-    byte getValue[2], bakCode;
+  unsigned short retValue;
+  byte getValue[2], bakCode;
 
-    bakCode = read(0x02, getValue, 2);
+  bakCode = read(0x02, getValue, 2);
 
-    *readValue = ((unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8));
+  *readValue = ((unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8));
 
-    return bakCode;
+  return bakCode;
 }
 
 // 类内部使用，I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功
@@ -46,10 +51,16 @@ byte LIGHTDETECT_I2C::write(unsigned char memory_address, unsigned char *data, u
 {
   byte rc;
 
+  Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address);
   Wire.write(memory_address);
   Wire.write(data, size);
   rc = Wire.endTransmission();
+  if (rc == I2C_ERROR_BUSY)
+  {
+    Wire.reset();
+  }
+  Task_Mesg.Give_Semaphore_IIC();
   return (rc);
 }
 
@@ -59,24 +70,31 @@ byte LIGHTDETECT_I2C::read(unsigned char memory_address, unsigned char *data, in
   byte rc;
   unsigned char cnt = 0;
 
+  Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(memory_address);
-  rc = Wire.endTransmission(false);        // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  if (rc != 0) 
+  rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  if (!(rc == 0 || rc == 7))
   {
-      return rc;
+    if (rc == I2C_ERROR_BUSY)
+    {
+      Wire.reset();
+    }
+    Task_Mesg.Give_Semaphore_IIC();
+    return rc;
   }
 
-  Wire.requestFrom(_device_address, size, true);  //地址，长度，停止位
+  Wire.requestFrom(_device_address, size, true); //地址，长度，停止位
   cnt = 0;
-  while(Wire.available()) 
+  while (Wire.available())
   {
     data[cnt] = Wire.read();
     cnt++;
   }
+  Task_Mesg.Give_Semaphore_IIC();
 
-  if(cnt == size)
+  if (cnt == size)
     return 0;
-  else 
+  else
     return 0xFF;
 }

@@ -30,8 +30,9 @@
 #include <Wire.h>
 #include <HT16D35B.h>
 #include <Thunder_Display.h>
+#include <Task_Mesg.h>
 
-#define PRINT_DEBUG_INFO
+// #define PRINT_DEBUG_ERROR
 
 // 配置I2C地址
 HT16D35B::HT16D35B(int slave_address)
@@ -45,51 +46,50 @@ byte HT16D35B::Setup(void)
   Serial.printf("开始配置点阵灯板...\n");
 
   byte rc;
-  uint8_t ROW_BUFF[4] = {0x7F,0XFF,0XFF,0XFF};    //最后一个ROW不用
-  uint8_t LED_BUFF[29] =  
-  {
-    0x00, //地址
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-    0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-    0x00  //不用的
-  };
+  uint8_t ROW_BUFF[4] = {0x7F, 0XFF, 0XFF, 0XFF}; //最后一个ROW不用
+  uint8_t LED_BUFF[29] =
+      {
+          0x00, //地址
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+          0x00 //不用的
+      };
 
   unsigned char reg;
 
   reg = 0xff;
-  rc = write(HT16D35B_CONTROL_COM, &reg, sizeof(reg));    //COM全开
-  if (rc != 0) 
+  rc = write(HT16D35B_CONTROL_COM, &reg, sizeof(reg)); //COM全开
+  if (rc != 0)
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_CONTROL_COM 配置失败 ___SSS"));
     return (rc);
   }
 
-
-  rc = write(HT16D35B_CONTROL_ROW, ROW_BUFF, sizeof(ROW_BUFF));  // 最后一个ROW不用
-  if (rc != 0) 
+  rc = write(HT16D35B_CONTROL_ROW, ROW_BUFF, sizeof(ROW_BUFF)); // 最后一个ROW不用
+  if (rc != 0)
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_CONTROL_ROW 配置失败 ___SSS"));
     return (rc);
   }
 
   reg = 0x01;
-  rc = write(HT16D35B_MODE_GRAY, &reg, sizeof(reg));    // 选择模式：灰度模式: 0x00; 二进制模式0x01
-  if (rc != 0) 
-  {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_MODE_GRAY 配置失败 ___SSS"));
-    return (rc);
-  }
-  
-  reg = 10;
-  rc = write(HT16D35B_GLOBAL_BRIGHT, &reg, sizeof(reg));    // 全局亮度设置：该命令用于控制 64 级 PWM 亮度
-  if (rc != 0) 
+  rc = write(HT16D35B_MODE_GRAY, &reg, sizeof(reg)); // 选择模式：灰度模式: 0x00; 二进制模式0x01
+  if (rc != 0)
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_MODE_GRAY 配置失败 ___SSS"));
     return (rc);
   }
 
-  rc = write(HT16D35B_DISPLAY_RAM, LED_BUFF, sizeof(LED_BUFF));  //写入数据
-  if (rc != 0) 
+  reg = 20;
+  rc = write(HT16D35B_GLOBAL_BRIGHT, &reg, sizeof(reg)); // 全局亮度设置：该命令用于控制 64 级 PWM 亮度
+  if (rc != 0)
+  {
+    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_GLOBAL_BRIGHT 配置失败 ___SSS"));
+    return (rc);
+  }
+
+  rc = write(HT16D35B_DISPLAY_RAM, LED_BUFF, sizeof(LED_BUFF)); //写入数据
+  if (rc != 0)
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_DISPLAY_RAM 配置失败 ___SSS"));
     return (rc);
@@ -97,7 +97,7 @@ byte HT16D35B::Setup(void)
 
   reg = 0X03;
   rc = write(HT16D35B_SYSTEM_CONTROL, &reg, sizeof(reg));
-  if (rc != 0) 
+  if (rc != 0)
   {
     Serial.println(F(" SSS___ 点阵灯板 HT16D35B_SYSTEM_CONTROL 配置失败 ___SSS"));
     return (rc);
@@ -112,17 +112,24 @@ byte HT16D35B::Setup(void)
 byte HT16D35B::LED_Show(const unsigned char *data, int size)
 {
   byte rc;
-  
-  Wire.beginTransmission(_device_address);    // 开启发送
+
+  Task_Mesg.Take_Semaphore_IIC();
+  Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(HT16D35B_DISPLAY_RAM);
   Wire.write(data, size);
-  rc = Wire.endTransmission();  //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-
-#ifdef PRINT_DEBUG_INFO
-  if(rc != 0){
-    Serial.println("### LED IIC Error! ###");
+  rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  if (rc == I2C_ERROR_BUSY)
+  {
+    Wire.reset();
   }
-#endif
+  Task_Mesg.Give_Semaphore_IIC();
+
+  if (rc != 0)
+  {
+  #ifdef PRINT_DEBUG_ERROR
+    Serial.printf("### LED IIC Error! ###%d#### \n", rc);
+  #endif
+  }
   return (rc);
 }
 
@@ -130,11 +137,16 @@ byte HT16D35B::LED_Show(const unsigned char *data, int size)
 byte HT16D35B::write(unsigned char memory_address, unsigned char *data, unsigned char size)
 {
   byte rc;
-
-  Wire.beginTransmission(_device_address);    // 开启发送
+  Task_Mesg.Take_Semaphore_IIC();
+  Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(memory_address);
   Wire.write(data, size);
-  rc = Wire.endTransmission();  //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  if (rc == I2C_ERROR_BUSY)
+  {
+    Wire.reset();
+  }
+  Task_Mesg.Give_Semaphore_IIC();
   return (rc);
 }
 
@@ -143,20 +155,29 @@ byte HT16D35B::read(unsigned char memory_address, unsigned char *data, int size)
   byte rc;
   unsigned char cnt;
 
+  Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address);
   Wire.write(memory_address);
   rc = Wire.endTransmission(false);
-  if (rc != 0) {
+  if (!(rc == 0 || rc == 7))
+  {
+    if (rc == I2C_ERROR_BUSY)
+    {
+      Wire.reset();
+    }
+    Task_Mesg.Give_Semaphore_IIC();
     return (rc);
   }
 
-  Wire.requestFrom(_device_address, size, 1);  //地址，长度，停止位
-    // Wire.requestFrom(_device_address, size, true);  //地址，长度，停止位
+  Wire.requestFrom(_device_address, size, 1); //地址，长度，停止位
+                                              // Wire.requestFrom(_device_address, size, true);  //地址，长度，停止位
   cnt = 0;
-  while(Wire.available()) {
+  while (Wire.available())
+  {
     data[cnt] = Wire.read();
     cnt++;
   }
+  Task_Mesg.Give_Semaphore_IIC();
 
   return (0);
 }

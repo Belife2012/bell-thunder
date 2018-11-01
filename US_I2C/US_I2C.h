@@ -31,18 +31,18 @@
 
 class US_I2C
 {
-  public:
-    US_I2C(int slave_address);                // 配置I2C地址
-    
-    byte Get_US_Data(unsigned short *data);   // 获取超声波数据
-    float Get_US_cm(void);                    // 获取超声波数据，0.1[cm] 
+public:
+  US_I2C(int slave_address); // 配置I2C地址
 
-  private:
-    int _device_address;
+  byte Get_US_Data(unsigned short *data); // 获取超声波数据
+  float Get_US_cm(void);                  // 获取超声波数据，0.1[cm]
 
-    byte get_rawval(unsigned char *data);     // 类内部使用，I2C通讯，读取超声波数据
-    byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
-    byte read(unsigned char memory_address, unsigned char *data, int size);             // 类内部使用，I2C通讯，发送并读取
+private:
+  int _device_address;
+
+  byte get_rawval(unsigned char *data);                                              // 类内部使用，I2C通讯，读取超声波数据
+  byte write(unsigned char memory_address, unsigned char *data, unsigned char size); // 类内部使用，I2C通讯，发送
+  byte read(unsigned char memory_address, unsigned char *data, int size);            // 类内部使用，I2C通讯，发送并读取
 };
 
 #endif
