@@ -51,10 +51,10 @@ class HT16D35B
     byte LED_Show(const unsigned char *data, int size);   // 显示图案，参数*data为灯数据，参数size为数据长度
     
   private:
-    int _device_address;
+    byte _device_address;
 
     byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
-    byte read(unsigned char memory_address, unsigned char *data, int size);             // 类内部使用，I2C通讯，发送并读取 (预留)
+    byte read(unsigned char memory_address, unsigned char *data, unsigned char size);             // 类内部使用，I2C通讯，发送并读取 (预留)
 };
 
 #endif // _HT16D35B_H_

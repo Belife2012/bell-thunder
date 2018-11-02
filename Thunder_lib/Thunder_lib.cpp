@@ -76,8 +76,8 @@ TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
 LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
 
 // 蓝牙
-uint8_t Rx_Data[6] = {0};
-uint8_t Tx_Data[6] = {0};
+uint8_t Rx_Data[16] = {0};
+uint8_t Tx_Data[16] = {0};
 bool deviceConnected = false;
 
 // 固件版本号 2 bytes, 分别为整数和小数，
@@ -114,6 +114,10 @@ void THUNDER::Setup_All(void)
 
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
 
+  Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED); // 把 LED点阵显示动画效果刷新工作 交给后台守护线程进行
+  Task_Mesg.Set_Flush_Task(FLUSH_COLOR_LED); // 把 彩灯刷新工作 交给后台守护线程进行
+  Task_Mesg.Set_Flush_Task(FLUSH_MOTOR_PID_CTRL); // 把 电机闭环控制 交给后台守护线程进行
+  Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL); // 把 滚动显示的刷新工作 交给后台守护线程进行
   Task_Mesg.Create_Deamon_Threads(); // 创建并开始 守护线程
 
   Serial.printf("SSSSSSSSSS___ 初始化完成 ___SSSSSSSSSS\n\n");
@@ -383,10 +387,11 @@ void THUNDER::Line_Tracing(void)
 #define LINE_INITIAL_MAX_POWER    140 // 初始化时最大的功率，如果最大功率达不到最大速度，会提高最大功率left_max_power right_max_power
 #define LINE_INITIAL_POWER        50  // 初始化时的功率，为了快速加速起来，初始化功率作为偏置量，
 #define LINE_RUN_MIN_POWER        70  // 运动轮子的最低功率，也是为了轮子可以从停止状态或反转状态 快速加速起来
-#define LINE_CHECK_MAX_POWER      120 // 搜索黑线时的初始速度
-#define LINE_CHECK_MIN_POWER      90  // 搜索黑线时的结束速度
+#define LINE_CHECK_MAX_POWER      90 // 搜索黑线时的初始速度
+#define LINE_CHECK_MIN_POWER      70  // 搜索黑线时的结束速度
+#define LINE_CHECK_ROTATE         5  // 30  搜索黑线时摇头的幅度
 
-#define LINE_TRACE_MAX_SPEED      10  // 运动轮子的最大速度（也是偏向时的高速度轮子的速度）
+#define LINE_TRACE_MAX_SPEED      20  // 运动轮子的最大速度（也是偏向时的高速度轮子的速度）
 #define LINE_TRACE_MIN_SPEED      7  // 运动轮子的最小速度（也是偏向时的低速度轮子的速度）
 #define LINE_TRACE_BACK_SPEED     5   // 出界时后退的速度
 
@@ -427,7 +432,7 @@ void Wait_Line_Location()
     // Speaker.Play_Song(103); // 播放声音：oh, no
     delay(2000);
   }
-  Speaker.Play_Song(101); // 播放声音：lets go
+  // Speaker.Play_Song(101); // 播放声音：lets go
   delay(2000);
 }
 
@@ -489,7 +494,7 @@ void Check_Line_When_Lost()
 
   case 1:
     current_line_rotate = Thunder_Motor.Get_R_RotateValue();
-    if(current_line_rotate < search_line_rotate + 30){
+    if(current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE){
       if(right_power > LINE_CHECK_MIN_POWER){
         right_power -= 1;
       }
@@ -511,7 +516,7 @@ void Check_Line_When_Lost()
   
   case 2:
     current_line_rotate = Thunder_Motor.Get_R_RotateValue();
-    if(current_line_rotate > search_line_rotate - 30){
+    if(current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE){
       if(right_power < -LINE_CHECK_MIN_POWER){
         right_power += 1;
       }
@@ -527,7 +532,7 @@ void Check_Line_When_Lost()
 
   case 3:
     current_line_rotate = Thunder_Motor.Get_L_RotateValue();
-    if(current_line_rotate < search_line_rotate + 30){
+    if(current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE){
       if(left_power > LINE_CHECK_MIN_POWER){
         left_power -= 1;
       }
@@ -548,7 +553,7 @@ void Check_Line_When_Lost()
   
   case 4:
     current_line_rotate = Thunder_Motor.Get_L_RotateValue();
-    if(current_line_rotate > search_line_rotate - 30){
+    if(current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE){
       if(left_power < -LINE_CHECK_MIN_POWER){
         left_power += 1;
       }
@@ -792,21 +797,30 @@ void Calculate_Motor_Power()
 // 2.000 0.100 0.016 5.000 10.00 0.200 1.000
 // 2.000 0.080 0.014 3.000 10.00 0.200 1.000
 
+// 方向控制PID
+// 3.000 0.400 0.000 0.000 2.000 0.016 2.000
+// 3.000 0.400 0.000 0.000 2.000 0.018 1.300
 float LINE_TRACE_P = 3.0;                // PI 控制速度的参数 Kp
-float LINE_TRACE_ACCE_I = 0.13;           // PI 控制速度加速的参数 Ki
-float LINE_TRACE_DECE_I = 0.00;           // PI 控制速度减速的参数 Ki
-float LINE_TRACE_SPEED_D = 10.0;          // PI 控制速度的偏差改变量因子 Kd
+float LINE_TRACE_ACCE_I = 0.40;           // PI 控制速度加速的参数 Ki
 
-float LINE_DEVIATION_P = 10.0;            // PI 控制偏差的参数 Kp
-float LINE_DEVIATION_I = 0.28;            // PI 控制偏差的参数 Ki
-float LINE_DEVIATION_D = 0.10;            // PI 控制偏差的参数 Kd
+float LINE_TRACE_DECE_I = 0.00;           // PI 控制速度减速的参数 Ki
+float LINE_TRACE_SPEED_D = 0.0;          // PI 控制速度的偏差改变量因子 Kd
+
+float LINE_DEVIATION_P = 2.00;            // PI 控制偏差的参数 Kp
+float LINE_DEVIATION_I = 0.018;            // PI 控制偏差的参数 Ki
+float LINE_DEVIATION_D = 1.30;            // PI 控制偏差的参数 Kd
 
 float DEVIATION_VALUE = 1;           
-float DEVIATION_DEEP_VALUE = 3;      
-float DEVIATION_OUT_VALUE = 6;       
+float DEVIATION_DEEP_VALUE = 2;      
+float DEVIATION_OUT_VALUE = 3;       
 #endif
 
-#define DIRECTION_TURN_MAX_POWER  35  // 控制方向的左右轮速度差最大值
+#define DIRECTION_TURN_MAX_POWER  60  // 控制方向的左右轮速度差最大值
+
+// 左右轮最大速度差，这个速度差相当于控制方向，值越大，拐的角度越大
+// 这里的值蕴含着运动最大曲率的问题，这个值与运动速度可以计算出最大转弯的曲率
+#define LINE_DIFF_MAX_SPEED       3.0 
+#define LINE_RUN_SPEED        15.0 // 固定速度，做PI控制的巡线是选用的初始速度
 
 int deviation[2] = {0, 0}; // 无偏差时为0；左偏差时 正数，右偏差时 负数
 float tempValue;
@@ -835,6 +849,8 @@ void Calculate_Motor_Power()
       right_power_I[0] = 0;
       left_power_I[1] = 0;
       right_power_I[1] = 0;
+      left_power_I[2] = 0;
+      right_power_I[2] = 0;
 
       left_power = LINE_INITIAL_POWER;
       right_power = LINE_INITIAL_POWER;
@@ -872,6 +888,8 @@ void Calculate_Motor_Power()
       right_power_I[0] = 0;
       left_power_I[1] = 0;
       right_power_I[1] = 0;
+      left_power_I[2] = 0;
+      right_power_I[2] = 0;
 
       Check_Line_When_Lost();
       Thunder_Motor.Set_L_Motor_Power( (int)left_power );
@@ -883,79 +901,92 @@ void Calculate_Motor_Power()
     break;
   }
 
-  // 偏移量变化时给一个速度变化量 和 方向逆向控制量
-  diffDeviation = abs(deviation[1]) - abs(deviation[0]);
-  // 速度改变量
-  left_power_I[0] += (diffDeviation > 0)? (LINE_TRACE_SPEED_D * diffDeviation) : 
-                      (LINE_TRACE_SPEED_D * diffDeviation);
-  right_power_I[0] += (diffDeviation > 0)? (LINE_TRACE_SPEED_D * diffDeviation) : 
-                      (LINE_TRACE_SPEED_D * diffDeviation);
+  // // 直线状态会加速，否则会先减速
+  // if(deviation[0] == 0){
+
+  //   left_power_I[1] = 0;
+  //   right_power_I[1] = 0;
+  // }else{
+  //   // 方向 逆向修复量
+  //   tempValue = left_power_I[1];
+  //   left_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? right_power_I[1] : 0);
+  //   right_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? tempValue : 0);
+
+  //   diffSpeed_left = Thunder_Motor.Get_L_Speed(); // 速度越大，减速效果越大
+  //   diffSpeed_right = Thunder_Motor.Get_R_Speed();
+
+  //   // 减速的依据有 目前速度值 和 方向偏移量
+  //   left_power_I[0] -= (left_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_left * abs(deviation[0]);
+  //   right_power_I[0] -= (right_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_right * abs(deviation[0]);
+  // }
   
-  // 直线状态会加速，否则会先减速
-  if(deviation[0] == 0){
-    // 方向 逆向修复量
-    left_power_I[0] += LINE_DEVIATION_D * ((diffDeviation > 0)? right_power_I[1] : 0);
-    right_power_I[0] += LINE_DEVIATION_D * ((diffDeviation > 0)? left_power_I[1] : 0);
-
-    diffSpeed_left = LINE_TRACE_MAX_SPEED - Thunder_Motor.Get_L_Speed();
-    diffSpeed_right = LINE_TRACE_MAX_SPEED - Thunder_Motor.Get_R_Speed();
-
-    left_power_I[0] += LINE_TRACE_ACCE_I * diffSpeed_left;
-    right_power_I[0] += LINE_TRACE_ACCE_I * diffSpeed_right;
-    // 相对最大速度的差值 与 速度控制比例因子LINE_TRACE_P 的乘积, 如果不是直线状态，比例值就不变
-    left_power_pre[0] = LINE_TRACE_P * diffSpeed_left; 
-    right_power_pre[0] = LINE_TRACE_P * diffSpeed_right;
-
-    left_power_I[1] = 0;
-    right_power_I[1] = 0;
-  }else{
-    // 方向 逆向修复量
-    tempValue = left_power_I[1];
-    left_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? right_power_I[1] : 0);
-    right_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? tempValue : 0);
-
-    diffSpeed_left = Thunder_Motor.Get_L_Speed(); // 速度越大，减速效果越大
-    diffSpeed_right = Thunder_Motor.Get_R_Speed();
-
-    // 减速的依据有 目前速度值 和 方向偏移量
-    left_power_I[0] -= (left_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_left * abs(deviation[0]);
-    right_power_I[0] -= (right_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_right * abs(deviation[0]);
-  }
-
-  // 根据偏向量deviation 调节左右轮的速度. deviation[0] 在左偏时为正数，右偏时为负数
-  left_power_I[1] += (abs(left_power_I[1]) > DIRECTION_TURN_MAX_POWER)? 0 : LINE_DEVIATION_I * deviation[0];
-  right_power_I[1] -= (abs(right_power_I[1]) > DIRECTION_TURN_MAX_POWER)? 0 : LINE_DEVIATION_I * deviation[0];
-  // PI控制的 比例P 量，左右轮有个固定的功率差
+  /***********************************方向控制PID**************************************/
+  // P: PI控制的 比例P 量，左右轮有个固定的功率差
   left_power_pre[1] = LINE_DEVIATION_P * deviation[0];
   right_power_pre[1] = -LINE_DEVIATION_P * deviation[0];
 
-  // PI控制 得到的 功率值
-  left_power = left_power_pre[0] + left_power_I[0] + left_power_pre[1] + left_power_I[1];
-  right_power = right_power_pre[0] + right_power_I[0] + right_power_pre[1] + right_power_I[1];
-
-  if(left_power > left_max_power){
-    // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-    if(Thunder_Motor.Get_L_Speed() < LINE_TRACE_MAX_SPEED){
-      left_max_power = (left_max_power<255-LINE_TRACE_ACCELERATION)?(left_max_power+LINE_TRACE_ACCELERATION):255;
-    }else if(Thunder_Motor.Get_L_Speed() > LINE_TRACE_MAX_SPEED + 3){
-      left_max_power -= LINE_TRACE_ACCELERATION;
-    }
-    left_power = left_max_power;
+  // I: 根据偏向量deviation 调节左右轮的速度. deviation[0] 在左偏时为正数，右偏时为负数
+  tempValue = left_power_I[1] + LINE_DEVIATION_I * deviation[0];
+  if( abs(tempValue) < LINE_DIFF_MAX_SPEED ){
+    left_power_I[1] = tempValue;
   }
-  if(right_power > right_max_power){
-    // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-    if(Thunder_Motor.Get_R_Speed() < LINE_TRACE_MAX_SPEED){
-      right_max_power = (right_max_power<255-LINE_TRACE_ACCELERATION)?(right_max_power+LINE_TRACE_ACCELERATION):255;
-    }else if(Thunder_Motor.Get_R_Speed() > LINE_TRACE_MAX_SPEED + 3){
-      right_max_power -= LINE_TRACE_ACCELERATION;
-    }
-    right_power = right_max_power;
+  tempValue = right_power_I[1] - LINE_DEVIATION_I * deviation[0];
+  if( abs(tempValue) < LINE_DIFF_MAX_SPEED ){
+    right_power_I[1] = tempValue;
   }
 
-  if(left_power > left_max_power) left_power = left_max_power;
-  else if(left_power < -left_max_power) left_power = -left_max_power;
-  if(right_power > right_max_power) right_power = right_max_power;
-  else if(right_power < -right_max_power) right_power = -right_max_power;
+  // 偏移量变化时给一个速度变化量 和 方向逆向控制量
+  diffDeviation = abs(deviation[1]) - abs(deviation[0]);
+  // D: 速度改变量, 用于出线时减速，进线时提速
+  left_power_I[2] += (LINE_DEVIATION_D * diffDeviation);
+  right_power_I[2] += (LINE_DEVIATION_D * diffDeviation);
+
+  // 得到的 左右轮子的速度控制目标 left_power_pre[2] right_power_pre[2]
+  left_power_pre[2] = LINE_RUN_SPEED + left_power_pre[1] + left_power_I[1] + left_power_I[2];
+  right_power_pre[2] = LINE_RUN_SPEED + right_power_pre[1] + right_power_I[1] + right_power_I[2];
+
+  /***********************************速度控制PID**************************************/
+  // 计算 速度控制目标 与 速度编码器 的差值
+  diffSpeed_left = left_power_pre[2] - Thunder_Motor.Get_L_Speed();
+  diffSpeed_right = right_power_pre[2] - Thunder_Motor.Get_R_Speed();
+
+  // 积分
+  left_power_I[0] += ( abs(left_power_I[0] + LINE_TRACE_ACCE_I * diffSpeed_left) > 255 )?
+                      0 : LINE_TRACE_ACCE_I * diffSpeed_left;
+  right_power_I[0] += ( abs(right_power_I[0] + LINE_TRACE_ACCE_I * diffSpeed_right) > 255 )?
+                      0 : LINE_TRACE_ACCE_I * diffSpeed_right;
+  // 比例
+  left_power_pre[0] = LINE_TRACE_P * diffSpeed_left; 
+  right_power_pre[0] = LINE_TRACE_P * diffSpeed_right;
+
+  // 根据速度控制得出 电机功率
+  left_power = left_power_pre[0] + left_power_I[0];
+  right_power = right_power_pre[0] + right_power_I[0];
+
+
+  // if(left_power > left_max_power){
+  //   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
+  //   if(Thunder_Motor.Get_L_Speed() < LINE_TRACE_MAX_SPEED){
+  //     left_max_power = (left_max_power<255-LINE_TRACE_ACCELERATION)?(left_max_power+LINE_TRACE_ACCELERATION):255;
+  //   }else if(Thunder_Motor.Get_L_Speed() > LINE_TRACE_MAX_SPEED + 3){
+  //     left_max_power -= LINE_TRACE_ACCELERATION;
+  //   }
+  //   left_power = left_max_power;
+  // }
+  // if(right_power > right_max_power){
+  //   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
+  //   if(Thunder_Motor.Get_R_Speed() < LINE_TRACE_MAX_SPEED){
+  //     right_max_power = (right_max_power<255-LINE_TRACE_ACCELERATION)?(right_max_power+LINE_TRACE_ACCELERATION):255;
+  //   }else if(Thunder_Motor.Get_R_Speed() > LINE_TRACE_MAX_SPEED + 3){
+  //     right_max_power -= LINE_TRACE_ACCELERATION;
+  //   }
+  //   right_power = right_max_power;
+  // }
+
+  if(left_power > 255) left_power = 255;
+  else if(left_power < -255) left_power = -255;
+  if(right_power > 255) right_power = 255;
+  else if(right_power < -255) right_power = -255;
 
   Thunder_Motor.Set_L_Motor_Power( (int)left_power );
   Thunder_Motor.Set_R_Motor_Power( (int)right_power );
@@ -973,26 +1004,26 @@ void THUNDER::Line_Tracing(void)
   history_data[0] = 0xFF;
   history_data[1] = 0xFF;
 
-  // uint32_t beginWaitTime;
-  // beginWaitTime = millis();
-  // Serial.print("Kp Ki Ki Kd Kp Ki Kd: ");
-  // //5.000 0.100 0.010 10.00 10.00 0.500 0.200
-  // while( Serial.available() < 41){
-  //   current_time = millis();
-  //   if(current_time > beginWaitTime + 5000){
-  //     break;
-  //   }
-  // }
-  // if(Serial.available() >= 41){
-  //   LINE_TRACE_P = Serial.parseFloat();
-  //   LINE_TRACE_ACCE_I = Serial.parseFloat();
-  //   LINE_TRACE_DECE_I = Serial.parseFloat();
-  //   LINE_TRACE_SPEED_D = Serial.parseFloat();
-  //   LINE_DEVIATION_P = Serial.parseFloat();
-  //   LINE_DEVIATION_I = Serial.parseFloat();
-  //   LINE_DEVIATION_D = Serial.parseFloat();
-  // }
-  // Serial.printf("\nK: %f %f\n", LINE_TRACE_P, LINE_DEVIATION_D);
+  uint32_t beginWaitTime;
+  beginWaitTime = millis();
+  Serial.print("Kp Ki Ki Kd Kp Ki Kd: ");
+  //5.000 0.100 0.010 10.00 10.00 0.500 0.200
+  while( Serial.available() < 41){
+    current_time = millis();
+    if(current_time > beginWaitTime + 5000){
+      break;
+    }
+  }
+  if(Serial.available() >= 41){
+    LINE_TRACE_P = Serial.parseFloat();
+    LINE_TRACE_ACCE_I = Serial.parseFloat();
+    LINE_TRACE_DECE_I = Serial.parseFloat();
+    LINE_TRACE_SPEED_D = Serial.parseFloat();
+    LINE_DEVIATION_P = Serial.parseFloat();
+    LINE_DEVIATION_I = Serial.parseFloat();
+    LINE_DEVIATION_D = Serial.parseFloat();
+  }
+  Serial.printf("\nK: %f %f\n", LINE_TRACE_P, LINE_DEVIATION_D);
 
   Line_last_time = millis();
   Line_last_led_time = millis();
@@ -1002,7 +1033,7 @@ void THUNDER::Line_Tracing(void)
   Wait_Line_Location();
   line_state = LINE_STATE_START;
 
-  Speaker.Play_Song(131);
+  // Speaker.Play_Song(131);
   while (Rx_Data[1] == 1)
   {
     Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
@@ -1956,6 +1987,8 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
   uint8_t ret;
   uint8_t regValue;
 
+  // 保证初始值与channelData 不一致
+  regValue = (channelData == 0) ? 0xff : 0;
   // 重复连接 IIC 扩展芯片
   for (uint8_t i = 0; i < 2; i++)
   {
@@ -1965,10 +1998,12 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
     Wire.beginTransmission(0x70);
     Wire.write(channelData);
     ret = Wire.endTransmission(true);
+    #ifdef COMPATIBILITY_OLD_ESP_LIB
     if (ret == I2C_ERROR_BUSY)
     {
       Wire.reset();
     }
+    #endif
     Task_Mesg.Give_Semaphore_IIC();
     if (ret != 0)
     {
@@ -1980,10 +2015,11 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
     {
       // read TCA9548
       Task_Mesg.Take_Semaphore_IIC();
-      Wire.requestFrom(0x70, 1, true);
-      while (Wire.available())
-      {
-        regValue = Wire.read();
+      if( 0 != Wire.requestFrom((byte)0x70, (byte)1, (byte)true) ){
+        while (Wire.available())
+        {
+          regValue = Wire.read();
+        }
       }
       Task_Mesg.Give_Semaphore_IIC();
 

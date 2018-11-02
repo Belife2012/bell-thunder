@@ -121,10 +121,12 @@ void XT1511_I2C::LED_OFF(void)
   Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(XT1511_I2C_COM_OFF);
   Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
     Wire.reset();
   }
+  #endif
   Task_Mesg.Give_Semaphore_IIC();
 }
 
@@ -137,10 +139,12 @@ void XT1511_I2C::LED_Updata(void)
   Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(XT1511_I2C_COM_UODATA);
   Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
     Wire.reset();
   }
+  #endif
   Task_Mesg.Give_Semaphore_IIC();
 }
 
@@ -168,10 +172,12 @@ byte XT1511_I2C::write(unsigned char memory_address, unsigned char *data, unsign
   Wire.write(memory_address);
   Wire.write(data, size);
   rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
     Wire.reset();
   }
+  #endif
   Task_Mesg.Give_Semaphore_IIC();
   return (rc);
 }
@@ -185,11 +191,8 @@ byte XT1511_I2C::write(unsigned char memory_address, unsigned char *data, unsign
  */
 void XT1511_I2C::Set_LED_Dynamic(uint8_t dynamicMode)
 {
-  if (LED_Dynamic != dynamicMode)
-  {
-    LED_Dynamic = dynamicMode;
-    ledDynamicIndex = 0;
-  }
+  LED_Dynamic = dynamicMode;
+  ledDynamicIndex = 0;
 }
 
 /* 
@@ -239,7 +242,7 @@ void XT1511_I2C::LED_Flush_Static()
     }
 
     LED_Updata();
-    ledDynamicIndex = 5; // 静态显示只会做一次显示的动作，把ledDynamicIndex设置为5，这个函数就不会做事情了
+    ledDynamicIndex++; // 静态显示只会做一次显示的动作，把ledDynamicIndex设置为5，这个函数就不会做事情了
   }
   else if (ledDynamicIndex < 4)
     ledDynamicIndex++; // 延时一段时间去更新，防止重复频繁更新会卡死 彩灯的IIC

@@ -13,9 +13,9 @@ public:
   byte Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueValue);
 
 private:
-  int _device_address;
+  byte _device_address;
   byte write(unsigned char memory_address, unsigned char *data, unsigned char size);
-  byte read(unsigned char memory_address, unsigned char *data, int size);
+  byte read(unsigned char memory_address, unsigned char *data, unsigned char size);
 };
 
 #endif

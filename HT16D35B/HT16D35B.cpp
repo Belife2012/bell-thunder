@@ -118,10 +118,12 @@ byte HT16D35B::LED_Show(const unsigned char *data, int size)
   Wire.write(HT16D35B_DISPLAY_RAM);
   Wire.write(data, size);
   rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
     Wire.reset();
   }
+  #endif
   Task_Mesg.Give_Semaphore_IIC();
 
   if (rc != 0)
@@ -142,15 +144,17 @@ byte HT16D35B::write(unsigned char memory_address, unsigned char *data, unsigned
   Wire.write(memory_address);
   Wire.write(data, size);
   rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
     Wire.reset();
   }
+  #endif
   Task_Mesg.Give_Semaphore_IIC();
   return (rc);
 }
 
-byte HT16D35B::read(unsigned char memory_address, unsigned char *data, int size)
+byte HT16D35B::read(unsigned char memory_address, unsigned char *data, unsigned char size)
 {
   byte rc;
   unsigned char cnt;
@@ -161,23 +165,25 @@ byte HT16D35B::read(unsigned char memory_address, unsigned char *data, int size)
   rc = Wire.endTransmission(false);
   if (!(rc == 0 || rc == 7))
   {
+    #ifdef COMPATIBILITY_OLD_ESP_LIB
     if (rc == I2C_ERROR_BUSY)
     {
       Wire.reset();
     }
+    #endif
     Task_Mesg.Give_Semaphore_IIC();
     return (rc);
   }
 
-  Wire.requestFrom(_device_address, size, 1); //地址，长度，停止位
-                                              // Wire.requestFrom(_device_address, size, true);  //地址，长度，停止位
   cnt = 0;
-  while (Wire.available())
-  {
-    data[cnt] = Wire.read();
-    cnt++;
+  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
+    while (Wire.available())
+    {
+      data[cnt] = Wire.read();
+      cnt++;
+    }
   }
   Task_Mesg.Give_Semaphore_IIC();
 
-  return (0);
+  return (cnt != 0) ? 0 : 0xff;
 }

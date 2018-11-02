@@ -38,11 +38,11 @@ public:
   float Get_US_cm(void);                  // 获取超声波数据，0.1[cm]
 
 private:
-  int _device_address;
+  byte _device_address;
 
   byte get_rawval(unsigned char *data);                                              // 类内部使用，I2C通讯，读取超声波数据
   byte write(unsigned char memory_address, unsigned char *data, unsigned char size); // 类内部使用，I2C通讯，发送
-  byte read(unsigned char memory_address, unsigned char *data, int size);            // 类内部使用，I2C通讯，发送并读取
+  byte read(unsigned char memory_address, unsigned char *data, unsigned char size);            // 类内部使用，I2C通讯，发送并读取
 };
 
 #endif

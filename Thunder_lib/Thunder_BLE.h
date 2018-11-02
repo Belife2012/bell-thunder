@@ -70,8 +70,8 @@
 
 // 蓝牙
 extern bool deviceConnected;
-extern uint8_t Tx_Data[6];
-extern uint8_t Rx_Data[6];
+extern uint8_t Tx_Data[16];
+extern uint8_t Rx_Data[16];
 
 class THUNDER_BLE
 {

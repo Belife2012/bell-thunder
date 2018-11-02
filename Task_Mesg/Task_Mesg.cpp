@@ -214,7 +214,7 @@ void TASK_MESG::Create_Deamon_Threads()
     return;
   }
   // deamon Tasks , Priority: 8~10
-  xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 4096, NULL, 9, NULL, 1);
+  xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 8192, NULL, 9, NULL, 1);
   xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 10, NULL, 1);
   deamon_task_running = 1;
 }

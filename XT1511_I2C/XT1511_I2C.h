@@ -67,7 +67,7 @@ class XT1511_I2C
     void LED_Flush(void);
 
   private:
-      int _device_address = 0x11;
+      byte _device_address = 0x11;
       byte LEDs_Data[36];
       byte LEDs_DataResult[36];
 

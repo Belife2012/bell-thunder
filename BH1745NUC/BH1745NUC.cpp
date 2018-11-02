@@ -272,16 +272,18 @@ byte BH1745NUC::write(unsigned char memory_address, unsigned char *data, unsigne
   Wire.write(memory_address);
   Wire.write(data, size);
   rc = Wire.endTransmission();
+  #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
     Wire.reset();
   }
+  #endif
   Task_Mesg.Give_Semaphore_IIC();
   return (rc);
 }
 
 // 类内部使用，I2C通讯，发送并读取
-byte BH1745NUC::read(unsigned char memory_address, unsigned char *data, int size)
+byte BH1745NUC::read(unsigned char memory_address, unsigned char *data, unsigned char size)
 {
   byte rc;
   unsigned char cnt;
@@ -292,23 +294,25 @@ byte BH1745NUC::read(unsigned char memory_address, unsigned char *data, int size
   rc = Wire.endTransmission(false);
   if (!(rc == 0 || rc == 7))
   {
+    #ifdef COMPATIBILITY_OLD_ESP_LIB
     if (rc == I2C_ERROR_BUSY)
     {
       Wire.reset();
     }
+    #endif
     Task_Mesg.Give_Semaphore_IIC();
     return (rc);
   }
 
-  Wire.requestFrom(_device_address, size, true); // Wire.requestFrom(_device_address, size, true);
-
   cnt = 0;
-  while (Wire.available())
-  {
-    data[cnt] = Wire.read();
-    cnt++;
+  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
+    while (Wire.available())
+    {
+      data[cnt] = Wire.read();
+      cnt++;
+    }
   }
   Task_Mesg.Give_Semaphore_IIC();
 
-  return (0);
+  return (cnt != 0) ? 0 : 0xff;
 }
