@@ -236,7 +236,7 @@ void THUNDER::Get_IR_Data(uint8_t data[])
   data[0] = digitalRead(IR_1);
   data[1] = digitalRead(IR_2);
 }
-#if 0
+#if 1
 // 巡线模式
 void THUNDER::Line_Tracing(void)
 {
