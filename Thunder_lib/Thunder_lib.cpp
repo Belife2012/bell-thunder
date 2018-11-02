@@ -48,6 +48,7 @@
 #include <Thunder_lib.h>
 
 #define DEBUG_PRINT_INFO_COMMAND
+// #define DEBUG_LINE_TRACING
 
 THUNDER Thunder;
 
@@ -99,8 +100,10 @@ void THUNDER::Setup_All(void)
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
   Select_Sensor_AllChannel();
 
+  #ifndef DEBUG_LINE_TRACING
   Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
   Thunder_BLE.Setup_BLE();    // 配置BLE
+  #endif
 
   Colour_Sensor.Setup();           // 配置颜色传感器
   Thunder_Motor.Setup_Motor();     // 配置电机
@@ -236,7 +239,7 @@ void THUNDER::Get_IR_Data(uint8_t data[])
   data[0] = digitalRead(IR_1);
   data[1] = digitalRead(IR_2);
 }
-#if 1
+#if 0
 /* 
  * 前驱电机的巡线
  * 1、控制没有使用PID控制，直接列举方式将传感器状态值作为参考量，电机运动功率分三个级别（无PID控制速度）
@@ -946,9 +949,9 @@ void Calculate_Motor_Power()
     right_power_I[1] = tempValue;
   }
 
-  // 偏移量变化时给一个速度变化量 和 方向逆向控制量
+  // 偏移量变化时给一个速度变化量
   diffDeviation = abs(deviation[1]) - abs(deviation[0]);
-  // D: 速度改变量, 用于出线时减速，进线时提速
+  // 分级减速, 用于出线时减速，进线时提速
   left_power_I[2] += (LINE_DEVIATION_D * diffDeviation);
   right_power_I[2] += (LINE_DEVIATION_D * diffDeviation);
 
@@ -1002,40 +1005,58 @@ void Calculate_Motor_Power()
 
   Thunder_Motor.Set_L_Motor_Power( (int)left_power );
   Thunder_Motor.Set_R_Motor_Power( (int)right_power );
-  // Serial.printf("*** Power L: %d   R: %d ***\n", (int)left_power, (int)right_power);
-  Serial.printf("P0: %6.2f %6.2f ", left_power_pre[0], right_power_pre[0]);
-  Serial.printf("I0: %6.2f %6.2f ", left_power_I[0], right_power_I[0]);
-  Serial.printf("P1: %6.2f %6.2f ", left_power_pre[1], right_power_pre[1]);
-  Serial.printf("I1: %6.2f %6.2f\n", left_power_I[1], right_power_I[1]);
+
+  #ifdef DEBUG_LINE_TRACING
+    // Serial.printf("*** Power L: %d   R: %d ***\n", (int)left_power, (int)right_power);
+    Serial.printf("P0: %6.2f %6.2f ", left_power_pre[0], right_power_pre[0]);
+    Serial.printf("I0: %6.2f %6.2f ", left_power_I[0], right_power_I[0]);
+    Serial.printf("P1: %6.2f %6.2f ", left_power_pre[1], right_power_pre[1]);
+    Serial.printf("I1: %6.2f %6.2f\n", left_power_I[1], right_power_I[1]);
+  #endif
 }
 #endif
 
-// 巡线模式
+/* 
+ * 后驱电机的巡线
+ * 1、控制使用了 方向PID、速度PID、分级减速的方式进行
+ *    a/将传感器状态值输进状态机，以获取到位置状态；
+ *    b/将位置状态转变为一个偏移量数值，以偏移量作为参考量
+ *    c/以一个固定速度行驶，方向PID控制两轮间的差速，以偏移量的变化量进行分级减速（后面可以改一版：减速也可以进行PID控制）
+ *      ，得到最后的速度值，然后速度PID以速度值作为参考量进行控制电机功率。
+ * 2、车型：电机安装在后面，传感器安装在前面
+ * 3、传感器安装高度升为 1.5cm
+ * 
+ * @parameters: 
+ * @return: 
+ */
 void THUNDER::Line_Tracing(void)
 {
   history_data[0] = 0xFF;
   history_data[1] = 0xFF;
 
-  uint32_t beginWaitTime;
-  beginWaitTime = millis();
-  Serial.print("Kp Ki Ki Kd Kp Ki Kd: ");
-  //5.000 0.100 0.010 10.00 10.00 0.500 0.200
-  while( Serial.available() < 41){
-    current_time = millis();
-    if(current_time > beginWaitTime + 5000){
-      break;
+  #ifdef DEBUG_LINE_TRACING
+    // 等待串口输入新的PID参数
+    uint32_t beginWaitTime;
+    beginWaitTime = millis();
+    Serial.print("Kp Ki Ki Kd Kp Ki Kd: ");
+    //5.000 0.100 0.010 10.00 10.00 0.500 0.200
+    while( Serial.available() < 41){
+      current_time = millis();
+      if(current_time > beginWaitTime + 5000){
+        break;
+      }
     }
-  }
-  if(Serial.available() >= 41){
-    LINE_TRACE_P = Serial.parseFloat();
-    LINE_TRACE_ACCE_I = Serial.parseFloat();
-    LINE_TRACE_DECE_I = Serial.parseFloat();
-    LINE_TRACE_SPEED_D = Serial.parseFloat();
-    LINE_DEVIATION_P = Serial.parseFloat();
-    LINE_DEVIATION_I = Serial.parseFloat();
-    LINE_DEVIATION_D = Serial.parseFloat();
-  }
-  Serial.printf("\nK: %f %f\n", LINE_TRACE_P, LINE_DEVIATION_D);
+    if(Serial.available() >= 41){
+      LINE_TRACE_P = Serial.parseFloat();
+      LINE_TRACE_ACCE_I = Serial.parseFloat();
+      LINE_TRACE_DECE_I = Serial.parseFloat();
+      LINE_TRACE_SPEED_D = Serial.parseFloat();
+      LINE_DEVIATION_P = Serial.parseFloat();
+      LINE_DEVIATION_I = Serial.parseFloat();
+      LINE_DEVIATION_D = Serial.parseFloat();
+    }
+    Serial.printf("\nK: %f %f\n", LINE_TRACE_P, LINE_DEVIATION_D);
+  #endif
 
   Line_last_time = millis();
   Line_last_led_time = millis();
