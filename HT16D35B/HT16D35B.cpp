@@ -104,6 +104,7 @@ byte HT16D35B::Setup(void)
   }
 
   Serial.printf(" 点阵灯板配置完成\n");
+  return 0;
 }
 
 // 显示图案

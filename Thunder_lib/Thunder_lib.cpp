@@ -800,13 +800,15 @@ void Calculate_Motor_Power()
 // 方向控制PID
 // 3.000 0.400 0.000 0.000 2.000 0.016 2.000
 // 3.000 0.400 0.000 0.000 2.000 0.018 1.300
+// 3.000 0.400 0.000 0.000 2.000 0.015 1.300  // #define LINE_RUN_SPEED        10.0
+// 3.000 0.400 0.000 0.000 1.500 0.018 1.300  // #define LINE_RUN_SPEED        20.0
 float LINE_TRACE_P = 3.0;                // PI 控制速度的参数 Kp
 float LINE_TRACE_ACCE_I = 0.40;           // PI 控制速度加速的参数 Ki
 
 float LINE_TRACE_DECE_I = 0.00;           // PI 控制速度减速的参数 Ki
 float LINE_TRACE_SPEED_D = 0.0;          // PI 控制速度的偏差改变量因子 Kd
 
-float LINE_DEVIATION_P = 2.00;            // PI 控制偏差的参数 Kp
+float LINE_DEVIATION_P = 1.50;            // PI 控制偏差的参数 Kp
 float LINE_DEVIATION_I = 0.018;            // PI 控制偏差的参数 Ki
 float LINE_DEVIATION_D = 1.30;            // PI 控制偏差的参数 Kd
 
@@ -820,7 +822,7 @@ float DEVIATION_OUT_VALUE = 3;
 // 左右轮最大速度差，这个速度差相当于控制方向，值越大，拐的角度越大
 // 这里的值蕴含着运动最大曲率的问题，这个值与运动速度可以计算出最大转弯的曲率
 #define LINE_DIFF_MAX_SPEED       3.0 
-#define LINE_RUN_SPEED        15.0 // 固定速度，做PI控制的巡线是选用的初始速度
+#define LINE_RUN_SPEED        20.0 // 固定速度，做PI控制的巡线是选用的初始速度
 
 int deviation[2] = {0, 0}; // 无偏差时为0；左偏差时 正数，右偏差时 负数
 float tempValue;
@@ -983,6 +985,7 @@ void Calculate_Motor_Power()
   //   right_power = right_max_power;
   // }
 
+  // 处理越界问题，不能简单处理，需要保证左右轮的差量合适
   if(left_power > 255) left_power = 255;
   else if(left_power < -255) left_power = -255;
   if(right_power > 255) right_power = 255;
@@ -1148,7 +1151,11 @@ void THUNDER::Line_Tracing(void)
           case LINE_STATE_LEFT_DEEP: // 太偏左状态
           case LINE_STATE_RIGHT_DEEP: // 太偏右状态
           case LINE_STATE_LEFT_OVER: // 左向出界
+            line_state = LINE_STATE_LEFT_OVER;
+            break;
           case LINE_STATE_RIGHT_OVER: // 右向出界
+            line_state = LINE_STATE_RIGHT_OVER;
+            break;
           case LINE_STATE_LOST: // 迷失状态，需要尝试左右旋转寻找出路
           default:
             line_state = LINE_STATE_LOST;
