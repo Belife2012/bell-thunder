@@ -237,7 +237,16 @@ void THUNDER::Get_IR_Data(uint8_t data[])
   data[1] = digitalRead(IR_2);
 }
 #if 1
-// 巡线模式
+/* 
+ * 前驱电机的巡线
+ * 1、控制没有使用PID控制，直接列举方式将传感器状态值作为参考量，电机运动功率分三个级别（无PID控制速度）
+ *    对应着不同的状态值
+ * 2、电机安装在前面，传感器安装在前面
+ * 3、传感器安装高度升为 1.5cm，与电机间隔两个安装孔位置
+ * 
+ * @parameters: 
+ * @return: 
+ */
 void THUNDER::Line_Tracing(void)
 {
   Line_last_time = millis();
