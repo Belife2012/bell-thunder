@@ -67,6 +67,7 @@ class BH1745NUC
 
   private:
     byte _device_address;
+    byte device_detected;// 0为未插入设备，!0为已插入设备
 
     byte get_rawval(unsigned char *data);                                               // 类内部使用，读取传感器数据
     byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送

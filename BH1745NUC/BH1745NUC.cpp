@@ -37,6 +37,7 @@
 BH1745NUC::BH1745NUC(int slave_address)
 {
   _device_address = slave_address;
+  device_detected = 0;
 }
 
 // 初始化设置
@@ -106,6 +107,7 @@ byte BH1745NUC::Setup(void)
   }
 
   Serial.printf(" 颜色传感器配置完成\n");
+  device_detected = 1;
 
   return 0;
 }
@@ -258,6 +260,14 @@ byte BH1745NUC::get_rawval(unsigned char *data)
   byte rc;
 
   rc = read(BH1745NUC_RED_DATA_LSB, data, 8);
+
+  // 如果读取数值失败，则标志设备未检测到，否则查看是否需要重新初始化设备
+  if(rc != 0){
+    device_detected = 0;
+  }else if(device_detected == 0){
+    Setup();
+    // 初始化完成后，不会重新读取，下一次的读取数值才是有效的
+  }
 
   return (rc);
 }
