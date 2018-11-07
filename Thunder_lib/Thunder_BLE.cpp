@@ -39,14 +39,14 @@ class MyServerCallbacks: public BLEServerCallbacks
     void onConnect(BLEServer* pServer) 
     {
       deviceConnected = true;
-      Serial.printf("SSS___ 蓝牙连接成功 ___SSS\n");
+      Serial.printf("*** BLE Connected ***\n");
       // Thunder_Motor.Setup_PID_Timer();
     };
 
     void onDisconnect(BLEServer* pServer) 
     {
       deviceConnected = false;
-      Serial.printf("SSS___ 断开蓝牙连接 ___SSS\n");
+      Serial.printf("### BLE DisConnect ###\n");
       Thunder.Stop_All();
       Speaker.Play_Song(45);   // 断开声音
     }
@@ -63,7 +63,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
       if (rxValue.length() > 0) 
       {
-        Serial.printf("SSS___ 收到蓝牙指令: %x ___SSS\n",rxValue[0]);
+        Serial.printf("* BLE recv cmd: %x *\n",rxValue[0]);
         
         if(rxValue[0] == 0xA1)  // 蓝牙命名指令数据
         {
@@ -177,7 +177,7 @@ uint64_t THUNDER_BLE::Get_ID(void)
 {
   SEP32_ID = ESP.getEfuseMac();   // 获取ESP32芯片ID
   
-  Serial.printf(" 设备 ID : %04X\n",(uint16_t)(SEP32_ID>>32)); // 打印芯片ID
+  Serial.printf(" Dev ID : %04X\n",(uint16_t)(SEP32_ID>>32)); // 打印芯片ID
   // Serial.printf("%08X\n",(uint32_t)SEP32_ID);
   
   return SEP32_ID;
@@ -186,15 +186,15 @@ uint64_t THUNDER_BLE::Get_ID(void)
 // 配置EEPROM
 void THUNDER_BLE::Setup_EEPROM(void)
 {
-  Serial.println("开始配置 EEPROM...");
+  Serial.println("Init EEPROM...");
 
   if (!EEPROM.begin(EEPROM_SIZE))
   {
-    Serial.println("初始化 EEPROM 失败！"); 
+    Serial.println("Init EEPROM fail!"); 
     delay(100000);
   }
   
-  Serial.print(" EEPROM_SIZE : ");
+  Serial.print("* EEPROM_SIZE : ");
   Serial.println(EEPROM_SIZE);
   
   for (int i = 0; i < EEPROM_SIZE; i++)
@@ -204,7 +204,7 @@ void THUNDER_BLE::Setup_EEPROM(void)
   }
   Serial.println();
 
-  Serial.println(" 配置EEPROM完成");
+  Serial.println("Init EEPROM end");
 }
 
 // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
@@ -252,7 +252,7 @@ void THUNDER_BLE::Reset_ROM ()
 {
   // int val = 255;
 
-  Serial.println("开始重置ROM...");
+  Serial.println("\nstart reset ROM...");
 
   for(int i = 0; i < EEPROM_SIZE; i++)
   {
@@ -260,25 +260,25 @@ void THUNDER_BLE::Reset_ROM ()
   }
   EEPROM.commit();
 
-  Serial.println(" 重置ROM完成");
+  Serial.println("reset ROM end");
 }
 
 // 配置BLE
 void THUNDER_BLE::Setup_BLE()
 {
-  Serial.printf("开始配置蓝牙...\n");
+  Serial.printf("\nstart Init BLE...\n");
 
   Read_BLE_Name(ADD_BLE_NAME);  // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
 
   if(BLE_Named == 1)
   {
-    Serial.printf(" 设备蓝牙已命名\n");
+    Serial.printf("* Dev BLE named\n");
 
     char buf[32] = "";
 
     for(int i=0; byte(EEPROM.read(i)) != '\0'; i++)
     {
-      Serial.printf("SSS___ byte(EEPROM.read(%d) : %d ___SSS\n",i,byte(EEPROM.read(i)));
+      Serial.printf("* byte(EEPROM.read(%d) : %d *\n",i,byte(EEPROM.read(i)));
 
       buf[i] = byte(EEPROM.read(i));
     }
@@ -286,7 +286,7 @@ void THUNDER_BLE::Setup_BLE()
   }
   else
   {
-    Serial.printf(" 设备蓝牙未命名\n");
+    Serial.printf("* Dev BLE No name\n");
 
     char buf[5];
     sprintf(buf, "%X", (uint16_t)(SEP32_ID>>32));   // 取芯片ID后4位
@@ -337,7 +337,7 @@ void THUNDER_BLE::Setup_BLE()
 
   pServer->getAdvertising()->start(); // 开始广播
 
-  Serial.printf(" 蓝牙配置完成\n");
+  Serial.printf("BLE Init end\n");
 }
 
 // 发送蓝牙数据
@@ -347,7 +347,7 @@ void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
 {
   if (deviceConnected) 
   {
-    Serial.printf("\nSSS___ 发送蓝牙指令: %x ___SSS\n", Tx_Data[0]);
+    Serial.printf("\n* Send BLE cmd: %x *\n", Tx_Data[0]);
 
     //发送
     pCharacteristic->setValue(&Tx_Data[0], byte_num); 
@@ -355,6 +355,6 @@ void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
   }
   else
   {
-    Serial.printf("蓝牙未连接...\n");
+    Serial.printf("# BLE DisConnected...\n");
   }
 }

@@ -71,8 +71,8 @@
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
 
-// 固件版本
-#define VERSION            0.21   // version
+// 使用新的 Version 变量Version_FW
+// #define VERSION            0.21   // version
 
 // I2C
 #define SDA_PIN            21   // SDA_PIN
@@ -156,6 +156,7 @@ class THUNDER
 
     // 电池电压
     uint16_t ADC_Battery = 0;
+    uint8_t lowpower_flag = 0; // 1 为低电压状态
 
     // 巡线IR
     // [0]是左边数据，[1]是右边数据
@@ -235,6 +236,7 @@ class THUNDER
     // 电池电压
     void Setup_Battery(void);     // 电池电压检测初始化
     float Get_Battery_Data(void); // 获取电池电压
+    void Indicate_Lowpower(uint16_t adc_value); // 电压低于 8V 后的提示
 
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算

@@ -1261,6 +1261,13 @@ const uint8_t LED_SHOW1_100[29] =
 0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x08,0x1C,0x3E,0x1C,0x0C,0x04,0x02,0x01,0x01,0x01,0x02,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,
   0x00  //不用的
 };
+const uint8_t LED_SHOW1_101[29] =  
+{
+  0x00, 
+0x00,0x00,0x00,0x0f,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x0f,0x07,0x00,0x00,0x00,0x00,0x08,0x44,0x44,0x44,0x44,0x48,0x00,0x00,
+  0x00
+
+};
 /////////////////////////////////////////////////////////////////////////////
 // uint8_t LED_SHOW1_[29] =  
 // {
@@ -1599,7 +1606,9 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
     case 100:
       HT16D35B.LED_Show(LED_SHOW1_100, sizeof(LED_SHOW1_100));
       break;
-
+    case 101:
+      HT16D35B.LED_Show(LED_SHOW1_101, sizeof(LED_SHOW1_101));
+      break;
 
     case 111:
       HT16D35B.LED_Show(LED_SHOW11, sizeof(LED_SHOW11));
@@ -1627,7 +1636,7 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
       HT16D35B.LED_Show(LED_Set, sizeof(LED_Set));
       break;
     default:
-      Serial.printf("SSSSSSSSSS___ 未定义指令 _ 清空画面 ___SSSSSSSSSS\n");
+      Serial.printf("# No frame, clear frame #\n");
       HT16D35B.LED_Show(LED_Clear, sizeof(LED_Clear));
       break; 
   }
@@ -1691,7 +1700,8 @@ void DOT_MATRIX_LED::Play_String_NextFrame()
   // 计算从 play_string_data 的什么下标开始，pt_data 的 row偏移量
   byte data_index = 0;
   byte data_offset = 0;
-
+  
+  #if 1
   // 没有显示
   if(display_string_len == 0) return;
 
@@ -1731,11 +1741,25 @@ void DOT_MATRIX_LED::Play_String_NextFrame()
     }
   }else start_roll_delay++;
 
+  #else // 用于将 8bit显示数据 转化为 HT16D35 的RAM显示数据格式
+  for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+    for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+      led_display_dots[i][j] = _acLowPower[i][j];
+    }
+  }
+  #endif
+
   for(i = 0; i < LED_MATRIX_COL_NUM; i++){
     for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
       LED_BUFF[led_location_16D35[i][j].rowIndex] |= led_display_dots[i][j] << led_location_16D35[i][j].comIndex;
     }
   }
+
+  /* Serial.printf("\n");
+  for(i = 0; i < 29; i++){
+    Serial.printf("0x%2x, ", LED_BUFF[i]);
+  }
+  Serial.printf("\n"); */
 
   HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }

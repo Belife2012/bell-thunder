@@ -44,7 +44,7 @@ BH1745NUC::BH1745NUC(int slave_address):
 // 初始化设置
 byte BH1745NUC::Setup(void)
 {
-  Serial.printf("开始配置颜色传感器...\n");
+  Serial.printf("\nstart Init Color Sensor...\n");
 
   byte rc;
   unsigned char reg;
@@ -53,16 +53,16 @@ byte BH1745NUC::Setup(void)
   rc = read(BH1745NUC_SYSTEM_CONTROL, &reg, sizeof(reg));
   if (rc != 0)
   {
-    Serial.printf(" SSS___ 颜色传感器未连接 ___SSS\n");
+    Serial.printf("# No Color Sensor\n");
     return (rc);
   }
   reg = reg & 0x3F;
-  Serial.print(F(" 颜色传感器 Part ID : "));
+  Serial.print(F("* Part ID : "));
   Serial.println(reg, HEX);
 
   if (reg != BH1745NUC_PART_ID_VAL)
   {
-    Serial.printf(" Part ID 获取失败\n");
+    Serial.printf("# Part ID fail\n");
     return (rc);
   }
 
@@ -70,15 +70,15 @@ byte BH1745NUC::Setup(void)
   rc = read(BH1745NUC_MANUFACTURER_ID, &reg, sizeof(reg));
   if (rc != 0)
   {
-    Serial.printf(" SSS___ 颜色传感器未连接 ___SSS\n");
+    Serial.printf("# No Color Sensor\n");
     return (rc);
   }
-  Serial.print(F(" 颜色传感器 MANUFACTURER ID : "));
+  Serial.print(F("* Color Sensor MANUFACTURER ID : "));
   Serial.println(reg, HEX);
 
   if (reg != BH1745NUC_MANUFACT_ID_VAL)
   {
-    Serial.printf(" MANUFACTURER ID 获取失败\n");
+    Serial.printf("# MANUFACTURER ID fail\n");
     return (rc);
   }
 
@@ -87,7 +87,7 @@ byte BH1745NUC::Setup(void)
   rc = write(BH1745NUC_MODE_CONTROL1, &reg, sizeof(reg));
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 颜色传感器 MODE_CONTROL1 配置失败 ___SSS"));
+    Serial.println(F("# MODE_CONTROL1 fail #"));
     return (rc);
   }
 
@@ -95,7 +95,7 @@ byte BH1745NUC::Setup(void)
   rc = write(BH1745NUC_MODE_CONTROL2, &reg, sizeof(reg));
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 颜色传感器 MODE_CONTROL2 配置失败 ___SSS"));
+    Serial.println(F("# MODE_CONTROL2 fail #"));
     return (rc);
   }
 
@@ -103,11 +103,11 @@ byte BH1745NUC::Setup(void)
   rc = write(BH1745NUC_MODE_CONTROL3, &reg, sizeof(reg));
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 颜色传感器 MODE_CONTROL3 配置失败 ___SSS"));
+    Serial.println(F("# MODE_CONTROL3 fail #"));
     return (rc);
   }
 
-  Serial.printf(" 颜色传感器配置完成\n");
+  Serial.printf("Color Sensor Init end\n\n");
   device_detected = 1;
 
   return 0;

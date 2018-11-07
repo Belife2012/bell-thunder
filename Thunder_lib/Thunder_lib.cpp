@@ -81,9 +81,13 @@ uint8_t Rx_Data[16] = {0};
 uint8_t Tx_Data[16] = {0};
 bool deviceConnected = false;
 
-// 固件版本号 2 bytes, 分别为整数和小数，
-// 要同时修改头文件的 宏 VERSION
-const uint8_t Version_FW[2] = {0, 21};
+// 固件版本号 4 bytes, 第一个是区分测试版本和 正式版本的前缀
+// 测试固件命名规则 Tx.x.x
+// 正式发布固件命名 Vx.x.x
+// 版本号第一位数字，发布版本具有重要功能修改
+// 版本号第二位数字，当有功能修改和增减时，相应地递增
+// 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
+const uint8_t Version_FW[4] = {'T', 0, 1, 32};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
@@ -94,11 +98,15 @@ void THUNDER::Setup_All(void)
   while (!Serial)
     ;
 
-  Serial.printf("\nSSS___ 雷霆固件版本 : V%.2f ___SSS\n", VERSION);
-  Serial.printf("\nSSSSSSSSSS___ 各模块初始化 ___SSSSSSSSSS\n");
+  Serial.printf("\n\n======\n");
+  Serial.printf("\nFirmware VERSION : %c%d.%d.%d \n", 
+                Version_FW[0], Version_FW[1], Version_FW[2], Version_FW[3]);
+
+  Serial.printf("\nInitialize All modules of -Thunder Go- \n\n");
 
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
   Select_Sensor_AllChannel();
+
 
   #ifndef DEBUG_LINE_TRACING
   Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
@@ -113,6 +121,7 @@ void THUNDER::Setup_All(void)
   Setup_Servo();          // 舵机初始化配置
   Setup_IR();             // 巡线IR传感器初始化配置
   Setup_Battery();        // 电池电压检测初始化配置
+
   Dot_Matrix_LED.Setup(); // 初始化单色LED驱动IC配置
 
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
@@ -123,16 +132,18 @@ void THUNDER::Setup_All(void)
   Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL); // 把 滚动显示的刷新工作 交给后台守护线程进行
   Task_Mesg.Create_Deamon_Threads(); // 创建并开始 守护线程
 
-  Serial.printf("SSSSSSSSSS___ 初始化完成 ___SSSSSSSSSS\n\n");
+  Serial.printf("\n*** Initial Completes ***\n\n");
 
   // 开机动画/声效
   Start_Show();
+  
+  Serial.printf("Battery Vlotage: %fV\n", Get_Battery_Data());
 }
 
 // 全部终止(电机)
 void THUNDER::Stop_All(void)
 {
-  Serial.printf("SSS___ 全部终止 ___SSS\n");
+  Serial.printf("Stop Motor... \n");
 
   Thunder_Motor.Set_L_Target(0); // 50ms 最大40  //编码器计数值
   Thunder_Motor.Set_R_Target(0);
@@ -155,10 +166,38 @@ float THUNDER::Get_Battery_Data()
   float Battery_Voltage = 0;
 
   ADC_Battery = analogRead(BATTERY_ADC_PIN); // 3.3V --> FFF(4095)
+  Indicate_Lowpower(ADC_Battery);
 
   Battery_Voltage = ADC_Battery * 3.3 * (ADC_R_1 + ADC_R_2) / ADC_R_1 / 4095; // 分压电阻为：51k;100k
 
   return Battery_Voltage;
+}
+
+/* 
+ * 显示低电量 LED Matrix图案
+ * 连续响三声 G5 声
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void THUNDER::Indicate_Lowpower(uint16_t adc_value)
+{
+  float Battery_Voltage = 0;
+  Battery_Voltage = adc_value * 3.3 * (ADC_R_1 + ADC_R_2) / ADC_R_1 / 4095; // 分压电阻为：51k;100k
+
+  if(Battery_Voltage < 7.0){
+    lowpower_flag = 1;
+
+    Dot_Matrix_LED.Play_LED_HT16F35B_Show(101);
+
+    Speaker.Play_Song(79);
+    delay(300);
+    Speaker.Play_Song(79);
+    delay(300);
+    Speaker.Play_Song(79);
+
+    Serial.printf("\nLow Power: %fV\n", Battery_Voltage);
+  }
 }
 
 // 编码电机  闭环计算
@@ -222,7 +261,7 @@ void THUNDER::Servo_Turn(int servo, int angle)
   }
   else
   {
-    Serial.printf("SSS___ 未定义舵机 ___SSS\n");
+    Serial.printf("### No needed Servo\n");
   }
 }
 
@@ -239,7 +278,7 @@ void THUNDER::Get_IR_Data(uint8_t data[])
   data[0] = digitalRead(IR_1);
   data[1] = digitalRead(IR_2);
 }
-#if 0
+#if 1
 /* 
  * 前驱电机的巡线
  * 1、控制没有使用PID控制，直接列举方式将传感器状态值作为参考量，电机运动功率分三个级别（无PID控制速度）
@@ -1332,23 +1371,24 @@ void THUNDER::Wait_BLE(void)
 {
   while ((deviceConnected == false) & (Usart_Communication == 0))
   {
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
-    delay(200);
-
+    if(lowpower_flag == 0){
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
+      delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
+      delay(200);
+    }
     if (Serial.available())
     {
       Usart_Communication = 1;
@@ -1640,7 +1680,7 @@ void THUNDER::Check_Communication(void)
       Rx_Data[0] = Serial.read(); //Serial.parseInt();  //读取整数
 
 #ifdef DEBUG_PRINT_INFO_COMMAND
-      Serial.printf("SSS___ 收到串口指令: %x ___SSS\n", Rx_Data[0]);
+      Serial.printf("* recv UART cmd: %x ___SSS\n", Rx_Data[0]);
 #endif
       //////////////////////////////////////// 其它特殊指令 //////////////////////////////////
       if (Rx_Data[0] == 0xC2) //刷新左侧彩色灯
@@ -1656,8 +1696,8 @@ void THUNDER::Check_Communication(void)
         if (SUM != Serial.read())
         {
           Rx_Data[0] = 0;
-          Serial.printf("\nSSS___ 0xC2 指令 校验和错误 ___SSS\n");
-          Serial.printf("SSSSSSSSSS___ SUM: %x ___SSSSSSSSSS\n", SUM);
+          Serial.printf("\n#  0xC2 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
         }
         else
         {
@@ -1677,8 +1717,8 @@ void THUNDER::Check_Communication(void)
         if (SUM != Serial.read())
         {
           Rx_Data[0] = 0;
-          Serial.printf("\nSSS___ 0xC3 指令 校验和错误 ___SSS\n");
-          Serial.printf("SSSSSSSSSS___ SUM: %x ___SSSSSSSSSS\n", SUM);
+          Serial.printf("\n# 0xC3 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
         }
         else
         {
@@ -1697,8 +1737,8 @@ void THUNDER::Check_Communication(void)
         if (SUM != Serial.read())
         {
           Rx_Data[0] = 0;
-          Serial.printf("\nSSS___ 0xD3 指令 校验和错误 ___SSS\n");
-          Serial.printf("SSSSSSSSSS___ SUM: %x ___SSSSSSSSSS\n", SUM);
+          Serial.printf("\n# 0xD3 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
         }
         else
         {
@@ -1717,8 +1757,8 @@ void THUNDER::Check_Communication(void)
         if (SUM != Serial.read())
         {
           Rx_Data[0] = 0;
-          Serial.printf("\nSSS___ 0xD4 指令 校验和错误 ___SSS\n");
-          Serial.printf("SSSSSSSSSS___ SUM: %x ___SSSSSSSSSS\n", SUM);
+          Serial.printf("\n# 0xD4 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
         }
         else
         {
@@ -1735,8 +1775,8 @@ void THUNDER::Check_Communication(void)
 
         if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
         {
-          Serial.printf("SSS __ Rx_Data[0]: %x 校验和错误 __ SSS \n", Rx_Data[0]);
-          Serial.printf("SSSSSSSSSS__ SUM error __ Rx_Data[5]: %x __ sum: %x __SSSSSSSSSS\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
+          Serial.printf("# Rx_Data[0]: %x CKsum error # \n", Rx_Data[0]);
+          Serial.printf("* SUM error __ Rx_Data[5]: %x __ sum: %x *\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
           Reset_Rx_Data();
         }
       }
@@ -1807,6 +1847,7 @@ void THUNDER::Check_Protocol(void)
 
   case 0x54: //获取电池电压数据
     ADC_Battery = analogRead(BATTERY_ADC_PIN);
+    Indicate_Lowpower(ADC_Battery);
 
     Tx_Data[0] = 0x54;
     Tx_Data[1] = ADC_Battery >> 8; //读取一次电池电压
@@ -1819,8 +1860,8 @@ void THUNDER::Check_Protocol(void)
     // 复制版本号的“整数”和“小数” 到 发送Buffer
     Tx_Data[1] = Version_FW[0];
     Tx_Data[2] = Version_FW[1];
-    Tx_Data[3] = 0x00;
-    Tx_Data[4] = 0x00;
+    Tx_Data[3] = Version_FW[2];
+    Tx_Data[4] = Version_FW[3];
 
     break;
 
@@ -1965,7 +2006,7 @@ void THUNDER::Check_Protocol(void)
   case 0x66: //_______________________ Demo ___________________
     if (Rx_Data[1] == 1)
     {
-      // Serial.printf("SSSSSSSSSS___ 巡线 ___SSSSSSSSSS\n");
+      // Serial.printf("* 巡线 *\n");
       // 使用开环控制电机，然后在巡线里面 以偏离黑线的时间长度作为参量 做速度闭环控制
       Disable_En_Motor(); // En_Motor_Flag = 0;
       Line_Tracing();
@@ -1974,7 +2015,7 @@ void THUNDER::Check_Protocol(void)
     break;
 
   default:
-    Serial.printf("SSS___ 未定义指令 ___SSS\n");
+    Serial.printf("# No cmd#\n");
     break;
   }
   Reset_Rx_Data();
@@ -2067,7 +2108,7 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
       }
       else
       {
-        Serial.println("### TCA9548 Read is not Write");
+        Serial.println("### TCA9548 Read not equal Write");
         delay(200);
       }
     }

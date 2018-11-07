@@ -43,7 +43,7 @@ HT16D35B::HT16D35B(int slave_address)
 // 初始化设置
 byte HT16D35B::Setup(void)
 {
-  Serial.printf("开始配置点阵灯板...\n");
+  Serial.printf("\nstart Init LED Matrix...\n");
 
   byte rc;
   uint8_t ROW_BUFF[4] = {0x7F, 0XFF, 0XFF, 0XFF}; //最后一个ROW不用
@@ -61,14 +61,14 @@ byte HT16D35B::Setup(void)
   rc = write(HT16D35B_CONTROL_COM, &reg, sizeof(reg)); //COM全开
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_CONTROL_COM 配置失败 ___SSS"));
+    Serial.println(F("# HT16D35B_CONTROL_COM fail #"));
     return (rc);
   }
 
   rc = write(HT16D35B_CONTROL_ROW, ROW_BUFF, sizeof(ROW_BUFF)); // 最后一个ROW不用
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_CONTROL_ROW 配置失败 ___SSS"));
+    Serial.println(F("# HT16D35B_CONTROL_ROW fail #"));
     return (rc);
   }
 
@@ -76,7 +76,7 @@ byte HT16D35B::Setup(void)
   rc = write(HT16D35B_MODE_GRAY, &reg, sizeof(reg)); // 选择模式：灰度模式: 0x00; 二进制模式0x01
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_MODE_GRAY 配置失败 ___SSS"));
+    Serial.println(F("# HT16D35B_MODE_GRAY fail #"));
     return (rc);
   }
 
@@ -84,14 +84,14 @@ byte HT16D35B::Setup(void)
   rc = write(HT16D35B_GLOBAL_BRIGHT, &reg, sizeof(reg)); // 全局亮度设置：该命令用于控制 64 级 PWM 亮度
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_GLOBAL_BRIGHT 配置失败 ___SSS"));
+    Serial.println(F("# HT16D35B_GLOBAL_BRIGHT fail #"));
     return (rc);
   }
 
   rc = write(HT16D35B_DISPLAY_RAM, LED_BUFF, sizeof(LED_BUFF)); //写入数据
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_DISPLAY_RAM 配置失败 ___SSS"));
+    Serial.println(F("# HT16D35B_DISPLAY_RAM fail #"));
     return (rc);
   }
 
@@ -99,11 +99,11 @@ byte HT16D35B::Setup(void)
   rc = write(HT16D35B_SYSTEM_CONTROL, &reg, sizeof(reg));
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 点阵灯板 HT16D35B_SYSTEM_CONTROL 配置失败 ___SSS"));
+    Serial.println(F("# HT16D35B_SYSTEM_CONTROL fail #"));
     return (rc);
   }
 
-  Serial.printf(" 点阵灯板配置完成\n");
+  Serial.printf("Init LED Matrix end\n\n");
   return 0;
 }
 
