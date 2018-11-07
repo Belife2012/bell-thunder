@@ -34,7 +34,8 @@
 #include <Task_Mesg.h>
 
 // 配置I2C地址
-BH1745NUC::BH1745NUC(int slave_address)
+BH1745NUC::BH1745NUC(int slave_address):
+  env_backlight_c(NO_COLOR_CARD_C)
 {
   _device_address = slave_address;
   device_detected = 0;
@@ -112,6 +113,11 @@ byte BH1745NUC::Setup(void)
   return 0;
 }
 
+void BH1745NUC::Env_Backlight_Filter(unsigned short new_data)
+{
+  env_backlight_c += ( (float)(new_data - env_backlight_c) ) / 30;
+}
+
 // 获取RGBC，并将结果存入*data
 byte BH1745NUC::Get_RGBC_Data(unsigned short *data)
 {
@@ -129,10 +135,18 @@ byte BH1745NUC::Get_RGBC_Data(unsigned short *data)
   data[2] = ((unsigned short)val[5] << 8) | val[4];
   data[3] = ((unsigned short)val[7] << 8) | val[6];
 
+  Env_Backlight_Filter(data[3]);
+
   return (rc);
 }
 
 // 利用*RGBC 计算HSV值，并存入*HSV
+/* 
+ * 如果用于动态的数据上，需要对HSV的结果值进行滤波
+ * 
+ * @parameters: *RGBC RGBC数据的地址；*HSV是计算结果的地址 
+ * @return: 
+ */
 void BH1745NUC::RGBtoHSV(unsigned short *RGBC, float *HSV)
 {
   float m_min, m_max, delta;
@@ -174,84 +188,90 @@ void BH1745NUC::RGBtoHSV(unsigned short *RGBC, float *HSV)
 }
 
 // 识别颜色
-uint8_t BH1745NUC::Colour_Recognition(unsigned short *RGBC, float *HSV)
+/* 
+ * 根据C进行判断亮度，所有色卡靠近都有反射光，C值小于一定的值 NO_COLOR_CARD_C 为无卡状态
+ * 
+ * @parameters: 
+ * @return: enum_Color_Card
+ */
+uint8_t BH1745NUC::Colour_Recognition(unsigned short *RGBC)
 {
-  float m_min, m_max, delta;
+  float m_min, m_max, HSV[3];
+  short compensation_c_high = 0, compensation_c_low = 0;
 
   m_min = min(RGBC[0], min(RGBC[1], RGBC[2]));
   m_max = max(RGBC[0], max(RGBC[1], RGBC[2]));
-  delta = m_max - m_min;
-  if (delta == 0)
-    delta = 1; //被除的数
-
-  //先处理特殊的
-  if (m_max <= 100) //3个值都小于100 --> 没有东西反光
-  {
-    return 0xFF; //没有东西反光
+  
+  // 根据环境光 计算黑卡的 C值补偿
+  if(env_backlight_c > NO_COLOR_CARD_C){
+    // compensation_c_high = ( (unsigned short)env_backlight_c - NO_COLOR_CARD_C ) * 2;
+    // compensation_c_high = (compensation_c_high > BLACK_CARD_MAX_C) ? BLACK_CARD_MAX_C : compensation_c_high;
+    compensation_c_high = 30;
   }
-  else
-  {
-    if (m_min <= 800) //最小值小于800
-    {
-      if (delta <= 210) //最小值小于800且最大值小于1010 --> 黑色
-      {
-        return 0xFE; //黑色
-      }
-    }
-    else if (m_max < m_min * 1.2) //均大于800并且差值不大
-    {
-      if (m_max <= 2100) //差值不大且数值都很小
-      {
-        return 0xFF; //没有东西
-      }
-      else
-      {
-        return 0x00; //白色
-      }
+  if( BLACK_CARD_MIN_C < env_backlight_c && env_backlight_c < BLACK_CARD_MAX_C ){
+    compensation_c_low = ( BLACK_CARD_MAX_C - BLACK_CARD_MIN_C ) / 2;
+    if( env_backlight_c < compensation_c_low + BLACK_CARD_MIN_C ){
+      compensation_c_low = (env_backlight_c - BLACK_CARD_MIN_C) + 2;
+    }else{
+      compensation_c_low = 0;
+      compensation_c_high = (env_backlight_c - BLACK_CARD_MAX_C) - 2;
     }
   }
 
-  //非特殊情况的颜色判别
+  //非特殊情况的颜色判别, 依据 颜色 H值
   RGBtoHSV(RGBC, HSV);
-
-  if ((HSV[0] < 4) | (HSV[0] > 345))
+  
+  //先处理特殊的, 无色卡情况
+  // if (RGBC[3] < NO_COLOR_CARD_C) //C值小于NO_COLOR_CARD_C ，没有东西反光
+  // {
+  //   return NO_CARD; //没有东西反光
+  // }
+  // else
   {
-    return 0x09; //粉红色
+    // 优先判断黑白，因为颜色有 H值 作为比较标准的判断条件, 而黑白具有较低的 S值
+    if( HSV[1] < COLORLESS_S ){
+      if (m_max <= BLACK_CARD_MAX_RGB && 
+          ( BLACK_CARD_MIN_C + compensation_c_low < RGBC[3]) && 
+          (RGBC[3] < BLACK_CARD_MAX_C + compensation_c_high ) 
+          /* && (COLORLESS_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < COLORLESS_MAX_H) */ ) 
+      {
+          return BLACK_CARD; //黑色
+      }
+      else if (m_min >= WHITE_CARD_MIN_RGB && ( WHITE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < WHITE_CARD_MAX_C ) && 
+          (COLORLESS_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < COLORLESS_MAX_H) ) 
+      {
+          return WHITE_CARD; //白色
+      }
+    }else{
+      if ( (RED_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < RED_CARD_MAX_H) && 
+            ( RED_CARD_MIN_C < RGBC[3]) && (RGBC[3] < RED_CARD_MAX_C ) )
+      {
+        return RED_CARD; // 
+      }
+      else if ( (BROWN_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < BROWN_CARD_MAX_H) && 
+            ( BROWN_CARD_MIN_C < RGBC[3]) && (RGBC[3] < BROWN_CARD_MAX_C ) )
+      {
+        return BROWN_CARD; //
+      }
+      else if ( (YELLOW_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < YELLOW_CARD_MAX_H) && 
+            ( YELLOW_CARD_MIN_C < RGBC[3]) && (RGBC[3] < YELLOW_CARD_MAX_C ) )
+      {
+        return YELLOW_CARD; //
+      }
+      else if ( (GREEN_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < GREEN_CARD_MAX_H) && 
+            ( GREEN_CARD_MIN_C < RGBC[3]) && (RGBC[3] < GREEN_CARD_MAX_C ) )
+      {
+        return GREEN_CARD; //
+      }
+      else if ( (BLUE_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < BLUE_CARD_MAX_H) && 
+            ( BLUE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < BLUE_CARD_MAX_C ) )
+      {
+        return BLUE_CARD; //
+      }
+    }
+    
   }
-  else if (HSV[0] < 18)
-  {
-    return 0x01; //红色
-  }
-  else if (HSV[0] < 62)
-  {
-    return 0x02; //橙色
-  }
-  else if (HSV[0] < 100)
-  {
-    return 0x03; //黄色
-  }
-  else if (HSV[0] < 136)
-  {
-    return 0x04; //绿色
-  }
-  else if (HSV[0] < 150)
-  {
-    return 0x05; //青色
-  }
-  else if (HSV[0] < 192)
-  {
-    return 0x06; //天蓝色
-  }
-  else if (HSV[0] < 213)
-  {
-    return 0x07; //深蓝色
-  }
-  else if (HSV[0] < 345)
-  {
-    return 0x08; //紫色
-  }
-
-  return 0;
+  return NO_CARD;
 }
 
 // 类内部使用，读取传感器数据

@@ -54,23 +54,155 @@
 #define BH1745NUC_MODE_CONTROL2_VAL            (BH1745NUC_MODE_CONTROL2_RGBC_EN | BH1745NUC_MODE_CONTROL2_ADC_GAIN_X16)
 #define BH1745NUC_MODE_CONTROL3_VAL            (0x02)
 
+// 颜色卡参数
+#if 0 // 裸板，没有外壳，LED与SENSOR间距减小
+// 亮度值C
+#define NO_COLOR_CARD_C         (160)
+#define BLACK_CARD_MIN_C        (160)
+#define BLACK_CARD_MAX_C        (400)
+#define GREEN_CARD_MIN_C        (350)
+#define GREEN_CARD_MAX_C        (1000)
+#define RED_CARD_MIN_C          (450)
+#define RED_CARD_MAX_C          (1500)
+#define BROWN_CARD_MIN_C        (400)
+#define BROWN_CARD_MAX_C        (1700)
+#define BLUE_CARD_MIN_C         (400)
+#define BLUE_CARD_MAX_C         (1700)
+#define YELLOW_CARD_MIN_C       (700)
+#define YELLOW_CARD_MAX_C       (3500)
+#define WHITE_CARD_MIN_C        (1000)
+#define WHITE_CARD_MAX_C        (6000)
+// 黑白卡的RGB值分别由最大值/最小值
+#define BLACK_CARD_MIN_RGB         (400)
+#define BLACK_CARD_MAX_RGB         (4500)
+#define WHITE_CARD_MIN_RGB         (5000)
+#define WHITE_CARD_MAX_RGB         (60000)
+// HSV 的S值 可以区分颜色的灰度，值越大，彩色越浓，趋向 0 时，就越接近 黑白
+#define COLORLESS_S             (0.7)
+// 彩色卡可以依据颜色 H值 进行判断
+#define COLORLESS_MIN_H         (110)
+#define COLORLESS_MAX_H         (150)
+#define RED_CARD_MIN_H          (0)
+#define RED_CARD_MAX_H          (12)
+#define BROWN_CARD_MIN_H        (35)
+#define BROWN_CARD_MAX_H        (55)
+#define YELLOW_CARD_MIN_H       (62)
+#define YELLOW_CARD_MAX_H       (85)
+#define GREEN_CARD_MIN_H        (110)
+#define GREEN_CARD_MAX_H        (140)
+#define BLUE_CARD_MIN_H         (155)
+#define BLUE_CARD_MAX_H         (214)
+#else // 现有的橘色模具
+#if 0 // 200欧姆电阻
+  // 亮度值C
+  #define NO_COLOR_CARD_C         (150)
+  #define BLACK_CARD_MIN_C        (40)
+  #define BLACK_CARD_MAX_C        (90)
+  #define GREEN_CARD_MIN_C        (100)
+  #define GREEN_CARD_MAX_C        (250)
+  #define RED_CARD_MIN_C          (200)
+  #define RED_CARD_MAX_C          (500)
+  #define BROWN_CARD_MIN_C        (200)
+  #define BROWN_CARD_MAX_C        (450)
+  #define BLUE_CARD_MIN_C         (200)
+  #define BLUE_CARD_MAX_C         (430)
+  #define YELLOW_CARD_MIN_C       (450)
+  #define YELLOW_CARD_MAX_C       (900)
+  #define WHITE_CARD_MIN_C        (600)
+  #define WHITE_CARD_MAX_C        (1500)
+  // 黑白卡的RGB值分别由最大值/最小值
+  #define BLACK_CARD_MIN_RGB         (150)
+  #define BLACK_CARD_MAX_RGB         (750)
+  #define WHITE_CARD_MIN_RGB         (3500)
+  #define WHITE_CARD_MAX_RGB         (15000)
+  // HSV 的S值 可以区分颜色的灰度，值越大，彩色越浓，趋向 0 时，就越接近 黑白
+  #define COLORLESS_S             (0.7)
+  // 彩色卡可以依据颜色 H值 进行判断
+  #define COLORLESS_MIN_H         (75)
+  #define COLORLESS_MAX_H         (130)
+  #define RED_CARD_MIN_H          (0)
+  #define RED_CARD_MAX_H          (12)
+  #define BROWN_CARD_MIN_H        (20)
+  #define BROWN_CARD_MAX_H        (45)
+  #define YELLOW_CARD_MIN_H       (45)
+  #define YELLOW_CARD_MAX_H       (65)
+  #define GREEN_CARD_MIN_H        (105)
+  #define GREEN_CARD_MAX_H        (140)
+  #define BLUE_CARD_MIN_H         (160)
+  #define BLUE_CARD_MAX_H         (215)
+#else // 1K欧姆电阻
+  // 亮度值C
+  #define NO_COLOR_CARD_C         (100)
+  #define BLACK_CARD_MIN_C        (20)    // 判断黑卡要先获取环境光的C值，从而再次确认判断为黑卡的C值范围
+  #define BLACK_CARD_MAX_C        (40)
+  #define GREEN_CARD_MIN_C        (60)
+  #define GREEN_CARD_MAX_C        (200)
+  #define RED_CARD_MIN_C          (100)
+  #define RED_CARD_MAX_C          (300)
+  #define BROWN_CARD_MIN_C        (80)
+  #define BROWN_CARD_MAX_C        (300)
+  #define BLUE_CARD_MIN_C         (80)
+  #define BLUE_CARD_MAX_C         (300)
+  #define YELLOW_CARD_MIN_C       (110)
+  #define YELLOW_CARD_MAX_C       (600)
+  #define WHITE_CARD_MIN_C        (300)
+  #define WHITE_CARD_MAX_C        (800)
+  // 黑白卡的RGB值分别由最大值/最小值
+  #define BLACK_CARD_MIN_RGB         (150)
+  #define BLACK_CARD_MAX_RGB         (500)
+  #define WHITE_CARD_MIN_RGB         (1000)
+  #define WHITE_CARD_MAX_RGB         (5000)
+  // HSV 的S值 可以区分颜色的灰度，值越大，彩色越浓，趋向 0 时，就越接近 黑白
+  #define COLORLESS_S             (0.65)
+  // 彩色卡可以依据颜色 H值 进行判断
+  #define COLORLESS_MIN_H         (75)
+  #define COLORLESS_MAX_H         (130)
+  #define RED_CARD_MIN_H          (0)
+  #define RED_CARD_MAX_H          (12)
+  #define BROWN_CARD_MIN_H        (20)
+  #define BROWN_CARD_MAX_H        (37)
+  #define YELLOW_CARD_MIN_H       (47)
+  #define YELLOW_CARD_MAX_H       (65)
+  #define GREEN_CARD_MIN_H        (90)
+  #define GREEN_CARD_MAX_H        (137)
+  #define BLUE_CARD_MIN_H         (160)
+  #define BLUE_CARD_MAX_H         (215)
+
+#endif
+
+#endif
+
+typedef enum{
+  BLACK_CARD = 0,
+  GREEN_CARD,
+  RED_CARD,
+  BROWN_CARD,
+  BLUE_CARD,
+  YELLOW_CARD,
+  WHITE_CARD,
+  NO_CARD
+}enum_Color_Card;
+
 class BH1745NUC
 {
   public:
+    float env_backlight_c;
+    
     BH1745NUC(int slave_address);                     // 配置I2C地址
     
     byte Setup(void);                                 // 初始化设置
     byte Get_RGBC_Data(unsigned short *data);         // 获取RGBC
     void RGBtoHSV(unsigned short *RGBC, float *HSV);  // 计算HSV
 
-    uint8_t Colour_Recognition(unsigned short *RGBC, float *HSV); // 识别颜色 (预留)
+    uint8_t Colour_Recognition(unsigned short *RGBC); // 识别颜色 (预留)
 
+    byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
   private:
     byte _device_address;
     byte device_detected;// 0为未插入设备，!0为已插入设备
 
+    void Env_Backlight_Filter(unsigned short new_data);
     byte get_rawval(unsigned char *data);                                               // 类内部使用，读取传感器数据
-    byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
     byte read(unsigned char memory_address, unsigned char *data, unsigned char size);             // 类内部使用，I2C通讯，发送并读取
 };
 

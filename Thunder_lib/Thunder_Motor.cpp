@@ -529,6 +529,7 @@ inline void Update_Rotate_Value()
 /*
  * 获取左轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 电机编码器磁铁是四对磁极对，减速比是27
+ * 编码器的计数器，计算了信号上下沿的数量，所以转一圈，编码器数值为216，实际测量也是
  * 
  * @parameters: 
  * @return: 
@@ -540,6 +541,7 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
 /*
  * 获取右轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 电机编码器磁铁是四对磁极对，减速比是27
+ * 编码器的计数器，计算了信号上下沿的数量，所以转一圈，编码器数值为216，实际测量也是
  * 
  * @parameters: 
  * @return: 
