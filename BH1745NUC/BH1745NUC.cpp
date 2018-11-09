@@ -135,8 +135,6 @@ byte BH1745NUC::Get_RGBC_Data(unsigned short *data)
   data[2] = ((unsigned short)val[5] << 8) | val[4];
   data[3] = ((unsigned short)val[7] << 8) | val[6];
 
-  Env_Backlight_Filter(data[3]);
-
   return (rc);
 }
 
@@ -235,12 +233,13 @@ uint8_t BH1745NUC::Colour_Recognition(unsigned short *RGBC)
           (RGBC[3] < BLACK_CARD_MAX_C + compensation_c_high ) 
           /* && (COLORLESS_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < COLORLESS_MAX_H) */ ) 
       {
-          return BLACK_CARD; //黑色
+        Env_Backlight_Filter(RGBC[3]);
+        return BLACK_CARD; //黑色
       }
       else if (m_min >= WHITE_CARD_MIN_RGB && ( WHITE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < WHITE_CARD_MAX_C ) && 
           (COLORLESS_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < COLORLESS_MAX_H) ) 
       {
-          return WHITE_CARD; //白色
+        return WHITE_CARD; //白色
       }
     }else{
       if ( (RED_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < RED_CARD_MAX_H) && 
@@ -271,6 +270,7 @@ uint8_t BH1745NUC::Colour_Recognition(unsigned short *RGBC)
     }
     
   }
+  Env_Backlight_Filter(RGBC[3]);
   return NO_CARD;
 }
 
