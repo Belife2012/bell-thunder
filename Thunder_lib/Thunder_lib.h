@@ -168,10 +168,10 @@ class THUNDER
     unsigned long Line_last_sound_time = 0;
 
     // 150 100 50 -50
-    int Line_H_Speed = 150;
-    int Line_M_Speed = 100;
-    int Line_L_Speed = 50;
-    int Line_B_Speed = -50;
+    int Line_H_Speed = 160;
+    int Line_M_Speed = 120;
+    int Line_L_Speed = 80;
+    int Line_B_Speed = -80;
 
     // 串口通信标志位
     uint8_t Usart_Communication = 0;
@@ -227,7 +227,7 @@ class THUNDER
     uint8_t I2C_LED_BUFF1[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     uint8_t I2C_LED_BUFF2[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    uint8_t line_state;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
+    uint8_t line_state = 0;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
   // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
     uint8_t history_data[2]; 
 

@@ -322,28 +322,56 @@ void THUNDER::Line_Tracing(void)
         Thunder_Motor.Set_R_Motor_Power(0);
         line_state = 5;
       }
-      else if ((line_state == 0) | (line_state == 3) | (line_state == 4)) //短时间偏左偏右的过程中出线 
+      else if (line_state == 0) // 忽然从全黑变为全零过程中出线 
       {
         // Speaker.Play_Song(5); //test用---------
         Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
 
+        // 左右扭头查找黑线
         Line_last_time = millis();
-        while ((current_time - 200) < Line_last_time)
+        while ( (IR_Data[0] == 0) && (IR_Data[1] == 0) )
         {
+          Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
           current_time = millis();
-          // En_Motor();
+
+          Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
         }
       }
-      else if (line_state == 1)
+      else if (line_state == 3) //短时间偏右的过程中出线，打转
       {
+        // Speaker.Play_Song(5); //test用---------
         Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+
+        if((current_time - 1000) > Line_last_time) // 打转超时未找到线
+        {
+          line_state = 5;
+        }
+      }
+      else if ( line_state == 4 ) //短时间偏左的过程中出线，打转
+      {
+        // Speaker.Play_Song(5); //test用---------
+        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+
+        if((current_time - 1000) > Line_last_time) // 打转超时未找到线
+        {
+          line_state = 5;
+        }
+      }
+      else if (line_state == 1) 
+      {
+        // 没有点在线上，不更新时间
+        Thunder_Motor.Set_L_Motor_Power(0);  
         Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
       }
       else if (line_state == 2)
       {
+        // 没有点在线上，不更新时间
         Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
-        Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+        Thunder_Motor.Set_R_Motor_Power(0);
       }
       else
       {
