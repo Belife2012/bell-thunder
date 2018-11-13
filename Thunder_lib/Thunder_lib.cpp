@@ -47,7 +47,7 @@
 
 #include <Thunder_lib.h>
 
-#define DEBUG_PRINT_INFO_COMMAND
+// #define PRINT_UART_COMMAND
 // #define DEBUG_LINE_TRACING
 
 THUNDER Thunder;
@@ -87,7 +87,7 @@ bool deviceConnected = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 1, 33};
+const uint8_t Version_FW[4] = {'T', 0, 1, 34};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -1506,8 +1506,8 @@ void THUNDER::Check_Communication(void)
     {
       Rx_Data[0] = Serial.read(); //Serial.parseInt();  //读取整数
 
-#ifdef DEBUG_PRINT_INFO_COMMAND
-      Serial.printf("* recv UART cmd: %x ___SSS\n", Rx_Data[0]);
+#ifdef PRINT_UART_COMMAND
+      Serial.printf("* recv UART cmd: %x *\n", Rx_Data[0]);
 #endif
       //////////////////////////////////////// 其它特殊指令 //////////////////////////////////
       if (Rx_Data[0] == 0xC2) //刷新左侧彩色灯
