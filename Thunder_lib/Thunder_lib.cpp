@@ -642,179 +642,12 @@ void Check_Line_When_Lost()
   }
 }
 
-#if 0
-/* 
- * 加速度 acceleration，所以电机功率对时间进行积分
- * 
- * @parameters: 
- * @return: 
- */
-void Calculate_Motor_Power()
-{
-  int16_t diffSpeed;
+#define DIRECTION_TURN_MAX_POWER  60  // 控制方向的左右轮速度差最大值
 
-  switch(Thunder.line_state){
-    case LINE_STATE_START: // 刚启动状态
-      left_power = LINE_INITIAL_POWER;
-      right_power = LINE_INITIAL_POWER;
-      break;
-    case LINE_STATE_STRAIGHT: // 直行状态
-      left_power_I[0] += (left_power_I[0] > 255*2)? 0 : LINE_TRACE_ACCE_P * LINE_TRACE_ACCELERATION;
-      right_power_I[0] += (right_power_I[0] > 255*2)? 0 : LINE_TRACE_ACCE_P * (LINE_TRACE_ACCELERATION);
-
-      left_power = right_power_pre[0]/4 + left_power_I[0];
-      right_power = left_power_pre[0]/4 + right_power_I[0];
-
-      if(left_power > left_max_power - 20){
-        // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-        if(Thunder_Motor.Get_L_Speed() < LINE_TRACE_MAX_SPEED){
-          left_max_power = (left_max_power<255-LINE_TRACE_ACCELERATION)?(left_max_power+LINE_TRACE_ACCELERATION):255;
-        }else if(Thunder_Motor.Get_L_Speed() > LINE_TRACE_MAX_SPEED + 3){
-          left_max_power -= LINE_TRACE_ACCELERATION;
-        }
-        left_power = left_max_power - 20;
-      }
-      if(right_power > right_max_power - 20){
-        // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-        if(Thunder_Motor.Get_R_Speed() < LINE_TRACE_MAX_SPEED){
-          right_max_power = (right_max_power<255-LINE_TRACE_ACCELERATION)?(right_max_power+LINE_TRACE_ACCELERATION):255;
-        }else if(Thunder_Motor.Get_R_Speed() > LINE_TRACE_MAX_SPEED + 3){
-          right_max_power -= LINE_TRACE_ACCELERATION;
-        }
-        right_power = right_max_power - 20;
-      }
-
-      left_power_I[1] = 0;
-      right_power_I[1] = 0;
-      left_power_pre[1] = left_power;
-      right_power_pre[1] = right_power;
-
-      break;
-    case LINE_STATE_LEFT: // 偏左状态, 左轮是以最大速度走的，不然就是要加速
-     /*  diffSpeed = LINE_TRACE_MAX_SPEED - Thunder_Motor.Get_L_Speed();
-      if( diffSpeed < 0 ){
-        left_power = left_power-LINE_TRACE_ACCELERATION;
-      }else{
-        if(left_power < LINE_RUN_MIN_POWER) left_power=LINE_RUN_MIN_POWER;
-        left_power += diffSpeed*LINE_TRACE_ACCELERATION;
-      } */
-      left_power_I[1] += (left_power_I[1] > 255*2)? 0 : LINE_DEVIATION_ACCE_P * LINE_TRACE_ACCELERATION;
-      right_power_I[1] += (right_power_I[1] < -255*2)? 0 : LINE_DEVIATION_ACCE_P * (-LINE_TRACE_ACCELERATION);
-
-      left_power = left_power_pre[1] + left_power_I[1];
-      right_power = right_power_pre[1] + right_power_I[1];
-
-      if(right_power < LINE_INITIAL_POWER) right_power = LINE_INITIAL_POWER;
-      
-      left_power_I[0] = 0;
-      right_power_I[0] = 0;
-      left_power_pre[0] = left_power;
-      right_power_pre[0] = right_power;
-     /*  diffSpeed = LINE_TRACE_MIN_SPEED - Thunder_Motor.Get_R_Speed();
-      if(diffSpeed < 0){
-        right_power = right_power-10*LINE_TRACE_ACCELERATION;
-      }else{
-        if(right_power < LINE_RUN_MIN_POWER) right_power=LINE_RUN_MIN_POWER;
-        right_power += diffSpeed/2*LINE_TRACE_ACCELERATION;
-      } */
-
-      break;
-
-    case LINE_STATE_RIGHT: // 偏右状态, 右轮是以最大速度走的，不然就是要加速
-/*       diffSpeed = LINE_TRACE_MAX_SPEED - Thunder_Motor.Get_R_Speed();
-      if(diffSpeed < 0){
-        right_power = right_power-LINE_TRACE_ACCELERATION;
-      }else{
-        if(right_power < LINE_RUN_MIN_POWER) right_power=LINE_RUN_MIN_POWER;
-        right_power += diffSpeed*LINE_TRACE_ACCELERATION;
-      } */
-      left_power_I[1] += (left_power_I[1] < -255*2)? 0 : LINE_DEVIATION_ACCE_P * (-LINE_TRACE_ACCELERATION);
-      right_power_I[1] += (right_power_I[1] > 255*2)? 0 : LINE_DEVIATION_ACCE_P * (LINE_TRACE_ACCELERATION);
-
-      left_power = left_power_pre[1] + left_power_I[1];
-      right_power = right_power_pre[1] + right_power_I[1];
-      
-      if(left_power < LINE_INITIAL_POWER) left_power = LINE_INITIAL_POWER;
-      
-      left_power_I[0] = 0;
-      right_power_I[0] = 0;
-      left_power_pre[0] = left_power;
-      right_power_pre[0] = right_power;
-      /* diffSpeed = LINE_TRACE_MIN_SPEED - Thunder_Motor.Get_L_Speed();
-      if( diffSpeed < 0 ){
-        left_power = left_power-10*LINE_TRACE_ACCELERATION;
-      }else{
-        if(left_power < LINE_RUN_MIN_POWER) left_power=LINE_RUN_MIN_POWER;
-        left_power += diffSpeed/2*LINE_TRACE_ACCELERATION;
-      } */
-
-      break;
-
-    case LINE_STATE_LEFT_DEEP: // 太偏左状态, 整体减速
-      diffSpeed = LINE_TRACE_MIN_SPEED - Thunder_Motor.Get_L_Speed();
-      if( diffSpeed < 0 ){
-        left_power = left_power + LINE_DEVIATION_DEEP_ACCE_P * diffSpeed;
-      }else if( diffSpeed > 2 ){
-        if(left_power < LINE_RUN_MIN_POWER) left_power=LINE_RUN_MIN_POWER;
-        left_power += LINE_TRACE_ACCELERATION*LINE_DEVIATION_DEEP_ACCE_P;
-      }
-      right_power = 0;
-      
-      left_power_I[1] = 0;
-      right_power_I[1] = 0;
-      left_power_pre[1] = LINE_RUN_MIN_POWER;
-      right_power_pre[1] = LINE_RUN_MIN_POWER;
-      break;
-
-    case LINE_STATE_RIGHT_DEEP: // 太偏右状态, 整体减速
-      diffSpeed = LINE_TRACE_MIN_SPEED - Thunder_Motor.Get_R_Speed();
-      if(diffSpeed < 0){
-        right_power = right_power + LINE_DEVIATION_DEEP_ACCE_P * diffSpeed;
-      }else if( diffSpeed > 2 ){
-        if(right_power < LINE_RUN_MIN_POWER) right_power=LINE_RUN_MIN_POWER;
-        right_power += LINE_TRACE_ACCELERATION*LINE_DEVIATION_DEEP_ACCE_P;
-      }
-      left_power = 0;
-      
-      left_power_I[1] = 0;
-      right_power_I[1] = 0;
-      left_power_pre[1] = LINE_RUN_MIN_POWER;
-      right_power_pre[1] = LINE_RUN_MIN_POWER;
-      break;
-
-    case LINE_STATE_LEFT_OVER: // 左向出界, 后退
-    case LINE_STATE_RIGHT_OVER: // 右向出界, 后退
-      if(Thunder_Motor.Get_L_Speed() < -LINE_TRACE_BACK_SPEED){
-        left_power += LINE_OUTSIDE_ACCE_P*LINE_TRACE_ACCELERATION;
-      }else if(Thunder_Motor.Get_L_Speed() > -LINE_TRACE_BACK_SPEED){
-        left_power -= LINE_OUTSIDE_ACCE_P*LINE_TRACE_ACCELERATION;
-      }
-
-      if(Thunder_Motor.Get_R_Speed() < -LINE_TRACE_BACK_SPEED){
-        right_power += LINE_OUTSIDE_ACCE_P*LINE_TRACE_ACCELERATION;
-      }else if(Thunder_Motor.Get_R_Speed() > -LINE_TRACE_BACK_SPEED){
-        right_power -= LINE_OUTSIDE_ACCE_P*LINE_TRACE_ACCELERATION;
-      }
-      break;
-
-    case LINE_STATE_LOST: // 迷失状态，需要尝试左右旋转寻找出路
-      Check_Line_When_Lost();
-      break;
-
-    default:
-      break;
-  }
-
-  if(left_power > left_max_power) left_power = left_max_power;
-  else if(left_power < -left_max_power) left_power = -left_max_power;
-  if(right_power > right_max_power) right_power = right_max_power;
-  else if(right_power < -right_max_power) right_power = -right_max_power;
-
-  Thunder_Motor.Set_L_Motor_Power( (int)left_power );
-  Thunder_Motor.Set_R_Motor_Power( (int)right_power );
-  // Serial.printf("*** Power L: %d   R: %d ***\n", left_power, right_power);
-}
-#else
+// 左右轮最大速度差，这个速度差相当于控制方向，值越大，拐的角度越大
+// 这里的值蕴含着运动最大曲率的问题，这个值与运动速度可以计算出最大转弯的曲率
+#define LINE_DIFF_MAX_SPEED       3.0 
+#define LINE_RUN_SPEED        20.0 // 固定速度，做PI控制的巡线是选用的初始速度
 
 #if 0
 #define LINE_TRACE_P              5.0   // PI 控制速度的参数 Kp
@@ -869,15 +702,9 @@ float DEVIATION_DEEP_VALUE = 2;
 float DEVIATION_OUT_VALUE = 3;       
 #endif
 
-#define DIRECTION_TURN_MAX_POWER  60  // 控制方向的左右轮速度差最大值
-
-// 左右轮最大速度差，这个速度差相当于控制方向，值越大，拐的角度越大
-// 这里的值蕴含着运动最大曲率的问题，这个值与运动速度可以计算出最大转弯的曲率
-#define LINE_DIFF_MAX_SPEED       3.0 
-#define LINE_RUN_SPEED        20.0 // 固定速度，做PI控制的巡线是选用的初始速度
-
 int deviation[2] = {0, 0}; // 无偏差时为0；左偏差时 正数，右偏差时 负数
 float tempValue;
+
 /* 
  * 加速度 acceleration，所以电机功率对时间进行积分
  * 
@@ -913,10 +740,10 @@ void Calculate_Motor_Power()
       deviation[0] = 0;
     break;
       
-    case LINE_STATE_LEFT: // 偏左状态, 左轮是以最大速度走的，不然就是要加速
+    case LINE_STATE_LEFT: // 偏左状态, 左轮加速
       deviation[0] = DEVIATION_VALUE;
     break;
-    case LINE_STATE_RIGHT: // 偏右状态, 右轮是以最大速度走的，不然就是要加速
+    case LINE_STATE_RIGHT: // 偏右状态, 右轮加速
       deviation[0] = -DEVIATION_VALUE;
     break;
 
@@ -927,10 +754,10 @@ void Calculate_Motor_Power()
       deviation[0] = -DEVIATION_DEEP_VALUE;
     break;
 
-    case LINE_STATE_LEFT_OVER: // 左向出界, 后退
+    case LINE_STATE_LEFT_OVER: // 左向出界, 可以打转
       deviation[0] = DEVIATION_OUT_VALUE;
     break;
-    case LINE_STATE_RIGHT_OVER: // 右向出界, 后退
+    case LINE_STATE_RIGHT_OVER: // 右向出界, 可以打转
       deviation[0] = -DEVIATION_OUT_VALUE;
     break;
 
@@ -1054,7 +881,6 @@ void Calculate_Motor_Power()
     Serial.printf("I1: %6.2f %6.2f\n", left_power_I[1], right_power_I[1]);
   #endif
 }
-#endif
 
 /* 
  * 后驱电机的巡线
