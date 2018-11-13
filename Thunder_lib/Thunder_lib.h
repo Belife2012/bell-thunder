@@ -167,10 +167,11 @@ class THUNDER
     unsigned long Line_last_led_time = 0;
     unsigned long Line_last_sound_time = 0;
 
-    int Line_H_Speed = 150;    //5
-    int Line_M_Speed = 100;    //4
-    int Line_L_Speed = 50;    //3
-    int Line_B_Speed = -50;   //-3
+    // 150 100 50 -50
+    int Line_H_Speed = 150;
+    int Line_M_Speed = 100;
+    int Line_L_Speed = 50;
+    int Line_B_Speed = -50;
 
     // 串口通信标志位
     uint8_t Usart_Communication = 0;

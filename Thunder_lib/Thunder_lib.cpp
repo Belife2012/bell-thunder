@@ -282,8 +282,16 @@ void THUNDER::Get_IR_Data(uint8_t data[])
 #if 1
 /* 
  * 前驱电机的巡线
- * 1、控制没有使用PID控制，直接列举方式将传感器状态值作为参考量，电机运动功率分三个级别（无PID控制速度）
- *    对应着不同的状态值
+ * 1、控制没有使用PID控制，直接列举方式将传感器状态值作为参考量，
+ *    电机运动功率分三个级别 Line_H_Speed Line_M_Speed Line_L_Speed（无PID控制速度）
+ *    对应着不同的状态值：
+ *    0(两点黑线) 
+ *    1(偏右时间超过 50ms，需要大幅度偏左运动) 
+ *    2 (偏左时间超过 50ms，需要大幅度偏右运动) 
+ *    3(偏右时间小于 50ms，需要小幅度偏左运动) 
+ *    4 (偏左时间小于 50ms，需要小幅度偏右运动) 
+ *    5(两个白点持续长时间)
+ * 
  * 2、电机安装在前面，传感器安装在前面
  * 3、传感器安装高度升为 1.5cm，与电机间隔两个安装孔位置
  * 
@@ -307,16 +315,16 @@ void THUNDER::Line_Tracing(void)
 
     if ((IR_Data[0] == 0) & (IR_Data[1] == 0)) //Serial.printf("SSSSSSSSSS 没线 SSSSSSSSSS\n");
     {
-      // Speaker.Play_Song(7); //test用----------------------------------------------------------------------------
+      // Speaker.Play_Song(7); //test用---------
       if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
       {
         Thunder_Motor.Set_L_Motor_Power(0);  
         Thunder_Motor.Set_R_Motor_Power(0);
         line_state = 5;
       }
-      else if ((line_state == 0) | (line_state == 3) | (line_state == 4)) //直行/假左/假右的过程中出线后退200ms
+      else if ((line_state == 0) | (line_state == 3) | (line_state == 4)) //短时间偏左偏右的过程中出线 
       {
-        // Speaker.Play_Song(5); //test用----------------------------------------------------------------------------
+        // Speaker.Play_Song(5); //test用---------
         Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
 
@@ -357,13 +365,13 @@ void THUNDER::Line_Tracing(void)
       {
         Line_last_time = millis();
       }
-      else if ((current_time - 50) > Line_last_time)
+      else if ((current_time - 50) > Line_last_time && line_state == 4)
       {
-        line_state = 2;
+        line_state = 2; // 偏左时间已经超过 50ms，需要大幅度偏右运动
       }
       else
       {
-        line_state = 4;
+        line_state = 4; // 偏左时间小于 50ms，需要小幅度偏右运动
       }
     }
     else if (IR_Data[1] == 0) //Serial.printf("SSSSSSSSSS 左转 SSSSSSSSSS\n");
@@ -380,13 +388,13 @@ void THUNDER::Line_Tracing(void)
       {
         Line_last_time = millis();
       }
-      else if ((current_time - 50) > Line_last_time)
+      else if ((current_time - 50) > Line_last_time && line_state == 3)
       {
-        line_state = 1;
+        line_state = 1; // 偏右时间已经超过 50ms，需要大幅度偏左运动
       }
       else
       {
-        line_state = 3;
+        line_state = 3; // 偏右时间小于 50ms，需要小幅度偏左运动
       }
     }
     else //Serial.printf("SSSSSSSSSS 线上 SSSSSSSSSS\n");
