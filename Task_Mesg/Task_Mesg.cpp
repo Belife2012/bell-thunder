@@ -35,7 +35,7 @@ void Driver_Flush(void *pvParameters)
         character_roll_time = millis();
       }
     }
-    // LED 屏最低刷新时间 100ms
+    // 每30ms进行一次查询
     vTaskDelay(pdMS_TO_TICKS(30));
   }
 }

@@ -310,14 +310,14 @@ void THUNDER::Line_Tracing(void)
       // Speaker.Play_Song(7); //test用----------------------------------------------------------------------------
       if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
       {
-        Thunder_Motor.Set_L_Motor_Power(0); //50ms 最大40  //编码器计数值
+        Thunder_Motor.Set_L_Motor_Power(0);  
         Thunder_Motor.Set_R_Motor_Power(0);
         line_state = 5;
       }
       else if ((line_state == 0) | (line_state == 3) | (line_state == 4)) //直行/假左/假右的过程中出线后退200ms
       {
         // Speaker.Play_Song(5); //test用----------------------------------------------------------------------------
-        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed); //50ms 最大40  //编码器计数值
+        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
 
         Line_last_time = millis();
@@ -329,17 +329,17 @@ void THUNDER::Line_Tracing(void)
       }
       else if (line_state == 1)
       {
-        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed); //50ms 最大40  //编码器计数值
+        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
       }
       else if (line_state == 2)
       {
-        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed); //50ms 最大40  //编码器计数值
+        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
       }
       else
       {
-        Thunder_Motor.Set_L_Motor_Power(0); //50ms 最大40  //编码器计数值
+        Thunder_Motor.Set_L_Motor_Power(0);  
         Thunder_Motor.Set_R_Motor_Power(0);
       }
     }
@@ -350,7 +350,7 @@ void THUNDER::Line_Tracing(void)
         Line_last_time = millis();
       }
 
-      Thunder_Motor.Set_L_Motor_Power(Line_H_Speed); //50ms 最大40  //编码器计数值
+      Thunder_Motor.Set_L_Motor_Power(Line_H_Speed);  
       Thunder_Motor.Set_R_Motor_Power(0);
 
       if (line_state == 2)
@@ -373,7 +373,7 @@ void THUNDER::Line_Tracing(void)
         Line_last_time = millis();
       }
 
-      Thunder_Motor.Set_L_Motor_Power(0); //50ms 最大40  //编码器计数值
+      Thunder_Motor.Set_L_Motor_Power(0);  
       Thunder_Motor.Set_R_Motor_Power(Line_H_Speed);
 
       if (line_state == 1)
@@ -391,7 +391,7 @@ void THUNDER::Line_Tracing(void)
     }
     else //Serial.printf("SSSSSSSSSS 线上 SSSSSSSSSS\n");
     {
-      Thunder_Motor.Set_L_Motor_Power(Line_M_Speed); //50ms 最大40  //编码器计数值
+      Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
       Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
       line_state = 0;
       Line_last_time = millis();

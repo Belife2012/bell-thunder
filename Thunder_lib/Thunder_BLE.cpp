@@ -63,7 +63,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
       if (rxValue.length() > 0) 
       {
-        Serial.printf("* BLE recv cmd: %x *\n",rxValue[0]);
+        Serial.printf("\n* BLE recv cmd: %x *\n",rxValue[0]);
         
         if(rxValue[0] == 0xA1)  // 蓝牙命名指令数据
         {
@@ -79,9 +79,9 @@ class MyCallbacks: public BLECharacteristicCallbacks
           if(SUM != rxValue[rxValue.length()-1])
           {
             Rx_Data[0] = 0;
-            Serial.printf("\nSSS___ SUM error 0xA1 ___SSS\n");
-            Serial.printf("SSS___ SUM: %x ___SSS\n",SUM);
-            Serial.printf("SSS___ rxValue[rxValue.length()-1]: %x ___SSS\n",rxValue[rxValue.length()-1]);
+            Serial.printf(" # SUM error 0xA1 #\n");
+            Serial.printf(" # SUM: %x #\n",SUM);
+            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
           }
         }
         else if(rxValue[0] == 0xC2)   // 刷新左侧彩色灯
@@ -97,9 +97,9 @@ class MyCallbacks: public BLECharacteristicCallbacks
           if(SUM != rxValue[19])
           {
             Rx_Data[0] = 0;
-            Serial.printf("\nSSS___ SUM error 0xC2 ___SSS\n");
-            Serial.printf("SSS___ SUM: %x ___SSS\n",SUM);
-            Serial.printf("SSS___ rxValue[rxValue.length()-1]: %x ___SSS\n",rxValue[rxValue.length()-1]);
+            Serial.printf(" # SUM error 0xC2 #\n");
+            Serial.printf(" # SUM: %x #\n",SUM);
+            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
           }
         }
         else if(rxValue[0] == 0xC3)   // 刷新右侧彩色灯
@@ -115,9 +115,9 @@ class MyCallbacks: public BLECharacteristicCallbacks
           if(SUM != rxValue[19])
           {
             Rx_Data[0] = 0;
-            Serial.printf("\nSSS___ SUM error 0xC3 ___SSS\n");
-            Serial.printf("SSS___ SUM: %x ___SSS\n",SUM);
-            Serial.printf("SSS___ rxValue[rxValue.length()-1]: %x ___SSS\n",rxValue[rxValue.length()-1]);
+            Serial.printf(" # SUM error 0xC3 #\n");
+            Serial.printf(" # SUM: %x #\n",SUM);
+            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
           }
         }
         else if(rxValue[0] == 0xD3)   // 单色点阵灯一次性刷新前半部分灯
@@ -133,9 +133,9 @@ class MyCallbacks: public BLECharacteristicCallbacks
           if(SUM != rxValue[15])
           {
             Rx_Data[0] = 0;
-            Serial.printf("\nSSS___ SUM error 0xD3 ___SSS\n");
-            Serial.printf("SSS___ SUM: %x ___SSS\n",SUM);
-            Serial.printf("SSS___ rxValue[rxValue.length()-1]: %x ___SSS\n",rxValue[rxValue.length()-1]);
+            Serial.printf(" # SUM error 0xD3 #\n");
+            Serial.printf(" # SUM: %x #\n",SUM);
+            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
           }
         }
         else if(rxValue[0] == 0xD4)   // 单色点阵灯一次性刷新后半部分灯
@@ -151,9 +151,9 @@ class MyCallbacks: public BLECharacteristicCallbacks
           if(SUM != rxValue[15])
           {
             Rx_Data[0] = 0;
-            Serial.printf("\nSSS___ SUM error 0xD4 ___SSS\n");
-            Serial.printf("SSS___ SUM: %x ___SSS\n",SUM);
-            Serial.printf("SSS___ rxValue[rxValue.length()-1]: %x ___SSS\n",rxValue[rxValue.length()-1]);
+            Serial.printf(" # SUM error 0xD4 #\n");
+            Serial.printf(" # SUM: %x #\n",SUM);
+            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
           }
         }
         else  // 一般指令数据
@@ -164,7 +164,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
           }
           if(Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
           {
-            Serial.printf("SSS__ SUM error __ Rx_Data[5]: %x __ sum: %x __SSS\n",Rx_Data[5],(uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
+            Serial.printf(" # SUM error: Rx_Data[5]=%x calSum=%x #\n",Rx_Data[5],(uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
             Thunder.Reset_Rx_Data();
           }
         }
