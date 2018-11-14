@@ -279,6 +279,15 @@ void THUNDER::Get_IR_Data(uint8_t data[])
   data[0] = digitalRead(IR_1);
   data[1] = digitalRead(IR_2);
 }
+
+void Wait_For_Motor_Slow()
+{
+  Thunder_Motor.Set_L_Motor_Power(0);  
+  Thunder_Motor.Set_R_Motor_Power(0);
+
+  while(Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15)
+  {}
+}
 #if 1
 /* 
  * 前驱电机的巡线
@@ -298,9 +307,20 @@ void THUNDER::Get_IR_Data(uint8_t data[])
  * @parameters: 
  * @return: 
  */
-#define WAIT_DIRECTION_COMFIRM_TIME       50 //ms
+#define WAIT_DIRECTION_COMFIRM_TIME       100 //ms
+#define MAYBE_STRAIGHT_DIRECTION          300 //ms
+#define LITTLE_L_R_POWER_DIFF             7
+#define SPIN_L_R_DIFF_ROTATEVALUE         350 //编码器数值的差量300为打转90度
+
 void THUNDER::Line_Tracing(void)
 {
+  int last_L_R_diffrotate;
+  int current_L_R_diffrotate;
+  int rotate_back_quantity;
+
+  uint32_t L_last_time; // 上次偏左的时间戳
+  uint32_t R_last_time; // 上次偏右的时间戳
+
   Line_last_time = millis();
   Line_last_led_time = millis();
   Line_last_sound_time = millis();
@@ -332,7 +352,7 @@ void THUNDER::Line_Tracing(void)
           Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
           Line_last_time = millis();
           current_time = millis();
-          while( current_time - 500 > Line_last_time ){
+          while( current_time - 500 < Line_last_time ){
             Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
             if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
               break;
@@ -346,7 +366,7 @@ void THUNDER::Line_Tracing(void)
           Thunder_Motor.Set_R_Motor_Power(0);
           Line_last_time = millis();
           current_time = millis();
-          while( current_time - 500 > Line_last_time ){
+          while( current_time - 500 < Line_last_time ){
             Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
             if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
               break;
@@ -358,39 +378,111 @@ void THUNDER::Line_Tracing(void)
           }
         }
       }
-      else if (line_state == 3) //短时间偏右的过程中出线，打转
+      else if (line_state == 3) //短时间偏右的过程中出线，打转(可能是直角转弯)
       {
-        // Speaker.Play_Song(5); //test用---------
-        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
-        Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
-
-        if((current_time - 1000) > Line_last_time) // 打转超时未找到线
+        // 左右打转90度查找黑线
+        rotate_back_quantity = 0;
+        while (1)
         {
-          line_state = 5;
-        }
-      }
-      else if ( line_state == 4 ) //短时间偏左的过程中出线，打转
-      {
-        // Speaker.Play_Song(5); //test用---------
-        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
-        Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+          Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+          current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          last_L_R_diffrotate = current_L_R_diffrotate;
+          while( current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE + rotate_back_quantity > last_L_R_diffrotate ){
+            Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+            if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+              break;
+            }
+            current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          }
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
 
-        if((current_time - 1000) > Line_last_time) // 打转超时未找到线
-        {
-          line_state = 5;
+          Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+          current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          last_L_R_diffrotate = current_L_R_diffrotate;
+          while( current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE*2 < last_L_R_diffrotate ){
+            Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+            if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+              break;
+            }
+            current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          }
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+          
+          rotate_back_quantity = SPIN_L_R_DIFF_ROTATEVALUE; // 回转要增加旋转量
         }
+        Wait_For_Motor_Slow();
       }
-      else if (line_state == 1) //偏右的过程中出线，快速漂移打转
+      else if ( line_state == 4 ) //短时间偏左的过程中出线，打转(可能是直角转弯)
       {
-        // 没有点在线上，不更新时间
+        // 左右打转90度查找黑线
+        rotate_back_quantity = 0;
+        while (1)
+        {
+          Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+          current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          last_L_R_diffrotate = current_L_R_diffrotate;
+          while( current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE - rotate_back_quantity < last_L_R_diffrotate ){
+            Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+            if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+              break;
+            }
+            current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          }
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+
+          Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+          current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          last_L_R_diffrotate = current_L_R_diffrotate;
+          while( current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE*2 > last_L_R_diffrotate ){
+            Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+            if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+              break;
+            }
+            current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+          }
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+          
+          rotate_back_quantity = SPIN_L_R_DIFF_ROTATEVALUE; // 回转要增加旋转量
+        }
+        Wait_For_Motor_Slow();
+      }
+      else if (line_state == 1) //偏右的过程中出线，快速漂移打转(弯道转弯)
+      {
         Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+        while(1){
+          Line_last_time = millis(); // 不改变line_state，刷新时间
+          Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+        }
+        Wait_For_Motor_Slow();
       }
-      else if (line_state == 2) //偏左的过程中出线，快速漂移打转
+      else if (line_state == 2) //偏左的过程中出线，快速漂移打转(弯道转弯)
       {
-        // 没有点在线上，不更新时间
-        Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+        Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);
         Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+        while(1){
+          Line_last_time = millis(); // 不改变line_state，刷新时间
+          Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+        }
+        Wait_For_Motor_Slow();
       }
       else
       {
@@ -402,23 +494,30 @@ void THUNDER::Line_Tracing(void)
     {
       if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
       {
-        Line_last_time = millis();
+        Line_last_time = millis(); // 不改变运动状态
+        continue; // 保持前运动状态继续运动
       }
 
-      Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
-      Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
-
+        if( R_last_time + MAYBE_STRAIGHT_DIRECTION < current_time ){  // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
+          Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+        }else{
+          Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
+        }
+        
       if (line_state == 2)
       {
         Line_last_time = millis(); //一直为偏左出线，所以一直更新状态时间
       }
       else if ((current_time - WAIT_DIRECTION_COMFIRM_TIME) > Line_last_time && line_state == 4)
       {
-        line_state = 2; // 偏左时间已经超过 50ms，需要大幅度偏右运动
+        line_state = 2; // 偏左时间已经超过 50ms
+        L_last_time = current_time;
       }
       else
       {
-        line_state = 4; // 偏左时间小于 50ms，需要小幅度偏右运动
+        line_state = 4; // 偏左时间小于 50ms，急转偏右运动一小段时间
         Thunder_Motor.Set_L_Motor_Power(Line_H_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
       }
@@ -427,25 +526,32 @@ void THUNDER::Line_Tracing(void)
     {
       if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
       {
-        Line_last_time = millis();
+        Line_last_time = millis(); // 不改变运动状态
+        continue; // 保持前运动状态继续运动
       }
 
-      Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
-      Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
-
+        if( L_last_time + MAYBE_STRAIGHT_DIRECTION < current_time ){  // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
+          Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
+          Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+        }else{
+          Thunder_Motor.Set_L_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);  
+          Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+        }
+        
       if (line_state == 1)
       {
-        Line_last_time = millis();//一直为偏右出线，所以一直更新状态时间
+        Line_last_time = millis();//一直为偏右出线，所以一直更新状态时间, 不改变运动状态
       }
       else if ((current_time - WAIT_DIRECTION_COMFIRM_TIME) > Line_last_time && line_state == 3)
       {
-        line_state = 1; // 偏右时间已经超过 50ms，需要大幅度偏左运动
+        line_state = 1; // 偏右时间已经超过 50ms
+        R_last_time = current_time;
       }
       else
       {
         Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_H_Speed);
-        line_state = 3; // 偏右时间小于 50ms，需要小幅度偏左运动
+        line_state = 3; // 偏右时间小于 50ms，急转偏右运动一小段时间
       }
     }
     else //Serial.printf("SSSSSSSSSS 线上 SSSSSSSSSS\n");
