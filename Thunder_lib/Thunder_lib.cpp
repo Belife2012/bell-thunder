@@ -291,13 +291,14 @@ void THUNDER::Get_IR_Data(uint8_t data[])
  *    3(偏右时间小于 50ms，需要小幅度偏左运动) 
  *    4 (偏左时间小于 50ms，需要小幅度偏右运动) 
  *    5(两个白点持续长时间)
- * 
+ *  a、快速出线，打转
  * 2、电机安装在前面，传感器安装在前面
  * 3、传感器安装高度升为 1.5cm，与电机间隔两个安装孔位置
  * 
  * @parameters: 
  * @return: 
  */
+#define WAIT_DIRECTION_COMFIRM_TIME       50 //ms
 void THUNDER::Line_Tracing(void)
 {
   Line_last_time = millis();
@@ -379,17 +380,17 @@ void THUNDER::Line_Tracing(void)
           line_state = 5;
         }
       }
-      else if (line_state == 1) 
+      else if (line_state == 1) //偏右的过程中出线，快速漂移打转
       {
         // 没有点在线上，不更新时间
-        Thunder_Motor.Set_L_Motor_Power(0);  
-        Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
       }
-      else if (line_state == 2)
+      else if (line_state == 2) //偏左的过程中出线，快速漂移打转
       {
         // 没有点在线上，不更新时间
-        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
-        Thunder_Motor.Set_R_Motor_Power(0);
+        Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
       }
       else
       {
@@ -404,14 +405,14 @@ void THUNDER::Line_Tracing(void)
         Line_last_time = millis();
       }
 
-      Thunder_Motor.Set_L_Motor_Power(Line_H_Speed);  
-      Thunder_Motor.Set_R_Motor_Power(0);
+      Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+      Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
 
       if (line_state == 2)
       {
-        Line_last_time = millis();
+        Line_last_time = millis(); //一直为偏左出线，所以一直更新状态时间
       }
-      else if ((current_time - 50) > Line_last_time && line_state == 4)
+      else if ((current_time - WAIT_DIRECTION_COMFIRM_TIME) > Line_last_time && line_state == 4)
       {
         line_state = 2; // 偏左时间已经超过 50ms，需要大幅度偏右运动
       }
@@ -419,7 +420,7 @@ void THUNDER::Line_Tracing(void)
       {
         line_state = 4; // 偏左时间小于 50ms，需要小幅度偏右运动
         Thunder_Motor.Set_L_Motor_Power(Line_H_Speed);  
-        Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+        Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
       }
     }
     else if (IR_Data[1] == 0) //Serial.printf("SSSSSSSSSS 左转 SSSSSSSSSS\n");
@@ -429,20 +430,20 @@ void THUNDER::Line_Tracing(void)
         Line_last_time = millis();
       }
 
-      Thunder_Motor.Set_L_Motor_Power(0);  
-      Thunder_Motor.Set_R_Motor_Power(Line_H_Speed);
+      Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+      Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
 
       if (line_state == 1)
       {
-        Line_last_time = millis();
+        Line_last_time = millis();//一直为偏右出线，所以一直更新状态时间
       }
-      else if ((current_time - 50) > Line_last_time && line_state == 3)
+      else if ((current_time - WAIT_DIRECTION_COMFIRM_TIME) > Line_last_time && line_state == 3)
       {
         line_state = 1; // 偏右时间已经超过 50ms，需要大幅度偏左运动
       }
       else
       {
-        Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
         Thunder_Motor.Set_R_Motor_Power(Line_H_Speed);
         line_state = 3; // 偏右时间小于 50ms，需要小幅度偏左运动
       }
