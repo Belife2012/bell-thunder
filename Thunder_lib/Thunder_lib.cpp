@@ -87,8 +87,8 @@ bool deviceConnected = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 1, 34};
-// const uint8_t Version_FW[4] = {0, 21, 0, 0};
+// const uint8_t Version_FW[4] = {'T', 0, 1, 34};
+const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
@@ -324,19 +324,37 @@ void THUNDER::Line_Tracing(void)
       }
       else if (line_state == 0) // 忽然从全黑变为全零过程中出线 
       {
-        // Speaker.Play_Song(5); //test用---------
-        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
-        Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
-
         // 左右扭头查找黑线
-        Line_last_time = millis();
-        while ( (IR_Data[0] == 0) && (IR_Data[1] == 0) )
+        while (1)
         {
-          Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
-          Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+          Thunder_Motor.Set_L_Motor_Power(0);  
+          Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+          Line_last_time = millis();
           current_time = millis();
-
-          Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+          while( current_time - 500 > Line_last_time ){
+            Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+            if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+              break;
+            }
+            current_time = millis();
+          }
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+          Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(0);
+          Line_last_time = millis();
+          current_time = millis();
+          while( current_time - 500 > Line_last_time ){
+            Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+            if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+              break;
+            }
+            current_time = millis();
+          }
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
         }
       }
       else if (line_state == 3) //短时间偏右的过程中出线，打转
@@ -400,6 +418,8 @@ void THUNDER::Line_Tracing(void)
       else
       {
         line_state = 4; // 偏左时间小于 50ms，需要小幅度偏右运动
+        Thunder_Motor.Set_L_Motor_Power(Line_H_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
       }
     }
     else if (IR_Data[1] == 0) //Serial.printf("SSSSSSSSSS 左转 SSSSSSSSSS\n");
@@ -422,6 +442,8 @@ void THUNDER::Line_Tracing(void)
       }
       else
       {
+        Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_H_Speed);
         line_state = 3; // 偏右时间小于 50ms，需要小幅度偏左运动
       }
     }
