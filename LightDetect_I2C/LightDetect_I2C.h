@@ -7,7 +7,7 @@ public:
   LIGHTDETECT_I2C(int slave_address);
 
   byte Set_Operate_Mode(byte optMode);
-  byte Get_Light_Value(unsigned short *readValue);
+  byte Get_Light_Value(float *readValue);
 
 private:
   byte _device_address;

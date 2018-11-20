@@ -45,6 +45,8 @@ public:
   void Give_Semaphore_IIC();
   void Set_Current_Task_Supreme();
   void Clear_Current_Task_Supreme();
+  void Enter_Task_Critical();
+  void Exit_Task_Critical();
 
   // 串口“示波器”的数据队列
   QueueHandle_t Queue_encoder_left;
@@ -53,6 +55,7 @@ public:
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
   UBaseType_t former_Priority;
+  portMUX_TYPE spinlockMUX;
 
   UBaseType_t flush_Tasks;
 

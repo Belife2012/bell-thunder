@@ -46,6 +46,7 @@
  ************************************************/
 
 #include <Thunder_lib.h>
+#include "esp_adc_cal.h"
 
 // #define PRINT_UART_COMMAND
 // #define DEBUG_LINE_TRACING
@@ -54,6 +55,10 @@ THUNDER Thunder;
 
 THUNDER_BLE Thunder_BLE;
 THUNDER_MOTOR Thunder_Motor;
+
+//ADC 校准使用
+esp_adc_cal_characteristics_t adc_chars;
+esp_adc_cal_value_t cal_value_type;
 
 // 音频
 WT588 Speaker = WT588(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
@@ -87,8 +92,8 @@ bool deviceConnected = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-// const uint8_t Version_FW[4] = {'T', 0, 1, 34};
-const uint8_t Version_FW[4] = {0, 21, 0, 0};
+const uint8_t Version_FW[4] = {'T', 0, 2, 35};
+// const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
@@ -158,18 +163,52 @@ void THUNDER::Stop_All(void)
 // 电池电压检测初始化配置
 void THUNDER::Setup_Battery()
 {
+  adc_power_on();
+  adc1_config_width(ADC_WIDTH_12Bit);
+  adc1_config_channel_atten(ADC1_CHANNEL_7, ADC_ATTEN_11db);
+
+  if( ESP_OK == esp_adc_cal_check_efuse(ESP_ADC_CAL_VAL_EFUSE_VREF) ){
+    Serial.println("\nsupport Efuse.");
+  }else{
+    Serial.println("\nNo Efuse.");
+  }
+
   pinMode(BATTERY_ADC_PIN, INPUT);
+  cal_value_type = esp_adc_cal_characterize(
+                    ADC_UNIT_1, 
+                    ADC_ATTEN_11db, 
+                    ADC_WIDTH_12Bit, 
+                    3300, 
+                    &adc_chars);
+  Serial.print("ADC Vref: ");
+  if (cal_value_type == ESP_ADC_CAL_VAL_EFUSE_VREF) {
+    Serial.println("eFuse Vref");
+  } else if (cal_value_type == ESP_ADC_CAL_VAL_EFUSE_TP) {
+    Serial.println("Two Point");
+  } else {
+    Serial.println("Default");
+  }
 }
 
 // 获取电池电压
 float THUNDER::Get_Battery_Data()
 {
-  float Battery_Voltage = 0;
+  uint32_t ADC_mV;
+  float Battery_Voltage;
 
-  ADC_Battery = analogRead(BATTERY_ADC_PIN); // 3.3V --> FFF(4095)
-  Indicate_Lowpower(ADC_Battery);
+  // ADC_Battery = analogRead(BATTERY_ADC_PIN); // 3.3V --> FFF(4095)
+  // Battery_Voltage = Indicate_Lowpower(ADC_Battery);
 
-  Battery_Voltage = ADC_Battery * 3.3 * (ADC_R_1 + ADC_R_2) / ADC_R_1 / 4095; // 分压电阻为：51k;100k
+  ADC_mV = adc1_get_raw(ADC1_CHANNEL_7);
+  Serial.printf("\nADC : %d\n", ADC_mV);
+  
+  if(cal_value_type == ESP_ADC_CAL_VAL_DEFAULT_VREF){
+    // efuse 的校准信息不存在，所以要手动计算原始ADC值
+    ADC_mV = ADC_mV * 3300 / 4095;
+  }else{
+    esp_adc_cal_get_voltage(ADC_CHANNEL_7, &adc_chars, &ADC_mV);
+  }
+  Battery_Voltage = Indicate_Lowpower(ADC_mV);
 
   return Battery_Voltage;
 }
@@ -181,10 +220,14 @@ float THUNDER::Get_Battery_Data()
  * @parameters: 
  * @return: 
  */
-void THUNDER::Indicate_Lowpower(uint16_t adc_value)
+float THUNDER::Indicate_Lowpower(uint16_t adc_value)
 {
-  float Battery_Voltage = 0;
-  Battery_Voltage = adc_value * 3.3 * (ADC_R_1 + ADC_R_2) / ADC_R_1 / 4095; // 分压电阻为：51k;100k
+  float Battery_Voltage;
+
+  Battery_Voltage = (float)adc_value/1000;
+  Serial.printf("ADC Voltage: %fV\n", Battery_Voltage);
+  Battery_Voltage = Battery_Voltage * (ADC_R_1 + ADC_R_2) / ADC_R_1;  // 分压电阻为：51k;100k
+  Serial.printf("Bat Voltage: %fV\n", Battery_Voltage);
 
   if(Battery_Voltage < 7.0){
     lowpower_flag = 1;
@@ -199,14 +242,16 @@ void THUNDER::Indicate_Lowpower(uint16_t adc_value)
 
     Serial.printf("\nLow Power: %fV\n", Battery_Voltage);
   }
+
+  return Battery_Voltage;
 }
 
 // 编码电机  闭环计算
 void THUNDER::En_Motor(void)
 {
-  if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
+  if (En_Motor_Flag == 1)
   {
-    if (En_Motor_Flag == 1)
+    if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
     {
       Thunder_Motor.PID_Speed();
 
@@ -327,8 +372,12 @@ void THUNDER::Line_Tracing(void)
   LED_counter = 99;
 
   Speaker.Play_Song(131);
-  while (Rx_Data[1] == 1)
+  while (1)
   {
+    // 接收到巡线停止指令， 则退出巡线循环
+    if(Rx_Data[0] == 0x61){
+      break;
+    }
     Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
     // Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
 
@@ -376,6 +425,10 @@ void THUNDER::Line_Tracing(void)
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
           }
+          
+          if(Rx_Data[0] == 0x61){
+            break;
+          }
         }
       }
       else if (line_state == 3) //短时间偏右的过程中出线，打转(可能是直角转弯)
@@ -415,6 +468,10 @@ void THUNDER::Line_Tracing(void)
           }
           
           rotate_back_quantity = SPIN_L_R_DIFF_ROTATEVALUE; // 回转要增加旋转量
+          
+          if(Rx_Data[0] == 0x61){
+            break;
+          }
         }
         Wait_For_Motor_Slow();
       }
@@ -455,6 +512,10 @@ void THUNDER::Line_Tracing(void)
           }
           
           rotate_back_quantity = SPIN_L_R_DIFF_ROTATEVALUE; // 回转要增加旋转量
+          
+          if(Rx_Data[0] == 0x61){
+            break;
+          }
         }
         Wait_For_Motor_Slow();
       }
@@ -1838,8 +1899,7 @@ void THUNDER::Check_Protocol(void)
     break;
 
   case 0x54: //获取电池电压数据
-    ADC_Battery = analogRead(BATTERY_ADC_PIN);
-    Indicate_Lowpower(ADC_Battery);
+    ADC_Battery = Get_Battery_Data()*1000;
 
     Tx_Data[0] = 0x54;
     Tx_Data[1] = ADC_Battery >> 8; //读取一次电池电压
@@ -1858,7 +1918,7 @@ void THUNDER::Check_Protocol(void)
     break;
 
   case 0xA1:                       //蓝牙命名  //仅限通过蓝牙，串口不支持重命名
-    Thunder_BLE.Write_BLE_Name(0); //从地址0开始写入命名的蓝牙
+    Thunder_BLE.Write_BLE_Name(ADD_BLE_NAME); //从地址0开始写入命名的蓝牙
     break;
 
   case 0xA2:                            //控制舵机

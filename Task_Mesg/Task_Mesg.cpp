@@ -82,6 +82,8 @@ TASK_MESG::TASK_MESG()
     }
   }
 
+  vPortCPUInitializeMutex(&spinlockMUX);
+
   former_Priority = 0;
   tasks_num = 0;
   flush_Tasks = 0;
@@ -175,6 +177,28 @@ void TASK_MESG::Clear_Current_Task_Supreme()
   }
 
   vTaskPrioritySet(NULL, former_Priority);
+}
+
+/* 
+ * 进入临界区
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void TASK_MESG::Enter_Task_Critical()
+{
+  taskENTER_CRITICAL(&spinlockMUX);
+}
+
+/* 
+ * 退出临界区
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void TASK_MESG::Exit_Task_Critical()
+{
+  taskEXIT_CRITICAL(&spinlockMUX);
 }
 
 /*

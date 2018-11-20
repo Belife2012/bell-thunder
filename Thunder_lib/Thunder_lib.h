@@ -80,8 +80,8 @@
 
 // 电池电压
 #define BATTERY_ADC_PIN    35
-#define ADC_R_1            51   // 分压电阻 51K:100K
-#define ADC_R_2            100
+#define ADC_R_1            33.0   // 分压电阻 33K:100K
+#define ADC_R_2            100.0
 
 // 舵机
 #define SERVO_CHANNEL_0     0    // use 0 channel of 16 channels (started from zero)
@@ -237,7 +237,7 @@ class THUNDER
     // 电池电压
     void Setup_Battery(void);     // 电池电压检测初始化
     float Get_Battery_Data(void); // 获取电池电压
-    void Indicate_Lowpower(uint16_t adc_value); // 电压低于 8V 后的提示
+    float Indicate_Lowpower(uint16_t adc_value); // 电压低于 8V 后的提示
 
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算

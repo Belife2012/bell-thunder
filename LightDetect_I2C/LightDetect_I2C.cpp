@@ -12,8 +12,7 @@ LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address)
  * 设置光电传感器的模式
  * 
  * @parameters: 
- *      0 为环境光模式，不点亮灯
- *      1 为反射光模式，需要点亮灯
+ *      LED亮灯可设置等级为 0 ~ 100，可以设置对应的LED亮度等级，用于不同模式
  * @return: 
  *      0 写数据正常
  *      非0 写数据出错
@@ -29,19 +28,22 @@ byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
 /* 
  * 获取光电传感器的值
  * 
- * @parameters: 获取未处理过的采集量
+ * @parameters: 获取光亮程度的百分比数值
  * @return: 
  *      0 获取数据正常
  *      非0 获取数据出错
  */
-byte LIGHTDETECT_I2C::Get_Light_Value(unsigned short *readValue)
+byte LIGHTDETECT_I2C::Get_Light_Value(float *readValue)
 {
   unsigned short retValue;
   byte getValue[2], bakCode;
 
   bakCode = read(0x02, getValue, 2);
 
-  *readValue = ((unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8));
+  retValue = (unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8);
+  // 百分比 = 100 * ADC_value/2400, 设置2400为最大值
+  retValue = retValue > 2400 ? 2400 : retValue ;
+  *readValue = ( (float)retValue ) / 24;
 
   return bakCode;
 }

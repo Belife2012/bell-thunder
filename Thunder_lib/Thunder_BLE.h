@@ -57,10 +57,11 @@
 #include <HT16D35B.h>
 
 // 内存读取
-#define EEPROM_SIZE 32
+#define EEPROM_SIZE 64
+#define BLE_NAME_SIZE 32
 
-// 自定义蓝牙名称
-#define ADD_BLE_NAME        0x00   //自定义蓝牙名称存储地址
+// 蓝牙名称首地址
+#define ADD_BLE_NAME        0x00   //蓝牙名称存储地址，不能改变，否则整个BLE name 读写的算法要更改
 
 // 蓝牙
 #define SERVICE_UUID            "33E5AE8B-E58D-9AE4-BC9F-931C69B5D354"
@@ -92,7 +93,7 @@ class THUNDER_BLE
     void Setup_EEPROM(void);            // 配置EEPROM
     void Read_BLE_Name (int addr);      // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
     void Write_BLE_Name (int addr);     // 写入自定义蓝牙名称
-    void Write_ROM (int addr, int val); // 写ROM
+    void Write_ROM (int addr, uint8_t val); // 写ROM
     void Reset_ROM (void);              // 重置ROM
 
     // 蓝牙
