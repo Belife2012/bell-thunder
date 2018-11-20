@@ -91,10 +91,11 @@ class THUNDER_BLE
     // 内存读取
     uint64_t Get_ID(void);              // 获取并返回芯片ID
     void Setup_EEPROM(void);            // 配置EEPROM
-    void Read_BLE_Name (int addr);      // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
-    void Write_BLE_Name (int addr);     // 写入自定义蓝牙名称
-    void Write_ROM (int addr, uint8_t val); // 写ROM
-    void Reset_ROM (void);              // 重置ROM
+    void Read_BLE_Name (uint32_t addr);      // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
+    void Write_BLE_Name (uint32_t addr);     // 写入自定义蓝牙名称
+    uint32_t Write_ROM (uint32_t addr, void *src_value, uint8_t size); // 写ROM
+    uint32_t Read_ROM (uint32_t addr, void *dest_value, uint8_t size);
+    uint32_t Reset_ROM (void);              // 重置ROM
 
     // 蓝牙
     void Setup_BLE(void);                           // 配置BLE

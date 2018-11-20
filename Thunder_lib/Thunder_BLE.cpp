@@ -31,6 +31,7 @@
  * 
  ************************************************/
 
+#include "esp_spi_flash.h"
 #include <Thunder_BLE.h>
 #include <Task_Mesg.h>
 
@@ -188,10 +189,11 @@ uint64_t THUNDER_BLE::Get_ID(void)
 }
 
 // 配置EEPROM
+uint32_t flash_size;
 void THUNDER_BLE::Setup_EEPROM(void)
 {
   Serial.println("Init EEPROM...");
-
+#if 0
   if (!EEPROM.begin(EEPROM_SIZE))
   {
     Serial.println("Init EEPROM fail!"); 
@@ -206,15 +208,26 @@ void THUNDER_BLE::Setup_EEPROM(void)
     Serial.print(" ");
     Serial.print(byte(EEPROM.read(i)));
   }
-  Serial.println();
+#else
+  flash_size = spi_flash_get_chip_size();
+  Serial.printf("Flash size: 0x%x\n", flash_size);
 
-  Serial.println("Init EEPROM end");
+#endif
+  Serial.println("\nInit EEPROM end");
 }
 
 // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
-void THUNDER_BLE::Read_BLE_Name (int addr)
+void THUNDER_BLE::Read_BLE_Name (uint32_t addr)
 {
-  if(EEPROM.read(addr) != 0xFF)
+  Serial.println("\nEEPROM:");
+  Read_ROM(ADD_BLE_NAME, BLE_Name_Data, BLE_NAME_SIZE);
+  for (int i = 0; i < BLE_NAME_SIZE; i++)
+  {
+    Serial.printf("0x%2x ", BLE_Name_Data[i]);
+  }
+  Serial.println();
+
+  if(BLE_Name_Data[0] != 0xFF)
   {
     BLE_Named = 1;
   }
@@ -227,53 +240,66 @@ void THUNDER_BLE::Read_BLE_Name (int addr)
 #define RTC_CNTL_OPTIONS0_REG     0x3ff48000
 #define RTC_CNTL_SW_SYS_RST       0x80000000
 // 写入自定义蓝牙名称
-void THUNDER_BLE::Write_BLE_Name (int addr)
+void THUNDER_BLE::Write_BLE_Name (uint32_t addr)
 {
   uint8_t errorCode;
-  Reset_ROM();  // 清空定义出来的ROM
+  if( ESP_OK != Reset_ROM() ){  // 清空定义出来的ROM
+    Serial.println("\nFlash erase fail.");
+    return;
+  }
   Serial.print("\nBLE w name: "); Serial.printf("%s\n", BLE_Name_Data);
 
-  int i;
-  for(i = addr; i < BLE_NAME_SIZE; i++)
-  {
-    EEPROM.write(i, BLE_Name_Data[i]); // 参数1：地址；参数2：数据
-    if(BLE_Name_Data[i] == '\0'){
-      break;
-    }
+  if( ESP_OK != Write_ROM(ADD_BLE_NAME, BLE_Name_Data, BLE_NAME_SIZE) ){
+    Serial.println("\nFlash W fail.");
+    return;
   }
-  
-  errorCode = EEPROM.commit();
 
-  if(errorCode == true){
-    Serial.println("BLE rename Success!");
-    // 断开蓝牙连接，使重命名有效
-    Serial.println("Device reset......");
-    // 复位系统，重启设备
-    // *((UBaseType_t *)RTC_CNTL_OPTIONS0_REG) |= RTC_CNTL_SW_SYS_RST;
-  }else{
-    Serial.println("BLE rename Fail!");
-  }
+  Serial.println("BLE rename Success!");
+  // 断开蓝牙连接，使重命名有效
+  Serial.println("Device reset......");
+  // 复位系统，重启设备
+  // *((UBaseType_t *)RTC_CNTL_OPTIONS0_REG) |= RTC_CNTL_SW_SYS_RST;
 }
 
 // 写ROM
-void THUNDER_BLE::Write_ROM (int addr, uint8_t val)
-{  
+uint32_t THUNDER_BLE::Write_ROM (uint32_t addr, void *src_value, uint8_t size)
+{
+#if 0
   // Serial.println("Start Write_ROM...");
   
   EEPROM.write(addr, val);
   // EEPROM.commit();
 
   // Serial.println("Finish Write_ROM");
+#else
+  if(addr + size > 0x1000){
+    return ESP_FAIL;
+  }
+  return spi_flash_write(flash_size - 0x1000 + addr, src_value, size);
+#endif
+}
+
+// 写ROM
+uint32_t THUNDER_BLE::Read_ROM (uint32_t addr, void *dest_value, uint8_t size)
+{
+  if(addr + size > 0x1000){
+    return ESP_FAIL;
+  }
+  return spi_flash_read(flash_size - 0x1000 + addr, dest_value, size);
 }
 
 // 重置ROM
-void THUNDER_BLE::Reset_ROM ()
+uint32_t THUNDER_BLE::Reset_ROM ()
 {
+#if 0
   for(int i = 0; i < EEPROM_SIZE; i++)
   {
     EEPROM.write(i, 0xFF);
   }
   // EEPROM.commit();
+#else
+  return spi_flash_erase_range(flash_size - 0x1000, 0x1000);
+#endif
 }
 
 // 配置BLE
@@ -285,31 +311,28 @@ void THUNDER_BLE::Setup_BLE()
 
   if(BLE_Named == 1)
   {
-    Serial.printf("* Dev BLE named\n");
+    Serial.printf("* Dev BLE named: ");
 
-    char buf[BLE_NAME_SIZE] = "";
     int i;
-    for(i=ADD_BLE_NAME; i < BLE_NAME_SIZE; i++)
+    char buf[BLE_NAME_SIZE] = "";
+    for(i=0; i < BLE_NAME_SIZE; i++)
     {
-      // 超过buf最大长度，最后一个字符补为字符结束符 '\0'
-      if(i >= BLE_NAME_SIZE - 1){
+      if( BLE_Name_Data[i] == '\0' || i == (BLE_NAME_SIZE - 1) ){
         buf[i] = '\0';
         break;
       }
-      buf[i] = byte(EEPROM.read(i));
-      if(buf[i] == '\0'){
-        break;
-      }
-      Serial.printf("* byte(EEPROM.read(%d) : %d *\n", i, buf[i]);
 
       // 如果出现控制字符，则意味着EEPROM里面的信息不准确，BLE命名为“BELL”
-      if(isControl(buf[i])){
+      if(isControl(BLE_Name_Data[i])){
         buf[0] = 'B';
         buf[1] = 'E';
         buf[2] = 'L';
         buf[3] = 'L';
         buf[4] = '\0';
+        break;
       }
+
+      buf[i] = BLE_Name_Data[i];
     }
     // 如果第一个字符串是字符串结束符
     if(buf[0] == '\0'){
@@ -319,6 +342,7 @@ void THUNDER_BLE::Setup_BLE()
       buf[3] = 'L';
       buf[4] = '\0';
     }
+    Serial.printf("%s\n", buf);
 
     BLEDevice::init(buf);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
   }
