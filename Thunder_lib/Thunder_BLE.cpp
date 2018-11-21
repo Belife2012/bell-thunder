@@ -32,6 +32,7 @@
  ************************************************/
 
 #include "esp_spi_flash.h"
+#include "esp_task_wdt.h"
 #include <Thunder_BLE.h>
 #include <Task_Mesg.h>
 
@@ -242,7 +243,6 @@ void THUNDER_BLE::Read_BLE_Name (uint32_t addr)
 // 写入自定义蓝牙名称
 void THUNDER_BLE::Write_BLE_Name (uint32_t addr)
 {
-  uint8_t errorCode;
   if( ESP_OK != Reset_ROM() ){  // 清空定义出来的ROM
     Serial.println("\nFlash erase fail.");
     return;
@@ -256,8 +256,12 @@ void THUNDER_BLE::Write_BLE_Name (uint32_t addr)
 
   Serial.println("BLE rename Success!");
   // 断开蓝牙连接，使重命名有效
-  Serial.println("Device reset......");
-  // 复位系统，重启设备
+  Serial.println("Device reset...");
+  // for(uint32_t i = 0; i < 3; i++){
+  //   delay(1000);
+  //   Serial.print(".");
+  // }
+  // // 复位系统，重启设备
   // *((UBaseType_t *)RTC_CNTL_OPTIONS0_REG) |= RTC_CNTL_SW_SYS_RST;
 }
 
@@ -275,7 +279,14 @@ uint32_t THUNDER_BLE::Write_ROM (uint32_t addr, void *src_value, uint8_t size)
   if(addr + size > 0x1000){
     return ESP_FAIL;
   }
-  return spi_flash_write(flash_size - 0x1000 + addr, src_value, size);
+
+  uint32_t backCode;
+  // esp_task_wdt_reset();
+  // Task_Mesg.Enter_Task_Critical();
+  backCode = spi_flash_write(flash_size - 0x1000 + addr, src_value, size);
+  // Task_Mesg.Exit_Task_Critical();
+
+  return backCode;
 #endif
 }
 
@@ -285,7 +296,14 @@ uint32_t THUNDER_BLE::Read_ROM (uint32_t addr, void *dest_value, uint8_t size)
   if(addr + size > 0x1000){
     return ESP_FAIL;
   }
-  return spi_flash_read(flash_size - 0x1000 + addr, dest_value, size);
+
+  uint32_t backCode;
+  // esp_task_wdt_reset();
+  // Task_Mesg.Enter_Task_Critical();
+  backCode = spi_flash_read(flash_size - 0x1000 + addr, dest_value, size);
+  // Task_Mesg.Exit_Task_Critical();
+  
+  return backCode;
 }
 
 // 重置ROM
@@ -298,7 +316,14 @@ uint32_t THUNDER_BLE::Reset_ROM ()
   }
   // EEPROM.commit();
 #else
-  return spi_flash_erase_range(flash_size - 0x1000, 0x1000);
+
+  uint32_t backCode;
+  // esp_task_wdt_reset();
+  // Task_Mesg.Enter_Task_Critical();
+  backCode = spi_flash_erase_range(flash_size - 0x1000, 0x1000);
+  // Task_Mesg.Exit_Task_Critical();
+  
+  return backCode;
 #endif
 }
 
