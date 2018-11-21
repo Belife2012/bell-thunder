@@ -124,19 +124,21 @@ void Get_Encoder_Value();
 
 // PID时间中断
 volatile SemaphoreHandle_t Timer_PID_Flag;
-volatile uint32_t lastIsrAt = 0;
 
 // 
 volatile int32_t rotate_RawValue_Left;
 volatile int32_t rotate_RawValue_Right;
 
+volatile uint32_t PID_Timer_Enable = 0;
+
 // timer中断
 void IRAM_ATTR PID_Timer_Handle()
 {
-  lastIsrAt = millis();
-  Get_Encoder_Value();
-  Update_Rotate_Value();
-  xSemaphoreGiveFromISR(Timer_PID_Flag, NULL);
+  if(PID_Timer_Enable == 1){
+    Get_Encoder_Value();
+    Update_Rotate_Value();
+    xSemaphoreGiveFromISR(Timer_PID_Flag, NULL);
+  }
 }
 
 // 配置PID定时器
@@ -147,12 +149,18 @@ void THUNDER_MOTOR::Setup_PID_Timer()
   timerAttachInterrupt(PID_Timer, &PID_Timer_Handle, true);  //Attach中断Handle
   timerAlarmWrite(PID_Timer, PID_dt * 1000, true);  // 50ms 中断
   timerAlarmEnable(PID_Timer);  // 使能
+  PID_Timer_Enable = 1;
 }
 
 // 移除PID定时器(会影响其它用到此定时器的功能)
-void THUNDER_MOTOR::Uninstall_PID_Timer(void)
+void THUNDER_MOTOR::Disable_PID_Timer(void)
 {
-  timerDetachInterrupt(PID_Timer);  //Detach中断Handle
+  PID_Timer_Enable = 0;
+}
+// 重启PID定时器
+void THUNDER_MOTOR::Enable_PID_Timer(void)
+{
+  PID_Timer_Enable = 1;
 }
 
 // 配置电机

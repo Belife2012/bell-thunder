@@ -79,7 +79,6 @@
 
 // PID时间中断
 extern volatile SemaphoreHandle_t Timer_PID_Flag;
-extern volatile uint32_t lastIsrAt;
 
 struct PID_Struct_t 
 {
@@ -114,7 +113,8 @@ class THUNDER_MOTOR
   public:
     // 定时器
     void Setup_PID_Timer(void);         // 配置PID用定时器
-    void Uninstall_PID_Timer(void);     // 移除PID用定时器(会影响其它用到此定时器的功能)
+    void Disable_PID_Timer(void);     // 移除PID用定时器(会影响其它用到此定时器的功能)
+    void Enable_PID_Timer(void);
 
     // 开环电机
     void Setup_Motor(void);                                 // 配置电机
