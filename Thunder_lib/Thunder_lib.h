@@ -79,9 +79,10 @@
 #define SCL_PIN            22   // SCL_PIN
 
 // 电池电压
-#define BATTERY_ADC_PIN    35
-#define ADC_R_1            33.0   // 分压电阻 33K:100K
-#define ADC_R_2            100.0
+#define BATTERY_FILTER_NUM  10
+#define BATTERY_ADC_PIN     35
+#define ADC_R_1             33.0   // 分压电阻 33K:100K
+#define ADC_R_2             100.0
 
 // 舵机
 #define SERVO_CHANNEL_0     0    // use 0 channel of 16 channels (started from zero)
@@ -155,7 +156,8 @@ class THUNDER
     int16_t R_Speed = 0;
 
     // 电池电压
-    uint16_t ADC_Battery = 0;
+    uint16_t battery_filter_data[BATTERY_FILTER_NUM] = {0,0,0,0,0,0,0,0,0,0};
+    uint16_t Battery_Power = 9000; //初始值设置为9000mV
     uint8_t lowpower_flag = 0; // 1 为低电压状态
 
     // 巡线IR
@@ -236,8 +238,9 @@ class THUNDER
 
     // 电池电压
     void Setup_Battery(void);     // 电池电压检测初始化
-    float Get_Battery_Data(void); // 获取电池电压
-    float Indicate_Lowpower(uint16_t adc_value); // 电压低于 8V 后的提示
+    uint32_t Battery_Power_Filter(uint32_t new_data);
+    uint32_t Get_Battery_Data(void); // 获取电池电压
+    void Indicate_Lowpower(uint32_t Battery_Voltage); // 电压低于 8V 后的提示
 
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算

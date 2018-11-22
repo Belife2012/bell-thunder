@@ -96,7 +96,7 @@
 #if 1 // 270欧姆电阻
   // 亮度值C
   #define NO_COLOR_CARD_C         (100)
-  #define BLACK_CARD_MIN_C        (20)
+  #define BLACK_CARD_MIN_C        (30)
   #define BLACK_CARD_MAX_C        (110)
   #define GREEN_CARD_MIN_C        (60)
   #define GREEN_CARD_MAX_C        (260)
@@ -108,12 +108,12 @@
   #define BLUE_CARD_MAX_C         (430)
   #define YELLOW_CARD_MIN_C       (150)
   #define YELLOW_CARD_MAX_C       (900)
-  #define WHITE_CARD_MIN_C        (300)
+  #define WHITE_CARD_MIN_C        (320)
   #define WHITE_CARD_MAX_C        (1500)
   // 黑白卡的RGB值分别由最大值/最小值
   #define BLACK_CARD_MIN_RGB         (150)
-  #define BLACK_CARD_MAX_RGB         (800)
-  #define WHITE_CARD_MIN_RGB         (2000)
+  #define BLACK_CARD_MAX_RGB         (1000)
+  #define WHITE_CARD_MIN_RGB         (1800)
   #define WHITE_CARD_MAX_RGB         (15000)
   // HSV 的S值 可以区分颜色的灰度，值越大，彩色越浓，趋向 0 时，就越接近 黑白
   #define COLORLESS_S             (0.62)
@@ -123,7 +123,7 @@
   #define BLACK_MIN_H         (55)
   #define BLACK_MAX_H         (100)
   #define WHITE_MIN_H         (105)
-  #define WHITE_MAX_H         (130)
+  #define WHITE_MAX_H         (140)
   #define RED_CARD_MIN_H          (0)
   #define RED_CARD_MAX_H          (12)
   #define BROWN_CARD_MIN_H        (25)

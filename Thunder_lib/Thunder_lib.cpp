@@ -92,7 +92,7 @@ bool deviceConnected = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 2, 35};
+const uint8_t Version_FW[4] = {'T', 0, 2, 36};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -136,6 +136,7 @@ void THUNDER::Setup_All(void)
   Task_Mesg.Set_Flush_Task(FLUSH_COLOR_LED); // 把 彩灯刷新工作 交给后台守护线程进行
   Task_Mesg.Set_Flush_Task(FLUSH_MOTOR_PID_CTRL); // 把 电机闭环控制 交给后台守护线程进行
   Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL); // 把 滚动显示的刷新工作 交给后台守护线程进行
+  Task_Mesg.Set_Flush_Task(FLUSH_BATTERY_MEASURE); // 每300ms检测一次电池电压，以保证每次测量都有之前的数据作为滤波数据
   Task_Mesg.Create_Deamon_Threads(); // 创建并开始 守护线程
 
   Serial.printf("\n*** Initial Completes ***\n\n");
@@ -143,7 +144,7 @@ void THUNDER::Setup_All(void)
   // 开机动画/声效
   Start_Show();
   
-  Serial.printf("Battery Vlotage: %fV\n", Get_Battery_Data());
+  Serial.printf( "Battery Vlotage: %fV\n", ((float)Get_Battery_Data()/1000) );
 }
 
 // 全部终止(电机)
@@ -190,17 +191,48 @@ void THUNDER::Setup_Battery()
   }
 }
 
+uint32_t THUNDER::Battery_Power_Filter(uint32_t new_data)
+{
+  uint32_t i, valid_num = 0;
+  uint32_t sum_data = 0, max_data = 0, min_data = 15000;
+  for( i = 0; i < BATTERY_FILTER_NUM - 1; i++){
+    battery_filter_data[i] = battery_filter_data[i+1];
+  }
+  battery_filter_data[BATTERY_FILTER_NUM - 1] = new_data;
+
+  for( i = 0; i < BATTERY_FILTER_NUM; i++){
+    if( 3300 < battery_filter_data[i] && battery_filter_data[i] < 15000 ){
+      valid_num++;
+      if(battery_filter_data[i] < min_data){
+        min_data = battery_filter_data[i];
+      }
+      if(max_data < battery_filter_data[i]){
+        max_data = battery_filter_data[i];
+      }
+      sum_data += battery_filter_data[i];
+    }
+  }
+  if(valid_num > 3){
+    sum_data -= min_data;
+    sum_data -= max_data;
+    valid_num -= 2;
+  }
+  //取平均值
+  if(valid_num == 0){
+    return 0;
+  }else{
+    return sum_data/valid_num;
+  }
+}
+
 // 获取电池电压
-float THUNDER::Get_Battery_Data()
+uint32_t THUNDER::Get_Battery_Data()
 {
   uint32_t ADC_mV;
-  float Battery_Voltage;
-
-  // ADC_Battery = analogRead(BATTERY_ADC_PIN); // 3.3V --> FFF(4095)
-  // Battery_Voltage = Indicate_Lowpower(ADC_Battery);
+  uint32_t Battery_Voltage;
 
   ADC_mV = adc1_get_raw(ADC1_CHANNEL_7);
-  Serial.printf("\nADC : %d\n", ADC_mV);
+  // Serial.printf("\nADC : %d\n", ADC_mV);
   
   if(cal_value_type == ESP_ADC_CAL_VAL_DEFAULT_VREF){
     // efuse 的校准信息不存在，所以要手动计算原始ADC值
@@ -208,7 +240,14 @@ float THUNDER::Get_Battery_Data()
   }else{
     esp_adc_cal_get_voltage(ADC_CHANNEL_7, &adc_chars, &ADC_mV);
   }
-  Battery_Voltage = Indicate_Lowpower(ADC_mV);
+  // Serial.printf("ADC Voltage: %dmV\n", ADC_mV);
+  Battery_Voltage = ADC_mV * (ADC_R_1 + ADC_R_2) / ADC_R_1;  // 分压电阻为：51k;100k
+
+  // Filter
+  Battery_Voltage = Battery_Power_Filter(Battery_Voltage);
+  // Serial.printf("Bat Voltage: %dmV\n", Battery_Voltage);
+
+  Indicate_Lowpower(Battery_Voltage);
 
   return Battery_Voltage;
 }
@@ -220,16 +259,9 @@ float THUNDER::Get_Battery_Data()
  * @parameters: 
  * @return: 
  */
-float THUNDER::Indicate_Lowpower(uint16_t adc_value)
+void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 {
-  float Battery_Voltage;
-
-  Battery_Voltage = (float)adc_value/1000;
-  Serial.printf("ADC Voltage: %fV\n", Battery_Voltage);
-  Battery_Voltage = Battery_Voltage * (ADC_R_1 + ADC_R_2) / ADC_R_1;  // 分压电阻为：51k;100k
-  Serial.printf("Bat Voltage: %fV\n", Battery_Voltage);
-
-  if(Battery_Voltage < 7.0){
+  if(Battery_Voltage < 7000 && Battery_Voltage < (Battery_Power - 300)){
     lowpower_flag = 1;
 
     Dot_Matrix_LED.Play_LED_HT16F35B_Show(101);
@@ -240,10 +272,9 @@ float THUNDER::Indicate_Lowpower(uint16_t adc_value)
     delay(300);
     Speaker.Play_Song(79);
 
-    Serial.printf("\nLow Power: %fV\n", Battery_Voltage);
+    Serial.printf("\nLow Power: %dmV\n", Battery_Voltage);
+    Battery_Power = Battery_Voltage;
   }
-
-  return Battery_Voltage;
 }
 
 // 编码电机  闭环计算
@@ -1899,11 +1930,12 @@ void THUNDER::Check_Protocol(void)
     break;
 
   case 0x54: //获取电池电压数据
-    ADC_Battery = Get_Battery_Data()*1000;
+    uint32_t Battery_Data;
+    Battery_Data = Get_Battery_Data();
 
     Tx_Data[0] = 0x54;
-    Tx_Data[1] = ADC_Battery >> 8; //读取一次电池电压
-    Tx_Data[2] = ADC_Battery;
+    Tx_Data[1] = Battery_Data >> 8; //读取一次电池电压
+    Tx_Data[2] = Battery_Data;
     break;
 
   case 0x55: //获取固件版本号

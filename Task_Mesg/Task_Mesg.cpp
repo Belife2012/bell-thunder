@@ -8,8 +8,10 @@ void Driver_Flush(void *pvParameters)
 {
   uint32_t current_time;
   uint32_t character_roll_time;
+  uint32_t battery_measure_time;
 
   character_roll_time = millis();
+  battery_measure_time = millis();
   for (;;)
   {
     current_time = millis();
@@ -35,6 +37,15 @@ void Driver_Flush(void *pvParameters)
         character_roll_time = millis();
       }
     }
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_BATTERY_MEASURE))
+    {
+      if (current_time - battery_measure_time > 300)
+      {
+        Thunder.Get_Battery_Data();
+        battery_measure_time = millis();
+      }
+    }
+
     // 每30ms进行一次查询
     vTaskDelay(pdMS_TO_TICKS(30));
   }
@@ -187,7 +198,7 @@ void TASK_MESG::Clear_Current_Task_Supreme()
  */
 void TASK_MESG::Enter_Task_Critical()
 {
-  taskENTER_CRITICAL(&spinlockMUX);
+  portENTER_CRITICAL(&spinlockMUX);
 }
 
 /* 
@@ -198,7 +209,7 @@ void TASK_MESG::Enter_Task_Critical()
  */
 void TASK_MESG::Exit_Task_Critical()
 {
-  taskEXIT_CRITICAL(&spinlockMUX);
+  portEXIT_CRITICAL(&spinlockMUX);
 }
 
 /*
