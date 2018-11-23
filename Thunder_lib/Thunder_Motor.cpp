@@ -51,6 +51,7 @@
 #include "driver/pcnt.h"
 
 // #define PRINT_DEBUG_INFO
+// #define ENABLE_ENCODER_TIMER
 
 /***********************************************************/
 #ifdef ENABLE_ENCODER_INT
@@ -131,6 +132,7 @@ volatile int32_t rotate_RawValue_Right;
 
 volatile uint32_t PID_Timer_Enable = 0;
 
+#ifdef ENABLE_ENCODER_TIMER
 // timer中断
 void IRAM_ATTR PID_Timer_Handle()
 {
@@ -141,15 +143,27 @@ void IRAM_ATTR PID_Timer_Handle()
   }
 }
 
+#else
+void THUNDER_MOTOR::Update_Encoder_Value()
+{
+  Get_Encoder_Value();
+  Update_Rotate_Value();
+}
+
+#endif
+
+
 // 配置PID定时器
 void THUNDER_MOTOR::Setup_PID_Timer()
 {
+  #ifdef ENABLE_ENCODER_TIMER
   Timer_PID_Flag = xSemaphoreCreateBinary();
   PID_Timer = timerBegin(3, 80, true);      // 使用定时器3,80预分频
   timerAttachInterrupt(PID_Timer, &PID_Timer_Handle, true);  //Attach中断Handle
   timerAlarmWrite(PID_Timer, PID_dt * 1000, true);  // 50ms 中断
   timerAlarmEnable(PID_Timer);  // 使能
   PID_Timer_Enable = 1;
+  #endif
 }
 
 // 移除PID定时器(会影响其它用到此定时器的功能)
@@ -403,11 +417,6 @@ void THUNDER_MOTOR::PID_Speed()
 
   Motor_L_Speed_PID.Fdb = Encoder_Counter_Left;
   Motor_R_Speed_PID.Fdb = Encoder_Counter_Right;
-
-#ifdef PRINT_DEBUG_INFO
-  xQueueSend(Task_Mesg.Queue_encoder_left, &Motor_L_Speed_PID.Fdb, 0);
-  xQueueSend(Task_Mesg.Queue_encoder_right, &Motor_R_Speed_PID.Fdb, 0);
-#endif
 
   //SSSSSSSSSS ___ 左轮 ___ SSSSSSSSSS
   if(Motor_L_Speed_PID.Ref != 0)

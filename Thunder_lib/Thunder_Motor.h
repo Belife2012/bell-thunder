@@ -132,6 +132,8 @@ class THUNDER_MOTOR
     void Set_L_Target(float target);  // 设定左轮目标速度(编码器计数值)
     void Set_R_Target(float target);  // 设定右轮目标速度(编码器计数值)
 
+    void Update_Encoder_Value();
+
     int16_t Get_L_Speed(void);  // 获取左轮速度(编码器计数值)
     int16_t Get_R_Speed(void);  // 获取右轮速度(编码器计数值)
 

@@ -47,9 +47,7 @@
 
 #include <Thunder_lib.h>
 #include "esp_adc_cal.h"
-
-// #define PRINT_UART_COMMAND
-// #define DEBUG_LINE_TRACING
+#include "print_macro.h"
 
 THUNDER Thunder;
 
@@ -92,15 +90,18 @@ bool deviceConnected = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 2, 36};
+const uint8_t Version_FW[4] = {'T', 0, 2, 37};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
   // delay(6000);
-
+  #ifdef SERIAL_PRINT_HIGHSPEED
+  Serial.begin(500000);
+  #else
   Serial.begin(115200);
+  #endif
   while (!Serial)
     ;
 
@@ -280,14 +281,12 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 // 编码电机  闭环计算
 void THUNDER::En_Motor(void)
 {
+  Thunder_Motor.Update_Encoder_Value();
   if (En_Motor_Flag == 1)
   {
-    if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
+    // if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
     {
       Thunder_Motor.PID_Speed();
-
-      // Serial.printf("%d  %d  %d  %d  \n",Thunder_Motor.Get_L_Speed(),Thunder_Motor.Get_R_Speed(),Thunder_Motor.Get_L_Target(),Thunder_Motor.Get_R_Target());
-      // Serial.printf("%d\n",Thunder_Motor.Get_L_Speed());
     }
   }
 }
@@ -1743,11 +1742,123 @@ void THUNDER::LED_Show(void)
   }
 }
 
+// 获取串口指令到 RX_Data
+void THUNDER::Get_Serial_Command()
+{
+  while (Serial.available())
+  {
+    Rx_Data[0] = Serial.read(); //Serial.parseInt();  //读取整数
+
+    #ifdef DEBUG_UART_COMMAND
+    Serial.printf("* recv UART cmd: %x *\n", Rx_Data[0]);
+    #endif
+    //////////////////////////////////////// 其它特殊指令 //////////////////////////////////
+    if (Rx_Data[0] == 0xC2) //刷新左侧彩色灯
+    {
+      uint8_t SUM = Rx_Data[0];
+      for (int i = 1; i < 19; i++)
+      {
+        Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
+        SUM += Thunder.I2C_LED_BUFF1[i - 1];
+        // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
+      }
+
+      if (SUM != Serial.read())
+      {
+        Rx_Data[0] = 0;
+        Serial.printf("\n#  0xC2 cmd CKsum error #\n");
+        Serial.printf("* SUM: %x *\n", SUM);
+      }
+      else
+      {
+        // Serial.printf("SSS ___ 0xC2 Complete ___ SSS \n");
+      }
+    }
+    else if (Rx_Data[0] == 0xC3) //刷新右侧彩色灯
+    {
+      uint8_t SUM = Rx_Data[0];
+      for (int i = 1; i < 19; i++)
+      {
+        Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
+        SUM += Thunder.I2C_LED_BUFF2[i - 1];
+        // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
+      }
+
+      if (SUM != Serial.read())
+      {
+        Rx_Data[0] = 0;
+        Serial.printf("\n# 0xC3 cmd CKsum error #\n");
+        Serial.printf("* SUM: %x *\n", SUM);
+      }
+      else
+      {
+        // Serial.printf("SSS ___ 0xC3 Complete ___ SSS \n");
+      }
+    }
+    else if (Rx_Data[0] == 0xD3) //单色点阵灯一次性刷新前半部分灯
+    {
+      uint8_t SUM = Rx_Data[0];
+      for (int i = 1; i < 15; i++)
+      {
+        Thunder.LED_BUFF_Dot[i] = Serial.read();
+        SUM += Thunder.LED_BUFF_Dot[i];
+      }
+
+      if (SUM != Serial.read())
+      {
+        Rx_Data[0] = 0;
+        Serial.printf("\n# 0xD3 cmd CKsum error #\n");
+        Serial.printf("* SUM: %x *\n", SUM);
+      }
+      else
+      {
+        // Serial.printf("SSS ___ 0xD3 Complete ___ SSS \n");
+      }
+    }
+    else if (Rx_Data[0] == 0xD4) //单色点阵灯一次性刷新后半部分灯
+    {
+      uint8_t SUM = Rx_Data[0];
+      for (int i = 1; i < 15; i++)
+      {
+        Thunder.LED_BUFF_Dot[i + 14] = Serial.read();
+        SUM += Thunder.LED_BUFF_Dot[i + 14];
+      }
+
+      if (SUM != Serial.read())
+      {
+        Rx_Data[0] = 0;
+        Serial.printf("\n# 0xD4 cmd CKsum error #\n");
+        Serial.printf("* SUM: %x *\n", SUM);
+      }
+      else
+      {
+        // Serial.printf("SSS ___ 0xD4 Complete ___ SSS \n");
+      }
+    }
+    else
+    {
+      Rx_Data[1] = Serial.read();
+      Rx_Data[2] = Serial.read();
+      Rx_Data[3] = Serial.read();
+      Rx_Data[4] = Serial.read();
+      Rx_Data[5] = Serial.read();
+
+      if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
+      {
+        Serial.printf("# Rx_Data[0]: %x CKsum error # \n", Rx_Data[0]);
+        Serial.printf("* SUM error __ Rx_Data[5]: %x __ sum: %x *\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
+        Reset_Rx_Data();
+      }
+    }
+  }
+}
+
 // 通信确认，蓝牙/串口
 void THUNDER::Check_Communication(void)
 {
   Wait_BLE(); //如果蓝牙没有连接，等待蓝牙连接 (有串口数据也跳出)
 
+  // BLE已经过去到指令
   if (Rx_Data[0] != 0)
   {
     Check_Protocol();
@@ -1757,114 +1868,9 @@ void THUNDER::Check_Communication(void)
       Thunder_BLE.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
     }
   }
-  else
+  else // 如果BLE没有获取到指令，则查询是否有串口输入
   {
-    while (Serial.available())
-    {
-      Rx_Data[0] = Serial.read(); //Serial.parseInt();  //读取整数
-
-#ifdef PRINT_UART_COMMAND
-      Serial.printf("* recv UART cmd: %x *\n", Rx_Data[0]);
-#endif
-      //////////////////////////////////////// 其它特殊指令 //////////////////////////////////
-      if (Rx_Data[0] == 0xC2) //刷新左侧彩色灯
-      {
-        uint8_t SUM = Rx_Data[0];
-        for (int i = 1; i < 19; i++)
-        {
-          Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
-          SUM += Thunder.I2C_LED_BUFF1[i - 1];
-          // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
-        }
-
-        if (SUM != Serial.read())
-        {
-          Rx_Data[0] = 0;
-          Serial.printf("\n#  0xC2 cmd CKsum error #\n");
-          Serial.printf("* SUM: %x *\n", SUM);
-        }
-        else
-        {
-          // Serial.printf("SSS ___ 0xC2 Complete ___ SSS \n");
-        }
-      }
-      else if (Rx_Data[0] == 0xC3) //刷新右侧彩色灯
-      {
-        uint8_t SUM = Rx_Data[0];
-        for (int i = 1; i < 19; i++)
-        {
-          Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
-          SUM += Thunder.I2C_LED_BUFF2[i - 1];
-          // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
-        }
-
-        if (SUM != Serial.read())
-        {
-          Rx_Data[0] = 0;
-          Serial.printf("\n# 0xC3 cmd CKsum error #\n");
-          Serial.printf("* SUM: %x *\n", SUM);
-        }
-        else
-        {
-          // Serial.printf("SSS ___ 0xC3 Complete ___ SSS \n");
-        }
-      }
-      else if (Rx_Data[0] == 0xD3) //单色点阵灯一次性刷新前半部分灯
-      {
-        uint8_t SUM = Rx_Data[0];
-        for (int i = 1; i < 15; i++)
-        {
-          Thunder.LED_BUFF_Dot[i] = Serial.read();
-          SUM += Thunder.LED_BUFF_Dot[i];
-        }
-
-        if (SUM != Serial.read())
-        {
-          Rx_Data[0] = 0;
-          Serial.printf("\n# 0xD3 cmd CKsum error #\n");
-          Serial.printf("* SUM: %x *\n", SUM);
-        }
-        else
-        {
-          // Serial.printf("SSS ___ 0xD3 Complete ___ SSS \n");
-        }
-      }
-      else if (Rx_Data[0] == 0xD4) //单色点阵灯一次性刷新后半部分灯
-      {
-        uint8_t SUM = Rx_Data[0];
-        for (int i = 1; i < 15; i++)
-        {
-          Thunder.LED_BUFF_Dot[i + 14] = Serial.read();
-          SUM += Thunder.LED_BUFF_Dot[i + 14];
-        }
-
-        if (SUM != Serial.read())
-        {
-          Rx_Data[0] = 0;
-          Serial.printf("\n# 0xD4 cmd CKsum error #\n");
-          Serial.printf("* SUM: %x *\n", SUM);
-        }
-        else
-        {
-          // Serial.printf("SSS ___ 0xD4 Complete ___ SSS \n");
-        }
-      }
-      else
-      {
-        Rx_Data[1] = Serial.read();
-        Rx_Data[2] = Serial.read();
-        Rx_Data[3] = Serial.read();
-        Rx_Data[4] = Serial.read();
-        Rx_Data[5] = Serial.read();
-
-        if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
-        {
-          Serial.printf("# Rx_Data[0]: %x CKsum error # \n", Rx_Data[0]);
-          Serial.printf("* SUM error __ Rx_Data[5]: %x __ sum: %x *\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
-          Reset_Rx_Data();
-        }
-      }
-    }
+    Get_Serial_Command();
     Check_Protocol();
     if (Tx_Data[0] != 0)
     {
@@ -1936,6 +1942,8 @@ void THUNDER::Check_Protocol(void)
     Tx_Data[0] = 0x54;
     Tx_Data[1] = Battery_Data >> 8; //读取一次电池电压
     Tx_Data[2] = Battery_Data;
+    Tx_Data[3] = 0;
+    Tx_Data[4] = 0;
     break;
 
   case 0x55: //获取固件版本号
@@ -2121,21 +2129,21 @@ void THUNDER::Reset_Rx_Data()
  */
 void THUNDER::Get_Queue_Encoder(void)
 {
-  if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
-  {
 #ifdef PRINT_DEBUG_INFO
-    float F_encoder_left;
-    float F_encoder_right;
+  // if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
+  // {
+  //   float F_encoder_left;
+  //   float F_encoder_right;
 
-    // Serial.printf("left: %d\n", (int)Encoder_Counter_Left);
-    F_encoder_left = Encoder_Counter_Left;
-    xQueueSend(Task_Mesg.Queue_encoder_left, &F_encoder_left, 0);
+  //   // Serial.printf("left: %d\n", (int)Encoder_Counter_Left);
+  //   F_encoder_left = Encoder_Counter_Left;
+  //   xQueueSend(Task_Mesg.Queue_encoder_left, &F_encoder_left, 0);
 
-    // Serial.printf("right: %d\n\n", (int)Encoder_Counter_Right);
-    F_encoder_right = Encoder_Counter_Right;
-    xQueueSend(Task_Mesg.Queue_encoder_right, &F_encoder_right, 0);
+  //   // Serial.printf("right: %d\n\n", (int)Encoder_Counter_Right);
+  //   F_encoder_right = Encoder_Counter_Right;
+  //   xQueueSend(Task_Mesg.Queue_encoder_right, &F_encoder_right, 0);
+  // }
 #endif
-  }
 }
 
 /* 

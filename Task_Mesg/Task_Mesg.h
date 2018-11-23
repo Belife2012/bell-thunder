@@ -10,7 +10,7 @@
 // #define COMPATIBILITY_OLD_ESP_LIB
 
 #define MAX_APPS_TASK_COUNTER 1
-#define APP_TASK_PRIORITY_MAX 12
+#define APP_TASK_PRIORITY_MAX 5
 
 typedef enum
 {

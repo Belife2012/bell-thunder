@@ -9,9 +9,11 @@ void Driver_Flush(void *pvParameters)
   uint32_t current_time;
   uint32_t character_roll_time;
   uint32_t battery_measure_time;
+  uint32_t color_led_ctrl_time;
 
   character_roll_time = millis();
   battery_measure_time = millis();
+  color_led_ctrl_time = millis();
   for (;;)
   {
     current_time = millis();
@@ -26,8 +28,10 @@ void Driver_Flush(void *pvParameters)
     }
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED))
     {
-      I2C_LED.LED_Flush();
-      // delay(1);
+      if(current_time - color_led_ctrl_time > 30){
+        I2C_LED.LED_Flush();
+        color_led_ctrl_time = millis();
+      }
     }
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))
     {
@@ -47,7 +51,7 @@ void Driver_Flush(void *pvParameters)
     }
 
     // 每30ms进行一次查询
-    vTaskDelay(pdMS_TO_TICKS(30));
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 void Deamon_Motor(void *pvParameters)
@@ -249,8 +253,8 @@ void TASK_MESG::Create_Deamon_Threads()
     return;
   }
   // deamon Tasks , Priority: 8~10
-  xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 8192, NULL, 9, NULL, 1);
-  xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 10, NULL, 1);
+  xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 8192, NULL, 2, NULL, 1);
+  xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 3, NULL, 1);
   deamon_task_running = 1;
 }
 

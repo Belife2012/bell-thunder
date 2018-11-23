@@ -266,6 +266,7 @@ class THUNDER
     void LED_Show(void);                    // 循环执行的内置动画控制程序
     
     // 协议解析
+    void Get_Serial_Command(void);
     void Check_Communication(void); // 通信确认，蓝牙/串口
     void Check_Protocol(void);      // 协议解析
     void Reset_Rx_Data(void);       // 清空接收数据

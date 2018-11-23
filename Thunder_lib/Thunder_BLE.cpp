@@ -36,6 +36,7 @@
 #include <Thunder_BLE.h>
 #include <Thunder_lib.h>
 #include <Task_Mesg.h>
+#include "print_macro.h"
 
 // 蓝牙连接/断开的回调函数
 class MyServerCallbacks: public BLEServerCallbacks 
@@ -43,14 +44,14 @@ class MyServerCallbacks: public BLEServerCallbacks
     void onConnect(BLEServer* pServer) 
     {
       deviceConnected = true;
-      Serial.printf("*** BLE Connected ***\n");
+      Serial.printf("* BLE Connected: %d *\n", pServer->getConnectedCount());
       // Thunder_Motor.Setup_PID_Timer();
     };
 
     void onDisconnect(BLEServer* pServer) 
     {
       deviceConnected = false;
-      Serial.printf("### BLE DisConnect ###\n");
+      Serial.printf("# BLE DisConnect: %d #\n", pServer->getConnectedCount());
       Thunder.Stop_All();
       Speaker.Play_Song(45);   // 断开声音
     }
@@ -66,7 +67,9 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
       if (rxValue.length() > 0) 
       {
-        Serial.printf("\n* BLE recv cmd: %x *\n",rxValue[0]);
+        #ifdef DEBUG_BLE_COMMAND
+        Serial.printf("\n*>%x*\n",rxValue[0]);
+        #endif
         
         if(rxValue[0] == 0xA1)  // 蓝牙命名指令数据
         {
@@ -179,6 +182,135 @@ class MyCallbacks: public BLECharacteristicCallbacks
     }
 };
 
+// 配置BLE
+void THUNDER_BLE::Setup_BLE()
+{
+  Serial.printf("\nstart Init BLE...\n");
+
+  Read_BLE_Name(ADD_BLE_NAME);  // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
+
+  if(BLE_Named == 1)
+  {
+    Serial.printf("* Dev BLE named: ");
+
+    int i;
+    char buf[BLE_NAME_SIZE] = "";
+    for(i=0; i < BLE_NAME_SIZE; i++)
+    {
+      if( BLE_Name_Data[i] == '\0' || i == (BLE_NAME_SIZE - 1) ){
+        buf[i] = '\0';
+        break;
+      }
+
+      // 如果出现控制字符，则意味着EEPROM里面的信息不准确，BLE命名为“BELL”
+      if(isControl(BLE_Name_Data[i])){
+        buf[0] = 'T';buf[1] = 'h';buf[2] = 'u';buf[3] = 'n';buf[4] = 'd';buf[5] = 'e';
+        buf[6] = 'r';buf[7] = '_';
+        Get_ID();
+        sprintf(&buf[8], "%X", (uint16_t)(SEP32_ID>>32));
+        buf[12] = '\0';
+        break;
+      }
+
+      buf[i] = BLE_Name_Data[i];
+    }
+    // 如果第一个字符串是字符串结束符
+    if(buf[0] == '\0'){
+      buf[0] = 'T';buf[1] = 'h';buf[2] = 'u';buf[3] = 'n';buf[4] = 'd';buf[5] = 'e';
+      buf[6] = 'r';buf[7] = '_';
+      Get_ID();
+      sprintf(&buf[8], "%X", (uint16_t)(SEP32_ID>>32));
+      buf[12] = '\0';
+    }
+    Serial.printf("%s\n", buf);
+
+    BLEDevice::init(buf);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
+  }
+  else
+  {
+    Serial.printf("* Dev BLE No name\n");
+
+    char buf[5];
+    sprintf(buf, "%X", (uint16_t)(SEP32_ID>>32));   // 取芯片ID后4位
+    User_BLE_Name += buf;  // 结尾添加芯片ID后4位
+    BLEDevice::init(User_BLE_Name);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
+  }
+
+  BLEServer *pServer = BLEDevice::createServer(); // 创建BLE服务器
+  pServer->setCallbacks(new MyServerCallbacks()); // 如果连接上蓝牙，deviceConnected置1
+
+  BLEService *pService = pServer->createService(SERVICE_UUID);  // 创建BLE服务
+  
+  // 改蓝牙广播功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);      
+  // 改蓝牙默认功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P7);  
+
+  // 增加广播内容
+  pAdvertising = pServer->getAdvertising();
+  BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
+  oAdvertisementData.setPartialServices(BLEUUID(SERVICE_UUID));     // 广播UUIDs
+  oAdvertisementData.setPartialServices(BLEUUID(ADVERTISING_UUID)); // 广播UUIDs
+
+  ////////////////////////////////////////////////////////////////////////////
+  std::string strServiceData = "";
+  
+  strServiceData += (char)02;     // Len
+  strServiceData += (char)0x01;   // Type
+  strServiceData += (char)0x06;
+  oAdvertisementData.addData(strServiceData);
+
+  // pAdvertising->setAdvertisementData(oAdvertisementData);
+  /////////////////////////////////////////////////////////////////////////////
+
+  pAdvertising->setAdvertisementData(oAdvertisementData);
+  // pAdvertising->start();
+
+
+  // 创建BLE特征
+  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX, 
+                  BLECharacteristic::PROPERTY_NOTIFY 
+                  | BLECharacteristic::PROPERTY_READ 
+                  | BLECharacteristic::PROPERTY_WRITE 
+                  | BLECharacteristic::PROPERTY_WRITE_NR );
+  // pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX,BLECharacteristic::PROPERTY_NOTIFY);
+  pCharacteristic->addDescriptor(new BLE2902());
+  // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE_NR);   //PROPERTY_READ PROPERTY_WRITE  PROPERTY_NOTIFY PROPERTY_BROADCAST  PROPERTY_INDICATE PROPERTY_WRITE_NR
+  // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE);
+  pCharacteristic->setCallbacks(new MyCallbacks()); // 接收到数据后执行的内容
+
+  pService->start();  // 开启服务
+
+  pServer->getAdvertising()->start(); // 开始广播
+
+  Serial.printf("BLE Init end\n");
+}
+
+// 发送蓝牙数据
+// 参数1-->要发送的地址
+// 参数2-->发送的字节数
+void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
+{
+  if (deviceConnected) 
+  {
+    #ifdef DEBUG_BLE_COMMAND
+    Serial.printf("*<%x*\n", Tx_Data[0]);
+    #endif
+
+    //发送
+    pCharacteristic->setValue(&Tx_Data[0], byte_num); 
+    pCharacteristic->notify();
+  }
+  else
+  {
+    Serial.printf("# BLE DisConnected...\n");
+  }
+
+  #ifndef DEBUG_BLE_COMMAND
+  Tx_Data[0] = 0;
+  #endif
+}
+
 // 获取并返回芯片ID
 uint64_t THUNDER_BLE::Get_ID(void)
 {
@@ -257,11 +389,12 @@ void THUNDER_BLE::Write_BLE_Name (uint32_t addr)
 
   Serial.println("BLE rename Success!");
   // 断开蓝牙连接，使重命名有效
-  Serial.print("Device reset");
-  for(uint32_t i = 0; i < 6; i++){
-    delay(500);
-    Serial.print(".");
-  }
+  Serial.print("Device reset...");
+  delay(50);
+  // for(uint32_t i = 0; i < 6; i++){
+  //   Serial.print(".");
+  //   delay(300);
+  // }
   // 复位系统，重启设备
   *((UBaseType_t *)RTC_CNTL_OPTIONS0_REG) |= RTC_CNTL_SW_SYS_RST;
 }
@@ -326,123 +459,4 @@ uint32_t THUNDER_BLE::Reset_ROM ()
   
   return backCode;
 #endif
-}
-
-// 配置BLE
-void THUNDER_BLE::Setup_BLE()
-{
-  Serial.printf("\nstart Init BLE...\n");
-
-  Read_BLE_Name(ADD_BLE_NAME);  // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
-
-  if(BLE_Named == 1)
-  {
-    Serial.printf("* Dev BLE named: ");
-
-    int i;
-    char buf[BLE_NAME_SIZE] = "";
-    for(i=0; i < BLE_NAME_SIZE; i++)
-    {
-      if( BLE_Name_Data[i] == '\0' || i == (BLE_NAME_SIZE - 1) ){
-        buf[i] = '\0';
-        break;
-      }
-
-      // 如果出现控制字符，则意味着EEPROM里面的信息不准确，BLE命名为“BELL”
-      if(isControl(BLE_Name_Data[i])){
-        buf[0] = 'B';
-        buf[1] = 'E';
-        buf[2] = 'L';
-        buf[3] = 'L';
-        buf[4] = '\0';
-        break;
-      }
-
-      buf[i] = BLE_Name_Data[i];
-    }
-    // 如果第一个字符串是字符串结束符
-    if(buf[0] == '\0'){
-      buf[0] = 'B';
-      buf[1] = 'E';
-      buf[2] = 'L';
-      buf[3] = 'L';
-      buf[4] = '\0';
-    }
-    Serial.printf("%s\n", buf);
-
-    BLEDevice::init(buf);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
-  }
-  else
-  {
-    Serial.printf("* Dev BLE No name\n");
-
-    char buf[5];
-    sprintf(buf, "%X", (uint16_t)(SEP32_ID>>32));   // 取芯片ID后4位
-    User_BLE_Name += buf;  // 结尾添加芯片ID后4位
-    BLEDevice::init(User_BLE_Name);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
-  }
-
-  BLEServer *pServer = BLEDevice::createServer(); // 创建BLE服务器
-  pServer->setCallbacks(new MyServerCallbacks()); // 如果连接上蓝牙，deviceConnected置1
-
-  BLEService *pService = pServer->createService(SERVICE_UUID);  // 创建BLE服务
-  
-  // 改蓝牙广播功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);      
-  // 改蓝牙默认功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P7);  
-
-  // 增加广播内容
-  pAdvertising = pServer->getAdvertising();
-  BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
-  oAdvertisementData.setPartialServices(BLEUUID(SERVICE_UUID));     // 广播UUIDs
-  oAdvertisementData.setPartialServices(BLEUUID(ADVERTISING_UUID)); // 广播UUIDs
-
-  ////////////////////////////////////////////////////////////////////////////
-  std::string strServiceData = "";
-  
-  strServiceData += (char)02;     // Len
-  strServiceData += (char)0x01;   // Type
-  strServiceData += (char)0x06;
-  oAdvertisementData.addData(strServiceData);
-
-  // pAdvertising->setAdvertisementData(oAdvertisementData);
-  /////////////////////////////////////////////////////////////////////////////
-
-  pAdvertising->setAdvertisementData(oAdvertisementData);
-  pAdvertising->start();
-
-
-  // 创建BLE特征
-  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX,BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR );
-  // pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX,BLECharacteristic::PROPERTY_NOTIFY);
-  pCharacteristic->addDescriptor(new BLE2902());
-  // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE_NR);   //PROPERTY_READ PROPERTY_WRITE  PROPERTY_NOTIFY PROPERTY_BROADCAST  PROPERTY_INDICATE PROPERTY_WRITE_NR
-  // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE);
-  pCharacteristic->setCallbacks(new MyCallbacks()); // 接收到数据后执行的内容
-
-  pService->start();  // 开启服务
-
-  pServer->getAdvertising()->start(); // 开始广播
-
-  Serial.printf("BLE Init end\n");
-}
-
-// 发送蓝牙数据
-// 参数1-->要发送的地址
-// 参数2-->发送的字节数
-void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
-{
-  if (deviceConnected) 
-  {
-    Serial.printf("\n* Send BLE cmd: %x *\n", Tx_Data[0]);
-
-    //发送
-    pCharacteristic->setValue(&Tx_Data[0], byte_num); 
-    pCharacteristic->notify();
-  }
-  else
-  {
-    Serial.printf("# BLE DisConnected...\n");
-  }
 }
