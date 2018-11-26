@@ -15,18 +15,10 @@ void Driver_Flush(void *pvParameters)
   character_roll_time = millis();
   battery_measure_time = millis();
   color_led_ctrl_time = millis();
-  communications_time = millis();
   for (;;)
   {
     current_time = millis();
 
-    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
-    {
-      if(current_time - communications_time > 50){
-        Thunder.Check_Communication();
-        communications_time = millis();
-      }
-    }
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
     {
       Thunder.LED_Show();
@@ -69,6 +61,18 @@ void Deamon_Motor(void *pvParameters)
     }
     // 电机 PID运算周期为 50ms
     vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+void Proc_Command(void *pvParameters)
+{
+  for (;;)
+  {
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
+    {
+        Thunder.Check_Communication();
+    }
+    // 电机 PID运算周期为 50ms
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 
@@ -260,6 +264,7 @@ void TASK_MESG::Create_Deamon_Threads()
   // deamon Tasks , Priority: 8~10
   xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 8192, NULL, 2, NULL, 1);
   xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 3, NULL, 1);
+  xTaskCreatePinnedToCore(Proc_Command, "procCommand", 4096, NULL, 1, NULL, 1);
   deamon_task_running = 1;
 }
 

@@ -38,6 +38,8 @@
 #include <Task_Mesg.h>
 #include "print_macro.h"
 
+uint8_t BLE_Name_Data[BLE_NAME_SIZE] = {0x00};
+
 // 蓝牙连接/断开的回调函数
 class MyServerCallbacks: public BLEServerCallbacks 
 {
@@ -57,127 +59,138 @@ class MyServerCallbacks: public BLEServerCallbacks
     }
 };
 
+void Analyze_BLE_Data(std::string &recv_data)
+{
+  #ifdef DEBUG_BLE_COMMAND
+  Serial.printf("\n*>%x*\n",recv_data[0]);
+  #endif
+  
+  switch(recv_data[0]){
+    case 0xA1:  // 蓝牙命名指令数据
+    {
+      uint8_t SUM = 0;
+      Rx_Data[0] = recv_data[0];
+      int i;
+      for (i = 1; i < recv_data.length() - 1; i++)
+      {
+        if(i < BLE_NAME_SIZE){
+          BLE_Name_Data[i-1] = recv_data[i];
+          BLE_Name_Data[i] = '\0';
+        }
+        SUM += recv_data[i - 1];
+      }
+      SUM += recv_data[i - 1];
+
+      if(SUM != recv_data[recv_data.length()-1])
+      {
+        Rx_Data[0] = 0;
+        Serial.printf(" # SUM error 0xA1 #\n");
+        Serial.printf(" # SUM: %x #\n",SUM);
+        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+      }
+      break;
+    }
+    case 0xC2:   // 刷新左侧彩色灯
+    {
+      uint8_t SUM = recv_data[0];
+      Rx_Data[0] = recv_data[0];
+      for (int i = 1; i < 19; i++)
+      {
+        Thunder.I2C_LED_BUFF1[i-1] = recv_data[i];
+        SUM += recv_data[i];
+      }
+
+      if(SUM != recv_data[19])
+      {
+        Rx_Data[0] = 0;
+        Serial.printf(" # SUM error 0xC2 #\n");
+        Serial.printf(" # SUM: %x #\n",SUM);
+        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+      }
+      break;
+    }
+    case 0xC3:   // 刷新右侧彩色灯
+    {
+      uint8_t SUM = recv_data[0];
+      Rx_Data[0] = recv_data[0];
+      for (int i = 1; i < 19; i++)
+      {
+        Thunder.I2C_LED_BUFF2[i-1] = recv_data[i];
+        SUM += recv_data[i];
+      }
+
+      if(SUM != recv_data[19])
+      {
+        Rx_Data[0] = 0;
+        Serial.printf(" # SUM error 0xC3 #\n");
+        Serial.printf(" # SUM: %x #\n",SUM);
+        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+      }
+      break;
+    }
+    case 0xD3:   // 单色点阵灯一次性刷新前半部分灯
+    {
+      uint8_t SUM = recv_data[0];
+      Rx_Data[0] = recv_data[0];
+      for (int i = 1; i < 15; i++)
+      {
+        Thunder.LED_BUFF_Dot[i] = recv_data[i];
+        SUM += recv_data[i];
+      }
+
+      if(SUM != recv_data[15])
+      {
+        Rx_Data[0] = 0;
+        Serial.printf(" # SUM error 0xD3 #\n");
+        Serial.printf(" # SUM: %x #\n",SUM);
+        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+      }
+      break;
+    }
+    case 0xD4:   // 单色点阵灯一次性刷新后半部分灯
+    {
+      uint8_t SUM = recv_data[0];
+      Rx_Data[0] = recv_data[0];
+      for (int i = 1; i < 15; i++)
+      {
+        Thunder.LED_BUFF_Dot[i+14] = recv_data[i];
+        SUM += recv_data[i];
+      }
+
+      if(SUM != recv_data[15])
+      {
+        Rx_Data[0] = 0;
+        Serial.printf(" # SUM error 0xD4 #\n");
+        Serial.printf(" # SUM: %x #\n",SUM);
+        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+      }
+      break;
+    }
+    default:  // 一般指令数据
+    {
+      for (int i = 0; i < recv_data.length(); i++)
+      {
+        Rx_Data[i] = recv_data[i];
+      }
+      if(Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
+      {
+        Serial.printf(" # SUM error: Rx_Data[5]=%x calSum=%x #\n",Rx_Data[5],(uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
+        Thunder.Reset_Rx_Data();
+      }
+      break;
+    }
+  }
+}
+
 // 接收蓝牙指令的回调函数
-uint8_t BLE_Name_Data[BLE_NAME_SIZE] = {0x00};
 class MyCallbacks: public BLECharacteristicCallbacks 
 {
     void onWrite(BLECharacteristic *pCharacteristic) 
     {
       std::string rxValue = pCharacteristic->getValue();  // 接收到的存入rxValue 最多20个8位
-
-      if (rxValue.length() > 0) 
-      {
-        #ifdef DEBUG_BLE_COMMAND
-        Serial.printf("\n*>%x*\n",rxValue[0]);
-        #endif
-        
-        if(rxValue[0] == 0xA1)  // 蓝牙命名指令数据
-        {
-          uint8_t SUM = 0;
-          Rx_Data[0] = rxValue[0];
-          int i;
-          for (i = 1; i < rxValue.length() - 1; i++)
-          {
-            if(i < BLE_NAME_SIZE){
-              BLE_Name_Data[i-1] = rxValue[i];
-              BLE_Name_Data[i] = '\0';
-            }
-            SUM += rxValue[i - 1];
-          }
-          SUM += rxValue[i - 1];
-
-          if(SUM != rxValue[rxValue.length()-1])
-          {
-            Rx_Data[0] = 0;
-            Serial.printf(" # SUM error 0xA1 #\n");
-            Serial.printf(" # SUM: %x #\n",SUM);
-            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
-          }
-        }
-        else if(rxValue[0] == 0xC2)   // 刷新左侧彩色灯
-        {
-          uint8_t SUM = rxValue[0];
-          Rx_Data[0] = rxValue[0];
-          for (int i = 1; i < 19; i++)
-          {
-            Thunder.I2C_LED_BUFF1[i-1] = rxValue[i];
-            SUM += rxValue[i];
-          }
-
-          if(SUM != rxValue[19])
-          {
-            Rx_Data[0] = 0;
-            Serial.printf(" # SUM error 0xC2 #\n");
-            Serial.printf(" # SUM: %x #\n",SUM);
-            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
-          }
-        }
-        else if(rxValue[0] == 0xC3)   // 刷新右侧彩色灯
-        {
-          uint8_t SUM = rxValue[0];
-          Rx_Data[0] = rxValue[0];
-          for (int i = 1; i < 19; i++)
-          {
-            Thunder.I2C_LED_BUFF2[i-1] = rxValue[i];
-            SUM += rxValue[i];
-          }
-
-          if(SUM != rxValue[19])
-          {
-            Rx_Data[0] = 0;
-            Serial.printf(" # SUM error 0xC3 #\n");
-            Serial.printf(" # SUM: %x #\n",SUM);
-            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
-          }
-        }
-        else if(rxValue[0] == 0xD3)   // 单色点阵灯一次性刷新前半部分灯
-        {
-          uint8_t SUM = rxValue[0];
-          Rx_Data[0] = rxValue[0];
-          for (int i = 1; i < 15; i++)
-          {
-            Thunder.LED_BUFF_Dot[i] = rxValue[i];
-            SUM += rxValue[i];
-          }
-
-          if(SUM != rxValue[15])
-          {
-            Rx_Data[0] = 0;
-            Serial.printf(" # SUM error 0xD3 #\n");
-            Serial.printf(" # SUM: %x #\n",SUM);
-            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
-          }
-        }
-        else if(rxValue[0] == 0xD4)   // 单色点阵灯一次性刷新后半部分灯
-        {
-          uint8_t SUM = rxValue[0];
-          Rx_Data[0] = rxValue[0];
-          for (int i = 1; i < 15; i++)
-          {
-            Thunder.LED_BUFF_Dot[i+14] = rxValue[i];
-            SUM += rxValue[i];
-          }
-
-          if(SUM != rxValue[15])
-          {
-            Rx_Data[0] = 0;
-            Serial.printf(" # SUM error 0xD4 #\n");
-            Serial.printf(" # SUM: %x #\n",SUM);
-            Serial.printf(" # rxValue[rxValue.length()-1]: %x #\n",rxValue[rxValue.length()-1]);
-          }
-        }
-        else  // 一般指令数据
-        {
-          for (int i = 0; i < rxValue.length(); i++)
-          {
-            Rx_Data[i] = rxValue[i];
-          }
-          if(Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
-          {
-            Serial.printf(" # SUM error: Rx_Data[5]=%x calSum=%x #\n",Rx_Data[5],(uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
-            Thunder.Reset_Rx_Data();
-          }
-        }
+      if (rxValue.length() > 0 && !ble_command_busy){
+        ble_command_busy = true;
+        Analyze_BLE_Data(rxValue);
       }
     }
 };
@@ -306,9 +319,6 @@ void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
     Serial.printf("# BLE DisConnected...\n");
   }
 
-  #ifndef DEBUG_BLE_COMMAND
-  Tx_Data[0] = 0;
-  #endif
 }
 
 // 获取并返回芯片ID

@@ -71,8 +71,10 @@
 
 // 蓝牙
 extern bool deviceConnected;
+extern bool ble_command_busy;
 extern uint8_t Tx_Data[16];
 extern uint8_t Rx_Data[16];
+extern uint8_t BLE_Name_Data[BLE_NAME_SIZE];
 
 class THUNDER_BLE
 {

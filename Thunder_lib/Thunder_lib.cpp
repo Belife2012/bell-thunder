@@ -83,6 +83,7 @@ LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
 uint8_t Rx_Data[16] = {0};
 uint8_t Tx_Data[16] = {0};
 bool deviceConnected = false;
+bool ble_command_busy = false;
 
 // 固件版本号 4 bytes, 第一个是区分测试版本和 正式版本的前缀
 // 测试固件命名规则 Tx.x.x
@@ -1866,27 +1867,37 @@ void THUNDER::Check_Communication(void)
     {
       Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
       Thunder_BLE.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
+      
+      for(uint32_t i=0; i<6; i++){
+        Serial.printf("%x ", Tx_Data[i]);
+      }
+      Serial.println();
+      Tx_Data[0] = 0;
     }
+    Reset_Rx_Data();
   }
   else // 如果BLE没有获取到指令，则查询是否有串口输入
   {
     Get_Serial_Command();
-    Check_Protocol();
-    if (Tx_Data[0] != 0)
-    {
-      Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
+    if(Rx_Data[0] != 0 && !ble_command_busy){
+      Check_Protocol();
+      if (Tx_Data[0] != 0)
+      {
+        Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
 
-      //串口返回数据
-      Serial.flush();
-      Serial.write(Tx_Data[0]);
-      Serial.write(Tx_Data[1]);
-      Serial.write(Tx_Data[2]);
-      Serial.write(Tx_Data[3]);
-      Serial.write(Tx_Data[4]);
-      Serial.write(Tx_Data[5]);
-      Serial.flush();
+        //串口返回数据
+        Serial.flush();
+        Serial.write(Tx_Data[0]);
+        Serial.write(Tx_Data[1]);
+        Serial.write(Tx_Data[2]);
+        Serial.write(Tx_Data[3]);
+        Serial.write(Tx_Data[4]);
+        Serial.write(Tx_Data[5]);
+        Serial.flush();
 
-      Tx_Data[0] = 0;
+        Tx_Data[0] = 0;
+      }
+      Reset_Rx_Data();
     }
   }
 }
@@ -2110,7 +2121,7 @@ void THUNDER::Check_Protocol(void)
     Serial.printf("# No cmd#\n");
     break;
   }
-  Reset_Rx_Data();
+  
 }
 
 // 清空接收数据
@@ -2120,6 +2131,7 @@ void THUNDER::Reset_Rx_Data()
   {
     Rx_Data[i] = 0;
   }
+  ble_command_busy = false;
 }
 
 /* 
