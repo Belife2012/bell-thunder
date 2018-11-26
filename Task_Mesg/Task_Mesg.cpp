@@ -10,17 +10,22 @@ void Driver_Flush(void *pvParameters)
   uint32_t character_roll_time;
   uint32_t battery_measure_time;
   uint32_t color_led_ctrl_time;
+  uint32_t communications_time;
 
   character_roll_time = millis();
   battery_measure_time = millis();
   color_led_ctrl_time = millis();
+  communications_time = millis();
   for (;;)
   {
     current_time = millis();
 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
-      Thunder.Check_Communication();
+      if(current_time - communications_time > 50){
+        Thunder.Check_Communication();
+        communications_time = millis();
+      }
     }
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
     {

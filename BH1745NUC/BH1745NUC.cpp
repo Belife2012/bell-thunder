@@ -230,15 +230,17 @@ uint8_t BH1745NUC::Colour_Recognition(unsigned short *RGBC)
     if( HSV[1] < COLORLESS_S ){
       if (m_max <= BLACK_CARD_MAX_RGB && 
           // ( BLACK_CARD_MIN_C + compensation_c_low < RGBC[3]) && (RGBC[3] < BLACK_CARD_MAX_C + compensation_c_high ) && 
-          ( BLACK_CARD_MIN_C < RGBC[3]) && (RGBC[3] < BLACK_CARD_MAX_C ) && 
-          (BLACK_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < BLACK_MAX_H) ) 
+          ( BLACK_CARD_MIN_C < RGBC[3]) && (RGBC[3] < BLACK_CARD_MAX_C )
+          // && (BLACK_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < BLACK_MAX_H) 
+           ) 
       {
         Env_Backlight_Filter(RGBC[3]);
         return BLACK_CARD; //黑色
       }
       else if (m_min >= WHITE_CARD_MIN_RGB && 
-          ( WHITE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < WHITE_CARD_MAX_C ) && 
-          (WHITE_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < WHITE_MAX_H) ) 
+          ( WHITE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < WHITE_CARD_MAX_C ) 
+          // && (WHITE_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < WHITE_MAX_H) 
+          ) 
       {
         return WHITE_CARD; //白色
       }
