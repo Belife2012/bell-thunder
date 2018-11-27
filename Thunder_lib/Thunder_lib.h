@@ -261,13 +261,14 @@ class THUNDER
 
     // 动作表情
     void Start_Show(void);                  // 开机动画/声效
-    void Wait_BLE(void);                    // 等待蓝牙连接动画 (有串口数据也跳出)
     void Set_LED_Show_No(uint8_t Show_No);  // 设置将要播放的内置动画编号
     void LED_Show(void);                    // 循环执行的内置动画控制程序
     
-    // 协议解析
+    // 指令通讯
+    void Wait_Communication(void);            // 等待蓝牙连接动画 (有串口数据也跳出)
     void Get_Serial_Command(void);
-    void Check_Communication(void); // 通信确认，蓝牙/串口
+    void Check_BLE_Communication(void); // 通信确认，蓝牙
+    void Check_UART_Communication(void); // 通信确认，串口
     void Check_Protocol(void);      // 协议解析
     void Reset_Rx_Data(void);       // 清空接收数据
 

@@ -15,14 +15,24 @@ void Driver_Flush(void *pvParameters)
   character_roll_time = millis();
   battery_measure_time = millis();
   color_led_ctrl_time = millis();
+  communications_time = millis();
   for (;;)
   {
     current_time = millis();
-
+    // 
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
+    {
+      if(current_time - communications_time > 50){
+        Thunder.Check_UART_Communication();
+        communications_time = millis();
+      }
+    }
+    // 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
     {
       Thunder.LED_Show();
     }
+    // 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED))
     {
       if(current_time - color_led_ctrl_time > 30){
@@ -30,6 +40,7 @@ void Driver_Flush(void *pvParameters)
         color_led_ctrl_time = millis();
       }
     }
+    // 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))
     {
       if (current_time - character_roll_time > 150)
@@ -38,6 +49,7 @@ void Driver_Flush(void *pvParameters)
         character_roll_time = millis();
       }
     }
+    // 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_BATTERY_MEASURE))
     {
       if (current_time - battery_measure_time > 300)
@@ -47,7 +59,7 @@ void Driver_Flush(void *pvParameters)
       }
     }
 
-    // 每30ms进行一次查询
+    // 每5ms进行一次查询
     vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
@@ -67,12 +79,14 @@ void Proc_Command(void *pvParameters)
 {
   for (;;)
   {
+    // 等待 xSemaphore_BLE, 如果没有give xSemaphore_BLE, 这个task是阻塞状态的
+    // Serial.println("wait BLE command...");
+    Task_Mesg.Take_Semaphore_BLE();
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
-        Thunder.Check_Communication();
+      // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
+      Thunder.Check_BLE_Communication();
     }
-    // 电机 PID运算周期为 50ms
-    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 
@@ -103,6 +117,15 @@ TASK_MESG::TASK_MESG()
     while (1)
     {
       Serial.println("Mutex_IIC create fail");
+    }
+  }
+  // 创建 BLE二进制信号量
+  xSemaphore_BLE = xSemaphoreCreateBinary();
+  if (xSemaphore_BLE == NULL)
+  {
+    while (1)
+    {
+      Serial.println("Semaphore_BLE create fail");
     }
   }
 
@@ -171,6 +194,30 @@ void TASK_MESG::Give_Semaphore_IIC()
 {
   xSemaphoreGive(xSemaphore_IIC);
 }
+
+/* 
+ * 处理BLE command前需要take xSemaphore_BLE
+ * 
+ * @parameters:
+ * @return
+ */
+void TASK_MESG::Take_Semaphore_BLE()
+{
+  do
+  {
+  } while ( xSemaphoreTake(xSemaphore_BLE, portMAX_DELAY) != pdTRUE );
+}
+/* 
+ * BLECharacteristicCallbacks onWrite函数 give xSemaphore_BLE
+ * 
+ * @parameters:
+ * @return
+ */
+void TASK_MESG::Give_Semaphore_BLE()
+{
+  xSemaphoreGive(xSemaphore_BLE);
+}
+
 /* 
  * 用于硬件驱动(如 语音芯片时序控制)，提升当前task 的优先级别Priority为所有应用线程的最高级别，
  * clear 前不能使用delay，不然其他低级别的线程会占用CPU，干扰到硬件操作的完整性
@@ -262,10 +309,15 @@ void TASK_MESG::Create_Deamon_Threads()
     return;
   }
   // deamon Tasks , Priority: 8~10
+  Serial.println("\nCreating deamons...");
   xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 8192, NULL, 2, NULL, 1);
+  Serial.println("1");
   xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 3, NULL, 1);
-  xTaskCreatePinnedToCore(Proc_Command, "procCommand", 4096, NULL, 1, NULL, 1);
+  Serial.println("2");
+  xTaskCreatePinnedToCore(Proc_Command, "procCommand", 4096, NULL, 4, NULL, 1);
+  Serial.println("3");
   deamon_task_running = 1;
+  Serial.println("Deamons ready");
 }
 
 /*

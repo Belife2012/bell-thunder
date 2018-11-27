@@ -44,6 +44,8 @@ public:
   void Resume_Others_AppsTask();
   void Take_Semaphore_IIC();
   void Give_Semaphore_IIC();
+  void Take_Semaphore_BLE();
+  void Give_Semaphore_BLE();
   void Set_Current_Task_Supreme();
   void Clear_Current_Task_Supreme();
   void Enter_Task_Critical();
@@ -63,6 +65,7 @@ private:
   uint8_t tasks_num;
   uint8_t deamon_task_running;
   volatile SemaphoreHandle_t xSemaphore_IIC;
+  volatile SemaphoreHandle_t xSemaphore_BLE;
 };
 
 extern TASK_MESG Task_Mesg;

@@ -91,7 +91,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 2, 37};
+const uint8_t Version_FW[4] = {'T', 0, 3, 37};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -143,9 +143,11 @@ void THUNDER::Setup_All(void)
 
   Serial.printf("\n*** Initial Completes ***\n\n");
 
+  #ifndef DISABLE_LAUNCH_DISPLAY
   // 开机动画/声效
   Start_Show();
-  
+  #endif
+
   Serial.printf( "Battery Vlotage: %fV\n", ((float)Get_Battery_Data()/1000) );
 }
 
@@ -1451,7 +1453,7 @@ void THUNDER::Wait_BLE(void)
 }
 #else
 // 等待蓝牙连接动画 (有串口数据也跳出)
-void THUNDER::Wait_BLE(void)
+void THUNDER::Wait_Communication(void)
 {
   while ((deviceConnected == false) & (Usart_Communication == 0))
   {
@@ -1754,111 +1756,126 @@ void THUNDER::Get_Serial_Command()
     Serial.printf("* recv UART cmd: %x *\n", Rx_Data[0]);
     #endif
     //////////////////////////////////////// 其它特殊指令 //////////////////////////////////
-    if (Rx_Data[0] == 0xC2) //刷新左侧彩色灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 19; i++)
+    switch(Rx_Data[0]){
+      case 0xA1:  // 蓝牙命名指令数据
       {
-        Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
-        SUM += Thunder.I2C_LED_BUFF1[i - 1];
-        // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
-      }
+        uint8_t SUM = 0;
+        int i;
+        for (i = 1; i < BLE_NAME_SIZE; i++)
+        {
+          if(Serial.available()){
+            Rx_Data[i] = Serial.read();
+          }else{
+            break;
+          }
+          BLE_Name_Data[i-1] = Rx_Data[i];
 
-      if (SUM != Serial.read())
-      {
-        Rx_Data[0] = 0;
-        Serial.printf("\n#  0xC2 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
-      }
-      else
-      {
-        // Serial.printf("SSS ___ 0xC2 Complete ___ SSS \n");
-      }
-    }
-    else if (Rx_Data[0] == 0xC3) //刷新右侧彩色灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 19; i++)
-      {
-        Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
-        SUM += Thunder.I2C_LED_BUFF2[i - 1];
-        // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
-      }
+          SUM += Rx_Data[i - 1];
+        }
+        BLE_Name_Data[i-2] = '\0';
 
-      if (SUM != Serial.read())
-      {
-        Rx_Data[0] = 0;
-        Serial.printf("\n# 0xC3 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
+        if(SUM != Rx_Data[i-1])
+        {
+          Serial.printf( " # SUM error 0xA1 #\n" );
+          Serial.printf( " # SUM: %x #\n", SUM );
+          Serial.printf( " # recv SUM: %x #\n", Rx_Data[i-1] );
+          Reset_Rx_Data();
+        }
+        break;
       }
-      else
+      case 0xC2: //刷新左侧彩色灯
       {
-        // Serial.printf("SSS ___ 0xC3 Complete ___ SSS \n");
-      }
-    }
-    else if (Rx_Data[0] == 0xD3) //单色点阵灯一次性刷新前半部分灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 15; i++)
-      {
-        Thunder.LED_BUFF_Dot[i] = Serial.read();
-        SUM += Thunder.LED_BUFF_Dot[i];
-      }
+        uint8_t SUM = Rx_Data[0];
+        for (int i = 1; i < 19; i++)
+        {
+          Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
+          SUM += Thunder.I2C_LED_BUFF1[i - 1];
+          // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
+        }
 
-      if (SUM != Serial.read())
-      {
-        Rx_Data[0] = 0;
-        Serial.printf("\n# 0xD3 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
+        if (SUM != Serial.read())
+        {
+          Serial.printf("\n#  0xC2 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
+          Reset_Rx_Data();
+        }
+        break;
       }
-      else
+      case 0xC3: //刷新右侧彩色灯
       {
-        // Serial.printf("SSS ___ 0xD3 Complete ___ SSS \n");
-      }
-    }
-    else if (Rx_Data[0] == 0xD4) //单色点阵灯一次性刷新后半部分灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 15; i++)
-      {
-        Thunder.LED_BUFF_Dot[i + 14] = Serial.read();
-        SUM += Thunder.LED_BUFF_Dot[i + 14];
-      }
+        uint8_t SUM = Rx_Data[0];
+        for (int i = 1; i < 19; i++)
+        {
+          Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
+          SUM += Thunder.I2C_LED_BUFF2[i - 1];
+          // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
+        }
 
-      if (SUM != Serial.read())
-      {
-        Rx_Data[0] = 0;
-        Serial.printf("\n# 0xD4 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
+        if (SUM != Serial.read())
+        {
+          Serial.printf("\n# 0xC3 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
+          Reset_Rx_Data();
+        }
+        break;
       }
-      else
+      case 0xD3: //单色点阵灯一次性刷新前半部分灯
       {
-        // Serial.printf("SSS ___ 0xD4 Complete ___ SSS \n");
-      }
-    }
-    else
-    {
-      Rx_Data[1] = Serial.read();
-      Rx_Data[2] = Serial.read();
-      Rx_Data[3] = Serial.read();
-      Rx_Data[4] = Serial.read();
-      Rx_Data[5] = Serial.read();
+        uint8_t SUM = Rx_Data[0];
+        for (int i = 1; i < 15; i++)
+        {
+          Thunder.LED_BUFF_Dot[i] = Serial.read();
+          SUM += Thunder.LED_BUFF_Dot[i];
+        }
 
-      if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
+        if (SUM != Serial.read())
+        {
+          Serial.printf("\n# 0xD3 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
+          Reset_Rx_Data();
+        }
+        break;
+      }
+      case 0xD4: //单色点阵灯一次性刷新后半部分灯
       {
-        Serial.printf("# Rx_Data[0]: %x CKsum error # \n", Rx_Data[0]);
-        Serial.printf("* SUM error __ Rx_Data[5]: %x __ sum: %x *\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
-        Reset_Rx_Data();
+        uint8_t SUM = Rx_Data[0];
+        for (int i = 1; i < 15; i++)
+        {
+          Thunder.LED_BUFF_Dot[i + 14] = Serial.read();
+          SUM += Thunder.LED_BUFF_Dot[i + 14];
+        }
+
+        if (SUM != Serial.read())
+        {
+          Serial.printf("\n# 0xD4 cmd CKsum error #\n");
+          Serial.printf("* SUM: %x *\n", SUM);
+          Reset_Rx_Data();
+        }
+        break;
+      }
+      default:
+      {
+        Rx_Data[1] = Serial.read();
+        Rx_Data[2] = Serial.read();
+        Rx_Data[3] = Serial.read();
+        Rx_Data[4] = Serial.read();
+        Rx_Data[5] = Serial.read();
+
+        if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
+        {
+          Serial.printf("# Rx_Data[0]: %x CKsum error # \n", Rx_Data[0]);
+          Serial.printf("* SUM error __ Rx_Data[5]: %x __ sum: %x *\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
+          Reset_Rx_Data();
+        }
+        break;
       }
     }
   }
 }
 
-// 通信确认，蓝牙/串口
-void THUNDER::Check_Communication(void)
+// 通信确认，蓝牙
+void THUNDER::Check_BLE_Communication(void)
 {
-  Wait_BLE(); //如果蓝牙没有连接，等待蓝牙连接 (有串口数据也跳出)
-
   // BLE已经过去到指令
   if (Rx_Data[0] != 0)
   {
@@ -1876,30 +1893,35 @@ void THUNDER::Check_Communication(void)
     }
     Reset_Rx_Data();
   }
-  else // 如果BLE没有获取到指令，则查询是否有串口输入
-  {
-    Get_Serial_Command();
-    if(Rx_Data[0] != 0 && !ble_command_busy){
-      Check_Protocol();
-      if (Tx_Data[0] != 0)
-      {
-        Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
+}
+// 通信确认，串口
+void THUNDER::Check_UART_Communication(void)
+{
+  // 等待有连接（蓝牙 或者 串口）后再进行后续的动作
+  Wait_Communication();
 
-        //串口返回数据
-        Serial.flush();
-        Serial.write(Tx_Data[0]);
-        Serial.write(Tx_Data[1]);
-        Serial.write(Tx_Data[2]);
-        Serial.write(Tx_Data[3]);
-        Serial.write(Tx_Data[4]);
-        Serial.write(Tx_Data[5]);
-        Serial.flush();
+  Get_Serial_Command();
+  if(Rx_Data[0] != 0 && !ble_command_busy){
+    Check_Protocol();
+    if (Tx_Data[0] != 0)
+    {
+      Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
 
-        Tx_Data[0] = 0;
-      }
-      Reset_Rx_Data();
+      //串口返回数据
+      Serial.flush();
+      Serial.write(Tx_Data[0]);
+      Serial.write(Tx_Data[1]);
+      Serial.write(Tx_Data[2]);
+      Serial.write(Tx_Data[3]);
+      Serial.write(Tx_Data[4]);
+      Serial.write(Tx_Data[5]);
+      Serial.flush();
+
+      Tx_Data[0] = 0;
     }
+    Reset_Rx_Data();
   }
+
 }
 
 // 协议解析

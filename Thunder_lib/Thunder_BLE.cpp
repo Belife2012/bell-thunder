@@ -86,7 +86,8 @@ void Analyze_BLE_Data(std::string &recv_data)
         Rx_Data[0] = 0;
         Serial.printf(" # SUM error 0xA1 #\n");
         Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -105,7 +106,8 @@ void Analyze_BLE_Data(std::string &recv_data)
         Rx_Data[0] = 0;
         Serial.printf(" # SUM error 0xC2 #\n");
         Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -124,7 +126,8 @@ void Analyze_BLE_Data(std::string &recv_data)
         Rx_Data[0] = 0;
         Serial.printf(" # SUM error 0xC3 #\n");
         Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -143,7 +146,8 @@ void Analyze_BLE_Data(std::string &recv_data)
         Rx_Data[0] = 0;
         Serial.printf(" # SUM error 0xD3 #\n");
         Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -162,7 +166,8 @@ void Analyze_BLE_Data(std::string &recv_data)
         Rx_Data[0] = 0;
         Serial.printf(" # SUM error 0xD4 #\n");
         Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv_data[recv_data.length()-1]: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -191,6 +196,11 @@ class MyCallbacks: public BLECharacteristicCallbacks
       if (rxValue.length() > 0 && !ble_command_busy){
         ble_command_busy = true;
         Analyze_BLE_Data(rxValue);
+
+        // 分析BLE数据后，如果指令Rx_Data[0] 不为 0 ，则give BLE信号
+        if(Rx_Data[0] != 0){
+          Task_Mesg.Give_Semaphore_BLE();
+        }
       }
     }
 };
