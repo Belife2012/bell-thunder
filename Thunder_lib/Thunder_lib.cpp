@@ -91,7 +91,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 3, 37};
+const uint8_t Version_FW[4] = {'T', 0, 3, 38};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -411,7 +411,7 @@ void THUNDER::Line_Tracing(void)
     if(Rx_Data[0] == 0x61){
       break;
     }
-    Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+    Get_IR_Data(IR_Data); //更新巡线传感器数据 //0-->白; 1-->黑
     // Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
 
     current_time = millis();

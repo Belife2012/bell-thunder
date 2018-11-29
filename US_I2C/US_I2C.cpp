@@ -31,6 +31,8 @@
 #include <US_I2C.h>
 #include <Task_Mesg.h>
 
+// #define DEBUG_US_IIC
+
 // #define DELAY_BEFORE_READ_US
 
 // 配置I2C地址
@@ -81,7 +83,9 @@ float US_I2C::Get_US_cm(void)
 
   if (rc != 0)
   {
+    #ifdef DEBUG_US_IIC
     Serial.printf("### US IIC R error: %d ###\n", rc);
+    #endif
     return 0.0; //最小3.0, 如果返回 0 则代表无法获取数据，数据无效
   }
 

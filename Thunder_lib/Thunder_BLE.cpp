@@ -286,6 +286,12 @@ void THUNDER_BLE::Setup_BLE()
   // pAdvertising->setAdvertisementData(oAdvertisementData);
   /////////////////////////////////////////////////////////////////////////////
 
+  Serial.println("AdvertisementData:");
+  for(int i=0; i<oAdvertisementData.getPayload().length(); i++){
+    Serial.printf( " %d", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
+  }
+  Serial.println();
+
   pAdvertising->setAdvertisementData(oAdvertisementData);
   // pAdvertising->start();
 

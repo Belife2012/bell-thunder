@@ -76,6 +76,34 @@ const uint8_t LED_No_char[LED_MATRIX_COL_NUM][SINGLE_CHARACTER_WIDTH] = {
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
   {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 };
+const uint8_t LED_Minus_Symbol[LED_MATRIX_COL_NUM][SINGLE_CHARACTER_WIDTH] = {
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x01, 0x01, 0x01, 0x01, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+};
+const uint8_t LED_Point_Symbol[LED_MATRIX_COL_NUM][SINGLE_CHARACTER_WIDTH] = {
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x01, 0x01, 0x00, 0x00},
+  {0x00, 0x00, 0x01, 0x01, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+};
 const uint8_t LED_number_char[10][LED_MATRIX_COL_NUM][SINGLE_CHARACTER_WIDTH] = {
   
   {
@@ -1651,7 +1679,7 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
  * @parameters: 传入字符串首地址，字符串最长30字节，NULL 表示清空显示
  * @return: 
  */
-void DOT_MATRIX_LED::Play_LED_String(char *playString)
+void DOT_MATRIX_LED::Play_LED_String(const char *playString)
 {
   uint8_t i;
 
@@ -1675,6 +1703,10 @@ void DOT_MATRIX_LED::Play_LED_String(char *playString)
       play_string_data[i] = &LED_alphabet_char[playString[i] - 'A'];
     }else if( 'a' <= playString[i] && playString[i] <= 'z' ){
       play_string_data[i] = &LED_alphabet_char[playString[i] - 'a'];
+    }else if('-' == playString[i]){
+      play_string_data[i] = &LED_Minus_Symbol;
+    }else if('.' == playString[i]){
+      play_string_data[i] = &LED_Point_Symbol;
     }else{
       play_string_data[i] = &LED_No_char;
     }
@@ -1762,4 +1794,163 @@ void DOT_MATRIX_LED::Play_String_NextFrame()
   Serial.printf("\n"); */
 
   HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+}
+
+/* 
+ * 显示18*12的点阵画面
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void DOT_MATRIX_LED::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM])
+{
+  uint8_t i;
+  uint8_t j;
+  // 清空字符串显示
+  Play_LED_String("");
+
+  memset(LED_BUFF, 0, sizeof(LED_BUFF));
+  
+  for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+    for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+      led_display_dots[i][j] = picture_dots[i][j];
+    }
+  }
+
+  for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+    for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+      LED_BUFF[led_location_16D35[i][j].rowIndex] |= led_display_dots[i][j] << led_location_16D35[i][j].comIndex;
+    }
+  }
+
+  /* Serial.printf("\n");
+  for(i = 0; i < 29; i++){
+    Serial.printf("0x%2x, ", LED_BUFF[i]);
+  }
+  Serial.printf("\n"); */
+
+  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+}
+
+/* 
+ * 移动点阵画面
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void DOT_MATRIX_LED::Move_Picture_To(int x, int y)
+{
+  uint8_t i;
+  uint8_t j;
+  byte old_picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM];
+
+  memset(LED_BUFF, 0, sizeof(LED_BUFF));
+  for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+    for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+      old_picture_dots[i][j] = led_display_dots[i][j];
+    }
+  }
+
+  for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+    if(j - x < 0 || j - x >= LED_MATRIX_ROW_NUM ){
+      // clear column
+      for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+          led_display_dots[i][j] = 0;
+      }
+    }else{
+      for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+        if(i - y < 0 || i - y >= LED_MATRIX_COL_NUM ){
+          // clear over dots
+          led_display_dots[i][j] = 0;
+        }else{
+          led_display_dots[i][j] = old_picture_dots[i-y][j-x];
+        }
+      }
+    }
+  }
+
+  for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+    for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+      LED_BUFF[led_location_16D35[i][j].rowIndex] |= led_display_dots[i][j] << led_location_16D35[i][j].comIndex;
+    }
+  }
+
+  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+}
+
+/* 
+ * 点亮画面的一个x,y点
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void DOT_MATRIX_LED::Set_Single_Dot(uint8_t x, uint8_t y)
+{
+  uint8_t i;
+  uint8_t j;
+  
+  if(x >= LED_MATRIX_ROW_NUM || y >= LED_MATRIX_COL_NUM){
+    return;
+  }
+
+  memset(LED_BUFF, 0, sizeof(LED_BUFF));
+  led_display_dots[y][x] = 1;
+
+  for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+    for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+      LED_BUFF[led_location_16D35[i][j].rowIndex] |= led_display_dots[i][j] << led_location_16D35[i][j].comIndex;
+    }
+  }
+
+  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+}
+
+/* 
+ * 熄灭画面的一个x,y点
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void DOT_MATRIX_LED::Clear_Single_Dot(uint8_t x, uint8_t y)
+{
+  uint8_t i;
+  uint8_t j;
+  
+  if(x >= LED_MATRIX_ROW_NUM || y >= LED_MATRIX_COL_NUM){
+    return;
+  }
+
+  memset(LED_BUFF, 0, sizeof(LED_BUFF));
+  led_display_dots[y][x] = 0;
+
+  for(i = 0; i < LED_MATRIX_COL_NUM; i++){
+    for(j = 0; j < LED_MATRIX_ROW_NUM; j++){
+      LED_BUFF[led_location_16D35[i][j].rowIndex] |= led_display_dots[i][j] << led_location_16D35[i][j].comIndex;
+    }
+  }
+
+  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+}
+
+/* 
+ * 显示数字（可以整数，负数，小数），小数保留最大3位，会进行四舍五入
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void DOT_MATRIX_LED::Display_Number(float number){
+  int number_int;
+  String number_char;
+
+  number_int = (int)number;
+
+  if( (float)number_int == number ){
+    number_char = String(number_int);
+  }else{
+    number_char = String(number, 3);
+  }
+  // Serial.println( number_char.c_str() );
+
+  Play_LED_String( number_char.c_str() );
+
 }
