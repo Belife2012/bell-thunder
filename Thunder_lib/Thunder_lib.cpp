@@ -91,7 +91,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 3, 38};
+const uint8_t Version_FW[4] = {'T', 0, 3, 39};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -356,6 +356,10 @@ void THUNDER::Get_IR_Data(uint8_t data[])
 {
   data[0] = digitalRead(IR_1);
   data[1] = digitalRead(IR_2);
+
+  #ifdef DEBUG_IR_SENSOR
+  Serial.printf("*** Left: %d ___ Right: %d ***\n", data[0], data[1]);
+  #endif
 }
 
 void Wait_For_Motor_Slow()
@@ -363,8 +367,9 @@ void Wait_For_Motor_Slow()
   Thunder_Motor.Set_L_Motor_Power(0);  
   Thunder_Motor.Set_R_Motor_Power(0);
 
-  while(Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15)
-  {}
+  do{
+    delay(50);
+  }while(Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15);
 }
 #if 1
 /* 
@@ -407,12 +412,14 @@ void THUNDER::Line_Tracing(void)
   Speaker.Play_Song(131);
   while (1)
   {
+    delay(5);
     // 接收到巡线停止指令， 则退出巡线循环
-    if(Rx_Data[0] == 0x61){
+    if( line_tracing_running == false || Rx_Data[0] == 0x61 || deviceConnected == false){
       break;
     }
     Get_IR_Data(IR_Data); //更新巡线传感器数据 //0-->白; 1-->黑
     // Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
+    // Serial.printf("*** line_state: %d ***\n", line_state);
 
     current_time = millis();
 
@@ -421,8 +428,8 @@ void THUNDER::Line_Tracing(void)
       // Speaker.Play_Song(7); //test用---------
       if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
       {
-        Thunder_Motor.Set_L_Motor_Power(0);  
-        Thunder_Motor.Set_R_Motor_Power(0);
+        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
         line_state = 5;
       }
       else if (line_state == 0) // 忽然从全黑变为全零过程中出线 
@@ -440,6 +447,7 @@ void THUNDER::Line_Tracing(void)
               break;
             }
             current_time = millis();
+            delay(5);
           }
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
@@ -454,6 +462,7 @@ void THUNDER::Line_Tracing(void)
               break;
             }
             current_time = millis();
+            delay(5);
           }
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
@@ -462,6 +471,7 @@ void THUNDER::Line_Tracing(void)
           if(Rx_Data[0] == 0x61){
             break;
           }
+          delay(5);
         }
       }
       else if (line_state == 3) //短时间偏右的过程中出线，打转(可能是直角转弯)
@@ -480,6 +490,7 @@ void THUNDER::Line_Tracing(void)
               break;
             }
             current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+            delay(5);
           }
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
@@ -495,6 +506,7 @@ void THUNDER::Line_Tracing(void)
               break;
             }
             current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+            delay(5);
           }
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
@@ -505,6 +517,7 @@ void THUNDER::Line_Tracing(void)
           if(Rx_Data[0] == 0x61){
             break;
           }
+          delay(5);
         }
         Wait_For_Motor_Slow();
       }
@@ -524,6 +537,7 @@ void THUNDER::Line_Tracing(void)
               break;
             }
             current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+            delay(5);
           }
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
@@ -539,6 +553,7 @@ void THUNDER::Line_Tracing(void)
               break;
             }
             current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+            delay(5);
           }
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
@@ -549,6 +564,7 @@ void THUNDER::Line_Tracing(void)
           if(Rx_Data[0] == 0x61){
             break;
           }
+          delay(5);
         }
         Wait_For_Motor_Slow();
       }
@@ -562,6 +578,7 @@ void THUNDER::Line_Tracing(void)
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
           }
+          delay(5);
         }
         Wait_For_Motor_Slow();
       }
@@ -575,13 +592,14 @@ void THUNDER::Line_Tracing(void)
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
           }
+          delay(5);
         }
         Wait_For_Motor_Slow();
       }
       else
       {
-        Thunder_Motor.Set_L_Motor_Power(0);  
-        Thunder_Motor.Set_R_Motor_Power(0);
+        Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
       }
     }
     else if (IR_Data[0] == 0) //Serial.printf("SSSSSSSSSS 右转 SSSSSSSSSS\n");
@@ -683,6 +701,7 @@ void THUNDER::Line_Tracing(void)
     // En_Motor();
     ////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
   }
+  line_tracing_running = false;
   Speaker.Play_Song(130);
 }
 #else
@@ -2128,13 +2147,19 @@ void THUNDER::Check_Protocol(void)
     Set_LED_Show_No(Rx_Data[1]);
     break;
 
+  case 0x61: //_______________________ Demo ___________________
+    line_tracing_running = false;
+    Stop_All();
+    break;
   case 0x66: //_______________________ Demo ___________________
     if (Rx_Data[1] == 1)
     {
       // Serial.printf("* 巡线 *\n");
       // 使用开环控制电机，然后在巡线里面 以偏离黑线的时间长度作为参量 做速度闭环控制
       Disable_En_Motor(); // En_Motor_Flag = 0;
-      Line_Tracing();
+      line_tracing_running = true;
+    }else if(Rx_Data[1] == 0){
+      line_tracing_running = false;
     }
     Stop_All();
     break;

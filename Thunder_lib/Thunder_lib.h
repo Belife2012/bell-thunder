@@ -233,6 +233,9 @@ class THUNDER
   // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
     uint8_t history_data[2]; 
 
+    // 巡线模式
+    uint8_t line_tracing_running = false;
+
     void Setup_All(void); // 所有模块初始化
     void Stop_All(void);  // 全部终止(电机)
 

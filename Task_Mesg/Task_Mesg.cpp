@@ -89,6 +89,16 @@ void Proc_Command(void *pvParameters)
     }
   }
 }
+void Operator_Mode_Deamon(void *pvParameters)
+{
+  for(;;)
+  {
+    if(Thunder.line_tracing_running == true){
+      Thunder.Line_Tracing();
+    }
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
 
 /************************************new app Thread*****************************************/
 void New_Loop_Task(void *pvParameters)
@@ -316,6 +326,9 @@ void TASK_MESG::Create_Deamon_Threads()
   Serial.println("2");
   xTaskCreatePinnedToCore(Proc_Command, "procCommand", 4096, NULL, 4, NULL, 1);
   Serial.println("3");
+  xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operatorModeDeamon", 4096, NULL, 1, NULL, 1);
+  Serial.println("4");
+
   deamon_task_running = 1;
   Serial.println("Deamons ready");
 }
