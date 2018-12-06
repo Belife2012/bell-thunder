@@ -91,7 +91,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 3, 39};
+const uint8_t Version_FW[4] = {'T', 0, 4, 39};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -229,6 +229,11 @@ uint32_t THUNDER::Battery_Power_Filter(uint32_t new_data)
   }
 }
 
+uint32_t THUNDER::Get_Battery_Value()
+{
+  return Battery_Value;
+}
+
 // 获取电池电压
 uint32_t THUNDER::Get_Battery_Data()
 {
@@ -252,6 +257,7 @@ uint32_t THUNDER::Get_Battery_Data()
   // Serial.printf("Bat Voltage: %dmV\n", Battery_Voltage);
 
   Indicate_Lowpower(Battery_Voltage);
+  Battery_Value = Battery_Voltage;
 
   return Battery_Voltage;
 }
@@ -265,7 +271,7 @@ uint32_t THUNDER::Get_Battery_Data()
  */
 void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 {
-  if(Battery_Voltage < 7000 && Battery_Voltage < (Battery_Power - 300)){
+  if(Battery_Voltage < BATTERY_LOW_VALUE && Battery_Voltage < (Battery_Power - 300)){
     lowpower_flag = 1;
 
     Dot_Matrix_LED.Play_LED_HT16F35B_Show(101);
@@ -285,8 +291,10 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 void THUNDER::En_Motor(void)
 {
   Thunder_Motor.Update_Encoder_Value();
-  if (En_Motor_Flag == 1)
-  {
+
+  if(En_Motor_Flag == 2){
+    Thunder_Motor.Drive_Car_Control();
+  }else if (En_Motor_Flag == 1){
     // if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
     {
       Thunder_Motor.PID_Speed();
@@ -294,7 +302,13 @@ void THUNDER::En_Motor(void)
   }
 }
 
-// 打开编码电机计算
+// 开启 Drive_Car_Control 功能
+void THUNDER::Enable_Drive_Car(void)
+{
+  En_Motor_Flag = 2;
+}
+
+// 开启 电机PID 功能
 void THUNDER::Enable_En_Motor(void)
 {
   En_Motor_Flag = 1;
@@ -362,13 +376,13 @@ void THUNDER::Get_IR_Data(uint8_t data[])
   #endif
 }
 
-void Wait_For_Motor_Slow()
+void THUNDER::Wait_For_Motor_Slow()
 {
   Thunder_Motor.Set_L_Motor_Power(0);  
   Thunder_Motor.Set_R_Motor_Power(0);
 
   do{
-    delay(50);
+    delay(1);
   }while(Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15);
 }
 #if 1
@@ -393,13 +407,14 @@ void Wait_For_Motor_Slow()
 #define WAIT_DIRECTION_COMFIRM_TIME       100 //ms
 #define MAYBE_STRAIGHT_DIRECTION          300 //ms
 #define LITTLE_L_R_POWER_DIFF             7
-#define SPIN_L_R_DIFF_ROTATEVALUE         350 //编码器数值的差量300为打转90度
+#define SPIN_L_R_DIFF_ROTATEVALUE         700 //编码器数值的差量300为打转90度
 
 void THUNDER::Line_Tracing(void)
 {
   int last_L_R_diffrotate;
   int current_L_R_diffrotate;
   int rotate_back_quantity;
+  int line_out_flag = 0;
 
   uint32_t L_last_time; // 上次偏左的时间戳
   uint32_t R_last_time; // 上次偏右的时间戳
@@ -437,11 +452,11 @@ void THUNDER::Line_Tracing(void)
         // 左右扭头查找黑线
         while (1)
         {
-          Thunder_Motor.Set_L_Motor_Power(0);  
-          Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+          Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
           Line_last_time = millis();
           current_time = millis();
-          while( current_time - 500 < Line_last_time ){
+          while( current_time - 2000 < Line_last_time ){
             Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
             if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
               break;
@@ -452,11 +467,11 @@ void THUNDER::Line_Tracing(void)
           if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
             break;
           }
-          Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
-          Thunder_Motor.Set_R_Motor_Power(0);
+          Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+          Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
           Line_last_time = millis();
           current_time = millis();
-          while( current_time - 500 < Line_last_time ){
+          while( current_time - 2000 < Line_last_time ){
             Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
             if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
               break;
@@ -605,10 +620,14 @@ void THUNDER::Line_Tracing(void)
     else if (IR_Data[0] == 0) //Serial.printf("SSSSSSSSSS 右转 SSSSSSSSSS\n");
     {
       if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
-      {
+      {          
+        Thunder_Motor.Set_L_Motor_Power(0);  
+        Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
         Line_last_time = millis(); // 不改变运动状态
+        line_out_flag = 1;
         continue; // 保持前运动状态继续运动
       }
+      line_out_flag = 0;
 
         if( R_last_time + MAYBE_STRAIGHT_DIRECTION < current_time ){  // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
           Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
@@ -638,9 +657,13 @@ void THUNDER::Line_Tracing(void)
     {
       if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
       {
+        Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(0);
         Line_last_time = millis(); // 不改变运动状态
+        line_out_flag = 1;
         continue; // 保持前运动状态继续运动
       }
+      line_out_flag = 0;
 
         if( L_last_time + MAYBE_STRAIGHT_DIRECTION < current_time ){  // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
           Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
@@ -668,9 +691,11 @@ void THUNDER::Line_Tracing(void)
     }
     else //Serial.printf("SSSSSSSSSS 线上 SSSSSSSSSS\n");
     {
-      Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
-      Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
-      line_state = 0;
+      if(line_out_flag == 0){
+        Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);  
+        Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+        line_state = 0;
+      }
       Line_last_time = millis();
     }
 
@@ -695,7 +720,354 @@ void THUNDER::Line_Tracing(void)
 
     if (((current_time - 19000) > Line_last_sound_time) & (current_time > 19000))
     {
-      Speaker.Play_Song(139);
+      // Speaker.Play_Song(139);
+      Line_last_sound_time = millis();
+    }
+    // En_Motor();
+    ////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
+  }
+  line_tracing_running = false;
+  Speaker.Play_Song(130);
+}
+
+/* 
+ * 左右电机缓慢同步前行
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void THUNDER::Motor_Slow_Go()
+{
+  Thunder_Motor.Set_Car_Speed_Direction(0, 0);
+
+  do{
+    delay(1);
+  }while(Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15);
+}
+/* 
+ * 车子左右晃动0.5s, IR传感器发现有黑线则返回
+ * 
+ * @parameters: 
+ *    dir: 1为先左后右，-1为先右后左
+ * @return: 0表示未发现两点黑线返回，1表示已发现两点黑线返回
+ */
+int THUNDER::Car_Shake_Left_Right(int dir)
+{
+  if(dir == 1){
+    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+  }else{
+    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+  }
+  Line_last_time = millis();
+  current_time = millis();
+  while( current_time - 500 < Line_last_time ){
+    Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+    if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+      break;
+    }
+    current_time = millis();
+    delay(5);
+  }
+  if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+    return 1;
+  }
+
+  if(dir == 1){
+    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+  }else{
+    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+  }
+  Line_last_time = millis();
+  current_time = millis();
+  while( current_time - 500 < Line_last_time ){
+    Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+    if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+      break;
+    }
+    current_time = millis();
+    delay(5);
+  }
+  if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+    return 1;
+  }
+
+  return 0;
+}
+
+/* 
+ * 车子左右旋转90度, IR传感器发现有黑线则返回
+ * 
+ * @parameters: 
+ *    dir: 1为先左后右，-1为先右后左
+ * @return: 0表示未发现两点黑线返回，1表示已发现两点黑线返回
+ */
+int THUNDER::Car_Rotate_90_Left_Right(int dir)
+{
+  int last_L_R_diffrotate;
+  int current_L_R_diffrotate;
+
+  if(dir == 1){
+    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+  }else{
+    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+  }
+  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+  last_L_R_diffrotate = current_L_R_diffrotate;
+  while( dir == 1 ? (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE > last_L_R_diffrotate) : 
+                    (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE < last_L_R_diffrotate) ){
+    Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+    if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+      break;
+    }
+    current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+    delay(5);
+  }
+  if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+    return 1;
+  }
+
+  if(dir == 1){
+    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+  }else{
+    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+  }
+  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+  last_L_R_diffrotate = current_L_R_diffrotate;
+  while( dir == 1 ? (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE < last_L_R_diffrotate) : 
+                    (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE > last_L_R_diffrotate) ){
+    Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+    if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+      break;
+    }
+    current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+    delay(5);
+  }
+  if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+    return 1;
+  }
+
+  return 0;
+}
+
+void THUNDER::Line_Tracing_Speed_Ctrl(void)
+{
+  uint32_t L_last_time; // 上次偏左的时间戳
+  uint32_t R_last_time; // 上次偏右的时间戳
+  int line_out_flag = 0;
+
+  Thunder.Enable_Drive_Car();
+
+  Line_last_time = millis();
+  Line_last_led_time = millis();
+  Line_last_sound_time = millis();
+  LED_counter = 99;
+
+  Speaker.Play_Song(131);
+  while (1)
+  {
+    delay(5);
+    // 接收到巡线停止指令， 则退出巡线循环
+    if( line_tracing_running == false || Rx_Data[0] == 0x61 || deviceConnected == false){
+      break;
+    }
+    Get_IR_Data(IR_Data); //更新巡线传感器数据 //0-->白; 1-->黑
+    // Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
+    // Serial.printf("*** line_state: %d ***\n", line_state);
+
+    current_time = millis();
+
+    if ((IR_Data[0] == 0) & (IR_Data[1] == 0)) //Serial.printf("* 没线 \n");
+    {
+      // Speaker.Play_Song(7); //test用---------
+      if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(15, 360);
+        line_state = 5;
+      }
+      else if (line_state == 0) // 忽然从全黑变为全零过程中出线 
+      {
+        // 左右扭头查找黑线
+        while (1)
+        {
+          if( 1 == Car_Shake_Left_Right(1) ){
+            break;
+          }
+          if( 1 == Car_Shake_Left_Right(-1) ){
+            break;
+          }
+          
+          if(Rx_Data[0] == 0x61){
+            break;
+          }
+          delay(5);
+        }
+      }
+      else if (line_state == 3) //短时间偏右的过程中出线，打转(可能是直角转弯)
+      {
+        // 左右打转90度查找两点黑线
+        while (1)
+        {
+          if( 1 == Car_Rotate_90_Left_Right(1) ){
+            break;
+          }
+          if( 1 == Car_Rotate_90_Left_Right(-1) ){
+            break;
+          }
+
+          if(Rx_Data[0] == 0x61){
+            break;
+          }
+          delay(5);
+        }
+        // Motor_Slow_Go();
+      }
+      else if ( line_state == 4 ) //短时间偏左的过程中出线，打转(可能是直角转弯)
+      {
+        // 右左打转90度查找两点黑线
+        while (1)
+        {
+          if( 1 == Car_Rotate_90_Left_Right(-1) ){
+            break;
+          }
+          if( 1 == Car_Rotate_90_Left_Right(1) ){
+            break;
+          }
+          
+          if(Rx_Data[0] == 0x61){
+            break;
+          }
+          delay(5);
+        }
+        // Motor_Slow_Go();
+      }
+      else if (line_state == 1) //偏右的过程中出线，快速漂移打转(弯道转弯)
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(20, -150);
+        while(1){
+          Line_last_time = millis(); // 不改变line_state，刷新时间
+          Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+          delay(5);
+        }
+        // Motor_Slow_Go();
+      }
+      else if (line_state == 2) //偏左的过程中出线，快速漂移打转(弯道转弯)
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(20, 150);
+        while(1){
+          Line_last_time = millis(); // 不改变line_state，刷新时间
+          Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
+          if( (IR_Data[0] != 0) || (IR_Data[1] != 0) ){
+            break;
+          }
+          delay(5);
+        }
+        // Motor_Slow_Go();
+      }
+      else
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(15, -360);
+      }
+    }
+    else if (IR_Data[0] == 0) //Serial.printf("* 偏左，右转 \n");
+    {
+      if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+        Line_last_time = millis(); // 不改变运动状态
+        line_out_flag = 1;
+        continue; // 这种情况是越界的情况，保持前运动状态继续运动，直到状态回归
+      }
+      line_out_flag = 0;
+        // 如果上次偏右时间不够200ms，那可能这里是处于直线状态的，转弯幅度要小
+        if( current_time < R_last_time + MAYBE_STRAIGHT_DIRECTION ){  
+          Thunder_Motor.Set_Car_Speed_Direction(20, 30);
+        }else{
+          Thunder_Motor.Set_Car_Speed_Direction(20, 50);
+        }
+        
+      if (line_state == 2)
+      {
+        //一直为偏左出线，所以一直更新状态时间, 不改变运动状态
+        Line_last_time = millis(); 
+      }
+      else if ((current_time - WAIT_DIRECTION_COMFIRM_TIME) > Line_last_time && line_state == 4)
+      {
+        line_state = 2; // 偏左时间已经超过 50ms
+        L_last_time = current_time;
+      }
+      else
+      {
+        line_state = 4; // 偏左时间小于 50ms，急转偏右运动一小段时间
+        Thunder_Motor.Set_Car_Speed_Direction(25, 60);
+      }
+    }
+    else if (IR_Data[1] == 0) //Serial.printf("* 偏右，左转 \n");
+    {
+      if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+        Line_last_time = millis(); // 不改变运动状态
+        line_out_flag = 2;
+        continue; // 保持前运动状态继续运动
+      }
+      line_out_flag = 0;
+        // 如果上次偏右时间不够200ms，那可能这里是处于直线状态的，转弯幅度要小
+        if( current_time < L_last_time + MAYBE_STRAIGHT_DIRECTION ){
+          Thunder_Motor.Set_Car_Speed_Direction(20, -30);
+        }else{
+          Thunder_Motor.Set_Car_Speed_Direction(20, -50);
+        }
+        
+      if (line_state == 1)
+      {
+        //一直为偏右，所以一直更新状态时间, 不改变运动状态
+        Line_last_time = millis();
+      }
+      else if ((current_time - WAIT_DIRECTION_COMFIRM_TIME) > Line_last_time && line_state == 3)
+      {
+        line_state = 1; // 偏右时间已经超过 50ms
+        R_last_time = current_time;
+      }
+      else
+      {
+        Thunder_Motor.Set_Car_Speed_Direction(25, -60);
+        line_state = 3; // 偏右时间小于 50ms，急转偏右运动一小段时间
+      }
+    }
+    else //Serial.printf("* 线上 \n");
+    {
+      if(line_out_flag == 0){
+        Thunder_Motor.Set_Car_Speed_Direction(25, 0);
+        line_state = 0;
+      }
+      Line_last_time = millis();
+    }
+
+    ////////////////////////////////// (start)巡线时LED画面、播放的声音 //////////////////////////////////
+    if ((current_time - 50) > Line_last_led_time)
+    {
+      if ((LED_counter > 98) & (line_state != 5))
+      {
+        LED_counter = 77;
+      }
+      else if ((LED_counter > 100) & (line_state == 5))
+      {
+        LED_counter = 99;
+        Line_last_sound_time = millis();
+      }
+
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+      LED_counter++;
+
+      Line_last_led_time = millis();
+    }
+
+    if (((current_time - 19000) > Line_last_sound_time) & (current_time > 19000))
+    {
+      // Speaker.Play_Song(139);
       Line_last_sound_time = millis();
     }
     // En_Motor();
@@ -1988,12 +2360,10 @@ void THUNDER::Check_Protocol(void)
     break;
 
   case 0x54: //获取电池电压数据
-    uint32_t Battery_Data;
-    Battery_Data = Get_Battery_Data();
-
+    // Get_Battery_Data();
     Tx_Data[0] = 0x54;
-    Tx_Data[1] = Battery_Data >> 8; //读取一次电池电压
-    Tx_Data[2] = Battery_Data;
+    Tx_Data[1] = Battery_Value >> 8; //读取一次电池电压
+    Tx_Data[2] = Battery_Value;
     Tx_Data[3] = 0;
     Tx_Data[4] = 0;
     break;

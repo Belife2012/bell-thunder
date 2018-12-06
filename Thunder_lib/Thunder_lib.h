@@ -79,6 +79,7 @@
 #define SCL_PIN            22   // SCL_PIN
 
 // 电池电压
+#define BATTERY_LOW_VALUE   7000  // mV
 #define BATTERY_FILTER_NUM  10
 #define BATTERY_ADC_PIN     35
 #define ADC_R_1             33.0   // 分压电阻 33K:100K
@@ -157,7 +158,8 @@ class THUNDER
 
     // 电池电压
     uint16_t battery_filter_data[BATTERY_FILTER_NUM] = {0,0,0,0,0,0,0,0,0,0};
-    uint16_t Battery_Power = 9000; //初始值设置为9000mV
+    uint16_t Battery_Power = 9000; //初始值设置为9000mV, 记录报警低电压时的电压值，每下降300mv报警一次
+    uint32_t Battery_Value; //记录每次采集电压值时的电压值
     uint8_t lowpower_flag = 0; // 1 为低电压状态
 
     // 巡线IR
@@ -170,10 +172,10 @@ class THUNDER
     unsigned long Line_last_sound_time = 0;
 
     // 150 100 50 -50
-    int Line_H_Speed = 160;
-    int Line_M_Speed = 120;
-    int Line_L_Speed = 80;
-    int Line_B_Speed = -80;
+    int Line_H_Speed = 90;
+    int Line_M_Speed = 70;
+    int Line_L_Speed = 50;
+    int Line_B_Speed = -50;
 
     // 串口通信标志位
     uint8_t Usart_Communication = 0;
@@ -243,11 +245,13 @@ class THUNDER
     void Setup_Battery(void);     // 电池电压检测初始化
     uint32_t Battery_Power_Filter(uint32_t new_data);
     uint32_t Get_Battery_Data(void); // 获取电池电压
+    uint32_t Get_Battery_Value();
     void Indicate_Lowpower(uint32_t Battery_Voltage); // 电压低于 8V 后的提示
 
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算
     void Enable_En_Motor(void);   // 打开编码电机计算
+    void Enable_Drive_Car(void);
     void Disable_En_Motor(void);  // 关闭编码电机计算
 
     // 只能开环控制电机时使用
@@ -260,7 +264,12 @@ class THUNDER
     // 巡线IR
     void Setup_IR(void);                // 巡线IR传感器初始化配置
     void Get_IR_Data(uint8_t data[]);   // 获取巡线IR数据
-    void Line_Tracing(void);            // 巡线模式
+    void Wait_For_Motor_Slow();
+    void Line_Tracing(void);            // 使用开环控制电机的巡线模式
+    void Motor_Slow_Go();               // 缓慢前行，拐弯后要恢复前行状态
+    int Car_Shake_Left_Right(int dir);
+    int Car_Rotate_90_Left_Right(int dir);
+    void Line_Tracing_Speed_Ctrl(void); // 使用驾驶模式闭环控制的巡线模式
 
     // 动作表情
     void Start_Show(void);                  // 开机动画/声效

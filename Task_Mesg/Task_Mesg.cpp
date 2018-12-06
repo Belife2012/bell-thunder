@@ -71,8 +71,13 @@ void Deamon_Motor(void *pvParameters)
     {
       Thunder.En_Motor();
     }
-    // 电机 PID运算周期为 50ms
-    vTaskDelay(pdMS_TO_TICKS(50));
+    if(Thunder.line_tracing_running == true){
+      // 巡线阶段，PID运算周期为 10ms
+      vTaskDelay(pdMS_TO_TICKS(10));
+    }else{
+      // 电机 PID运算周期为 50ms
+      vTaskDelay(pdMS_TO_TICKS(10));
+    }
   }
 }
 void Proc_Command(void *pvParameters)
@@ -95,6 +100,7 @@ void Operator_Mode_Deamon(void *pvParameters)
   {
     if(Thunder.line_tracing_running == true){
       Thunder.Line_Tracing();
+      // Thunder.Line_Tracing_Speed_Ctrl();
     }
     vTaskDelay(pdMS_TO_TICKS(50));
   }

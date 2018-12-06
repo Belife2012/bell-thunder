@@ -46,6 +46,7 @@
  ************************************************/
 
 #include <Thunder_Motor.h>
+#include <Thunder_lib.h>
 
 #include "driver/periph_ctrl.h"
 #include "driver/pcnt.h"
@@ -245,22 +246,46 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
   }
 }
 
-// 参数1-->功率；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
-void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
+// 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
+void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
 
-  if( Lpower >= 0 ){
-    Motor_Move(1, Lpower, 1);
+  if( M_output >= 0 ){
+    Motor_Move(1, M_output, 1);
   }else{
-    Motor_Move(1, -1*Lpower, 0);
+    Motor_Move(1, -1*M_output, 0);
   }
 }
-// 参数1-->功率；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
-void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
+// 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
+void THUNDER_MOTOR::Set_R_Motor_Output( int M_output ){
 
-  if( Rpower >= 0 ){
-    Motor_Move(2, Rpower, 1);
+  if( M_output >= 0 ){
+    Motor_Move(2, M_output, 1);
   }else{
-    Motor_Move(2, -1*Rpower, 0);
+    Motor_Move(2, -1*M_output, 0);
+  }
+}
+// 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
+void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
+  float M_power;
+  M_power = Lpower;
+  M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Thunder.Get_Battery_Value() ) * ( M_power / 100 );
+
+  if( M_power >= 0 ){
+    Motor_Move(1, M_power, 1);
+  }else{
+    Motor_Move(1, -1*M_power, 0);
+  }
+}
+// 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
+void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
+  float M_power;
+  M_power = Rpower;
+  M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Thunder.Get_Battery_Value() ) * ( M_power / 100 );
+
+  if( M_power >= 0 ){
+    Motor_Move(2, (int)M_power, 1);
+  }else{
+    Motor_Move(2, -1*(int)M_power, 0);
   }
 }
 
@@ -462,21 +487,179 @@ void THUNDER_MOTOR::PID_Speed()
 // 设定左轮目标速度(编码器计数值) 目前范围暂定 -40~40，负数为方向转
 void THUNDER_MOTOR::Set_L_Target(float target)
 {
-  if(Motor_L_Speed_PID.Ref != target)
+  float target_encoder_num;
+  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
+
+  if(Motor_L_Speed_PID.Ref != target_encoder_num)
   {
     PID_Reset(&Motor_L_Speed_PID);
-    Motor_L_Speed_PID.Ref = target;
+    Motor_L_Speed_PID.Ref = target_encoder_num;
   }
 }
 
 // 设定右轮目标速度(编码器计数值) 目前范围暂定 -40~40，负数为方向转
 void THUNDER_MOTOR::Set_R_Target(float target)
 {
-  if(Motor_R_Speed_PID.Ref != target)
+  float target_encoder_num;
+  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
+
+  if(Motor_R_Speed_PID.Ref != target_encoder_num)
   {
     PID_Reset(&Motor_R_Speed_PID);
-    Motor_R_Speed_PID.Ref = target;
+    Motor_R_Speed_PID.Ref = target_encoder_num;
   }
+}
+
+void THUNDER_MOTOR::Calculate_Left_Control()
+{
+  // calculate left motor out power
+  drive_car_pid.OutP_left = drive_car_pid.left_speed_diff * drive_car_pid.Kp;
+  drive_car_pid.OutI_left += drive_car_pid.left_speed_diff * drive_car_pid.Ki;
+  drive_car_pid.Out_left = drive_car_pid.OutP_left + drive_car_pid.OutI_left;
+
+  if( drive_car_pid.Out_left > MAX_DRIVE_OUTPUT ){
+    drive_car_pid.Out_left = MAX_DRIVE_OUTPUT;
+    drive_car_pid.OutI_left = drive_car_pid.OutI_left_last;
+  }else if( drive_car_pid.Out_left < -MAX_DRIVE_OUTPUT ){
+    drive_car_pid.Out_left = -MAX_DRIVE_OUTPUT;
+    drive_car_pid.OutI_left = drive_car_pid.OutI_left_last;
+  }else{
+    drive_car_pid.OutI_left_last = drive_car_pid.OutI_left;
+  }
+}
+void THUNDER_MOTOR::Calculate_Right_Control()
+{
+  // calculate right motor out power
+  drive_car_pid.OutP_right = drive_car_pid.right_speed_diff * drive_car_pid.Kp;
+  drive_car_pid.OutI_right += drive_car_pid.right_speed_diff * drive_car_pid.Ki;
+  drive_car_pid.Out_right = drive_car_pid.OutP_right + drive_car_pid.OutI_right;
+
+  if( drive_car_pid.Out_right > MAX_DRIVE_OUTPUT ){
+    drive_car_pid.Out_right = MAX_DRIVE_OUTPUT;
+    drive_car_pid.OutI_right = drive_car_pid.OutI_right_last;
+  }else if( drive_car_pid.Out_left < -MAX_DRIVE_OUTPUT ){
+    drive_car_pid.Out_right = -MAX_DRIVE_OUTPUT;
+    drive_car_pid.OutI_right = drive_car_pid.OutI_right_last;
+  }else{
+    drive_car_pid.OutI_right_last = drive_car_pid.OutI_right;
+  }
+}
+
+/* 
+ * 控制速度和方向的PID函数
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void THUNDER_MOTOR::Drive_Car_Control()
+{
+  float time_interval;
+  float left_speed, right_speed;
+
+  if(drive_car_pid.last_pid_time == 0){
+    time_interval = 10;
+  }else{
+    time_interval = millis() - drive_car_pid.last_pid_time;
+  }
+  left_speed = Encoder_Counter_Left;
+  left_speed = left_speed * 10.0 / time_interval;
+  right_speed = Encoder_Counter_Right;
+  right_speed = right_speed * 10.0 / time_interval;
+
+// Serial.printf("LeftSpeed:%f, RightSpeed:%f \n", left_speed, right_speed);
+
+  drive_car_pid.left_speed_diff = drive_car_pid.left_speed_target - left_speed;
+  drive_car_pid.right_speed_diff = drive_car_pid.right_speed_target - right_speed;
+  if(drive_direction == 0.0){
+    // drive_car_pid.new_left_target = drive_car_pid.left_speed_target;
+    // drive_car_pid.new_right_target = drive_car_pid.right_speed_target;
+
+    if( (drive_car_pid.Out_left == 255 && drive_car_pid.left_speed_diff >= 0) || 
+        ( drive_car_pid.Out_left == -255 && drive_car_pid.left_speed_diff <= 0) ){
+      drive_car_pid.new_right_target = left_speed;
+      drive_car_pid.right_speed_diff = drive_car_pid.new_right_target - right_speed;
+    }
+    
+    if( (drive_car_pid.Out_right == 255 && drive_car_pid.right_speed_diff >= 0) || 
+        ( drive_car_pid.Out_right == -255 && drive_car_pid.right_speed_diff <= 0) ){
+      drive_car_pid.new_left_target = right_speed;
+      drive_car_pid.left_speed_diff = drive_car_pid.new_left_target - left_speed;
+    }
+      // Serial.printf("Left target:%f, Right target:%f \n", drive_car_pid.new_left_target, drive_car_pid.new_right_target);
+  }else if((drive_direction > 0.0 && drive_car_pid.Out_left == 255 && drive_car_pid.left_speed_diff >= 0) || 
+    (drive_direction > 0.0 && drive_car_pid.Out_left == -255 && drive_car_pid.left_speed_diff <= 0)){
+      drive_car_pid.new_right_target = left_speed * (MAX_DRIVE_DIRECTION/2 - drive_direction)
+                                       / (MAX_DRIVE_DIRECTION/2);
+      drive_car_pid.right_speed_diff = drive_car_pid.new_right_target - right_speed;
+
+      // Serial.printf("Left target:%f, Right target:%f \n", (float)left_speed, new_right_target);
+  }else if((drive_direction < 0.0 && drive_car_pid.Out_right == 255 && drive_car_pid.right_speed_diff >= 0) || 
+    (drive_direction < 0.0 && drive_car_pid.Out_right == -255 && drive_car_pid.right_speed_diff <= 0)){
+      drive_car_pid.new_left_target = right_speed * (MAX_DRIVE_DIRECTION/2 + drive_direction)
+                                       / (MAX_DRIVE_DIRECTION/2);
+      drive_car_pid.left_speed_diff = drive_car_pid.new_left_target - left_speed;
+
+      // Serial.printf("Left target:%f, Right target:%f \n", new_left_target, (float)right_speed);
+  }
+
+// Serial.printf("LeftDiff:%f, RightDiff:%f \n", drive_car_pid.left_speed_diff, drive_car_pid.right_speed_diff);  
+  Calculate_Left_Control();
+  Calculate_Right_Control();
+
+// Serial.printf("LeftOut:%f, RightOut:%f \n\n", drive_car_pid.Out_left, drive_car_pid.Out_right); 
+
+  Set_L_Motor_Output((int)drive_car_pid.Out_left);
+  Set_R_Motor_Output((int)drive_car_pid.Out_right);
+
+}
+
+/* 
+ * 控制驾驶的速度和方向，
+ * 速度:
+ * 设置全速的百分比，值为 -100~100，-100为全速后退，100为全速前进
+ * 正速度时，0方向为正前方；
+ * 负速度时，0方向为正后方
+ * 方向：
+ * 0~360为右转，向前时0为正前方，360为顺时针打转；向后时0为正后方，360为逆时针打转；
+ * 0~-360为左转，向前时0为正前方，-360为逆时针打转；向后时0为正后方，-360为顺时针打转；
+ * 右转时：direction = 180 * (L-R)/L 左转时：direction = 180 * (L-R)/R
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
+{
+  if( speed > 100.0 ){
+    drive_speed = 100.0;
+  }else if( speed < -100.0 ){
+    drive_speed = -100.0;
+  }else{
+    drive_speed = speed;
+  }
+  drive_speed = (drive_speed / 100.0) * MAX_DRIVE_SPEED;
+
+  if( direction > MAX_DRIVE_DIRECTION ){
+    drive_direction = MAX_DRIVE_DIRECTION;
+  }else if( direction < -MAX_DRIVE_DIRECTION ){
+    drive_direction = -MAX_DRIVE_DIRECTION;
+  }else{
+    drive_direction = direction;
+  }
+
+  if(drive_direction >= 0.0){
+    drive_car_pid.P_direction_divisor = &Encoder_Counter_Left;
+    drive_car_pid.left_speed_target = drive_speed;
+    drive_car_pid.right_speed_target = drive_speed * (MAX_DRIVE_DIRECTION/2 - drive_direction) / (MAX_DRIVE_DIRECTION/2);
+  }else{
+    drive_car_pid.P_direction_divisor = &Encoder_Counter_Right;
+    drive_car_pid.right_speed_target = drive_speed;
+    drive_car_pid.left_speed_target = drive_speed * (MAX_DRIVE_DIRECTION/2 + drive_direction) / (MAX_DRIVE_DIRECTION/2);
+  }
+
+  drive_car_pid.new_left_target = drive_car_pid.left_speed_target;
+  drive_car_pid.new_right_target = drive_car_pid.right_speed_target;
+
+  // Serial.printf("Left target:%f, Right target:%f \n", drive_car_pid.left_speed_target, drive_car_pid.right_speed_target);
 }
 
 // 获取左轮速度(编码器计数值), 这个数值是每个PID周期采集到的计数器数值
@@ -484,7 +667,7 @@ void THUNDER_MOTOR::Set_R_Target(float target)
 // 在一个PID周期内获取的值是相同的
 int16_t THUNDER_MOTOR::Get_L_Speed(void)
 {
-  return Encoder_Counter_Left;
+  return Encoder_Counter_Left * 100 / MAX_DRIVE_SPEED;
 }
 
 // 获取右轮速度(编码器计数值), 这个数值是每个PID周期采集到的计数器数值
@@ -492,19 +675,19 @@ int16_t THUNDER_MOTOR::Get_L_Speed(void)
 // 在一个PID周期内获取的值是相同的
 int16_t THUNDER_MOTOR::Get_R_Speed(void)
 {
-  return Encoder_Counter_Right;
+  return Encoder_Counter_Right * 100 / MAX_DRIVE_SPEED;
 }
 
 // 获取左轮目标(编码器计数值)
 int16_t THUNDER_MOTOR::Get_L_Target(void)
 {
-  return Motor_L_Speed_PID.Ref;
+  return Motor_L_Speed_PID.Ref * 100 / MAX_DRIVE_SPEED;
 }
 
 // 获取右轮目标(编码器计数值)
 int16_t THUNDER_MOTOR::Get_R_Target(void)
 {
-  return Motor_R_Speed_PID.Ref;
+  return Motor_R_Speed_PID.Ref * 100 / MAX_DRIVE_SPEED;
 }
 
 /* 

@@ -72,10 +72,15 @@
 #define EN_R_A 34 //编码器B 中断  右
 #define EN_R_B 17 //编码器B
 
-#define PID_Default_Kp 8.0      //P 3.3   8.0   8.0
-#define PID_Default_Ki 3.0      //I 2.85  4.0   3.0
+#define PID_Default_Kp 10.0      //P 3.3   8.0   8.0
+#define PID_Default_Ki 5.6      //I 2.85  4.0   3.0
 #define PID_Default_Kd 3.5      //D       3.5   3.5
 #define PID_dt 50               //[ms]
+
+// drive car
+#define MAX_DRIVE_OUTPUT       255
+#define MAX_DRIVE_SPEED       10.0
+#define MAX_DRIVE_DIRECTION   360.0
 
 // PID时间中断
 extern volatile SemaphoreHandle_t Timer_PID_Flag;
@@ -108,6 +113,37 @@ struct PID_Struct_t
     float Out = 0;
 };
 
+struct DriveCarPid_Struct{
+  int16_t* P_direction_divisor;
+
+  float left_speed_target;
+  float right_speed_target;
+  float new_left_target;
+  float new_right_target;
+  float left_speed_diff;
+  float right_speed_diff;
+
+  float direction;
+  float dir_diff;
+
+  float Kp = 10.0;
+  float Ki = 5.6;
+  float Kd = 0;
+
+  uint32_t last_pid_time = 0;
+
+  float OutP_left = 0;
+  float OutI_left = 0;
+  float OutI_left_last = 0;
+  float OutD_left = 0;
+  float OutP_right = 0;
+  float OutI_right = 0;
+  float OutI_right_last = 0;
+  float OutD_right = 0;
+  float Out_left = 0;
+  float Out_right = 0;
+};
+
 class THUNDER_MOTOR
 {
   public:
@@ -119,6 +155,8 @@ class THUNDER_MOTOR
     // 开环电机
     void Setup_Motor(void);                                 // 配置电机
     void Motor_Move(int motor, int speed, int direction);   // 开环电机控制函数
+    void Set_L_Motor_Output( int M_output );
+    void Set_R_Motor_Output( int M_output );
     void Set_L_Motor_Power( int Lpower );
     void Set_R_Motor_Power( int Rpower );
 
@@ -128,6 +166,9 @@ class THUNDER_MOTOR
     void All_PID_Init();                                                    // 按默认PID参数初始化左右电机
     void Setup_Motor_PID(void);                                             // 配置左右两个电机编码器
     void PID_Speed(void);                                                   // 按PID输出控制左右两个电机
+
+    void Drive_Car_Control();
+    void Set_Car_Speed_Direction(float speed, float direction);
 
     void Set_L_Target(float target);  // 设定左轮目标速度(编码器计数值)
     void Set_R_Target(float target);  // 设定右轮目标速度(编码器计数值)
@@ -154,11 +195,18 @@ class THUNDER_MOTOR
     struct PID_Struct_t Motor_L_Speed_PID;
     struct PID_Struct_t Motor_R_Speed_PID;
 
+    // drive car 
+    struct DriveCarPid_Struct drive_car_pid;
+    float drive_speed = 0;
+    float drive_direction = 0;
+
     // timer中断
     hw_timer_t * PID_Timer = NULL;
 
     void set_speed(uint8_t channel, uint32_t value);
     float motor_PID(struct PID_Struct_t *pid);      // PID计算
+    void Calculate_Left_Control();
+    void Calculate_Right_Control();
 
 };
 
