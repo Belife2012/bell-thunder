@@ -537,7 +537,7 @@ void THUNDER_MOTOR::Calculate_Right_Control()
   if( drive_car_pid.Out_right > MAX_DRIVE_OUTPUT ){
     drive_car_pid.Out_right = MAX_DRIVE_OUTPUT;
     drive_car_pid.OutI_right = drive_car_pid.OutI_right_last;
-  }else if( drive_car_pid.Out_left < -MAX_DRIVE_OUTPUT ){
+  }else if( drive_car_pid.Out_right < -MAX_DRIVE_OUTPUT ){
     drive_car_pid.Out_right = -MAX_DRIVE_OUTPUT;
     drive_car_pid.OutI_right = drive_car_pid.OutI_right_last;
   }else{
@@ -574,27 +574,29 @@ void THUNDER_MOTOR::Drive_Car_Control()
     // drive_car_pid.new_left_target = drive_car_pid.left_speed_target;
     // drive_car_pid.new_right_target = drive_car_pid.right_speed_target;
 
-    if( (drive_car_pid.Out_left == 255 && drive_car_pid.left_speed_diff >= 0) || 
-        ( drive_car_pid.Out_left == -255 && drive_car_pid.left_speed_diff <= 0) ){
+    if( (drive_car_pid.Out_left == 255 && drive_car_pid.left_speed_diff > 0) || 
+        ( drive_car_pid.Out_left == -255 && drive_car_pid.left_speed_diff < 0) ){
       drive_car_pid.new_right_target = left_speed;
       drive_car_pid.right_speed_diff = drive_car_pid.new_right_target - right_speed;
+      // Serial.printf("Right target:%f \n", drive_car_pid.new_right_target);
     }
     
-    if( (drive_car_pid.Out_right == 255 && drive_car_pid.right_speed_diff >= 0) || 
-        ( drive_car_pid.Out_right == -255 && drive_car_pid.right_speed_diff <= 0) ){
+    if( (drive_car_pid.Out_right == 255 && drive_car_pid.right_speed_diff > 0) || 
+        ( drive_car_pid.Out_right == -255 && drive_car_pid.right_speed_diff < 0) ){
       drive_car_pid.new_left_target = right_speed;
       drive_car_pid.left_speed_diff = drive_car_pid.new_left_target - left_speed;
+      // Serial.printf("Left target:%f \n", drive_car_pid.new_left_target);
     }
       // Serial.printf("Left target:%f, Right target:%f \n", drive_car_pid.new_left_target, drive_car_pid.new_right_target);
-  }else if((drive_direction > 0.0 && drive_car_pid.Out_left == 255 && drive_car_pid.left_speed_diff >= 0) || 
-    (drive_direction > 0.0 && drive_car_pid.Out_left == -255 && drive_car_pid.left_speed_diff <= 0)){
+  }else if((drive_direction > 0.0 && drive_car_pid.Out_left == 255 && drive_car_pid.left_speed_diff > 0) || 
+    (drive_direction > 0.0 && drive_car_pid.Out_left == -255 && drive_car_pid.left_speed_diff < 0)){
       drive_car_pid.new_right_target = left_speed * (MAX_DRIVE_DIRECTION/2 - drive_direction)
                                        / (MAX_DRIVE_DIRECTION/2);
       drive_car_pid.right_speed_diff = drive_car_pid.new_right_target - right_speed;
 
       // Serial.printf("Left target:%f, Right target:%f \n", (float)left_speed, new_right_target);
-  }else if((drive_direction < 0.0 && drive_car_pid.Out_right == 255 && drive_car_pid.right_speed_diff >= 0) || 
-    (drive_direction < 0.0 && drive_car_pid.Out_right == -255 && drive_car_pid.right_speed_diff <= 0)){
+  }else if((drive_direction < 0.0 && drive_car_pid.Out_right == 255 && drive_car_pid.right_speed_diff > 0) || 
+    (drive_direction < 0.0 && drive_car_pid.Out_right == -255 && drive_car_pid.right_speed_diff < 0)){
       drive_car_pid.new_left_target = right_speed * (MAX_DRIVE_DIRECTION/2 + drive_direction)
                                        / (MAX_DRIVE_DIRECTION/2);
       drive_car_pid.left_speed_diff = drive_car_pid.new_left_target - left_speed;
