@@ -67,6 +67,9 @@
 #define MOTOR_MAX_DUTY      5500 //最大8191 // 8191 = 2 ^ 13 - 1 //电机选型的原因在此进行最大输出限制   //安全duty 5500
 
 // 编码器
+#define DEGREES_EVERY_CIRCLE      360
+#define ENCODER_NUM_EVERY_CIRCLE  216   // 电机编码器磁铁是四对磁极对，减速比是27
+
 #define EN_L_A 14 //编码器A 中断  左
 #define EN_L_B 33 //编码器A
 #define EN_R_A 34 //编码器B 中断  右
@@ -80,7 +83,7 @@
 // drive car
 #define MAX_DRIVE_OUTPUT       255
 #define MAX_DRIVE_SPEED       10.0
-#define MAX_DRIVE_DIRECTION   360.0
+#define MAX_DRIVE_DIRECTION   100.0
 
 // PID时间中断
 extern volatile SemaphoreHandle_t Timer_PID_Flag;
@@ -144,6 +147,30 @@ struct DriveCarPid_Struct{
   float Out_right = 0;
 };
 
+struct MotorRunning_Struct{
+  //0代表left 和 right的控制都起效；1代表left控制起效，right无效; 2代表right控制起效，left无效
+  byte motor_select;
+
+  //0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+  byte running_mode;
+
+  float mode_data;
+
+  float left_motor_speed;
+  float right_motor_speed;
+};
+
+struct MotorTurnning_Struct{
+  //0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+  byte turnning_mode;
+
+  float mode_data;
+
+  // 取值范围 -100~100
+  float turn_percent;
+  float motor_speed;
+};
+
 class THUNDER_MOTOR
 {
   public:
@@ -172,6 +199,8 @@ class THUNDER_MOTOR
 
     void Set_L_Target(float target);  // 设定左轮目标速度(编码器计数值)
     void Set_R_Target(float target);  // 设定右轮目标速度(编码器计数值)
+    void Control_Motor_Running(MotorRunning_Struct &running_data);
+    void Control_Motor_Turnning(MotorTurnning_Struct &turnning_data);
 
     void Update_Encoder_Value();
 

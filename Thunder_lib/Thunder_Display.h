@@ -70,6 +70,9 @@ class DOT_MATRIX_LED
     void Play_LED_HT16F35B(void);                   // 跑马灯
     void Play_LED_HT16F35B_Show(int LED_Show_No);   // 内置单色点阵图案
     void Play_LED_String(const char *playString);         // 显示字符，长字符串以滚动方式呈现
+    void Play_LED_String(double number);
+    void Play_LED_String(float number);
+    void Play_LED_String(int number);
     void Play_String_NextFrame(void);
     void Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
                                     byte display_flag);
@@ -77,7 +80,6 @@ class DOT_MATRIX_LED
     void Set_Single_Dot(uint8_t x, uint8_t y);
     void Clear_Single_Dot(uint8_t x, uint8_t y);
 
-    void Display_Number(float number);
 };
 
 #endif

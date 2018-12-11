@@ -296,9 +296,25 @@ void THUNDER_MOTOR::PID_Reset(struct PID_Struct_t *pid)
   pid->SumErr = 0; 
   pid->LastErr = 0; 
     
+  pid->OutP = 0;
+  pid->OutI = 0;
+  pid->OutD = 0;
+
   pid->LastOutP = 0;
   pid->LastOutI = 0;
   pid->LastOutD = 0;
+  
+  drive_car_pid.last_pid_time = 0;
+  drive_car_pid.OutP_left = 0;
+  drive_car_pid.OutI_left = 0;
+  drive_car_pid.OutI_left_last = 0;
+  drive_car_pid.OutD_left = 0;
+  drive_car_pid.OutP_right = 0;
+  drive_car_pid.OutI_right = 0;
+  drive_car_pid.OutI_right_last = 0;
+  drive_car_pid.OutD_right = 0;
+  drive_car_pid.Out_left = 0;
+  drive_car_pid.Out_right = 0;
 
   // pid->Out = 0;  
 }
@@ -314,16 +330,36 @@ void THUNDER_MOTOR::PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float
   pid->SumErr = 0; 
   pid->LastErr = 0; 
 
+  pid->OutP = 0;
+  pid->OutI = 0;
+  pid->OutD = 0;
+
+  pid->LastOutP = 0;
+  pid->LastOutI = 0;
+  pid->LastOutD = 0;
+
   pid->Out = 0;
 }
 
-// 按默认PID参数初始化左右电机
+// 按默认PID参数初始化电机闭环控制的变量
 void THUNDER_MOTOR::All_PID_Init()
 {
     float Kp,Ki,Kd;
     Kp = PID_Default_Kp;
     Ki = PID_Default_Ki;
     Kd = PID_Default_Kd;
+    
+    drive_car_pid.last_pid_time = 0;
+    drive_car_pid.OutP_left = 0;
+    drive_car_pid.OutI_left = 0;
+    drive_car_pid.OutI_left_last = 0;
+    drive_car_pid.OutD_left = 0;
+    drive_car_pid.OutP_right = 0;
+    drive_car_pid.OutI_right = 0;
+    drive_car_pid.OutI_right_last = 0;
+    drive_car_pid.OutD_right = 0;
+    drive_car_pid.Out_left = 0;
+    drive_car_pid.Out_right = 0;
 
     PID_Init(&Motor_L_Speed_PID, Kp, Ki, Kd);
     PID_Init(&Motor_R_Speed_PID, Kp, Ki, Kd);
@@ -484,12 +520,14 @@ void THUNDER_MOTOR::PID_Speed()
   }
 }
 
-// 设定左轮目标速度(编码器计数值) 目前范围暂定 -40~40，负数为方向转
+// 负数为反方向转
 void THUNDER_MOTOR::Set_L_Target(float target)
 {
   float target_encoder_num;
-  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
 
+  Thunder.Enable_En_Motor();
+
+  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
   if(Motor_L_Speed_PID.Ref != target_encoder_num)
   {
     PID_Reset(&Motor_L_Speed_PID);
@@ -497,17 +535,222 @@ void THUNDER_MOTOR::Set_L_Target(float target)
   }
 }
 
-// 设定右轮目标速度(编码器计数值) 目前范围暂定 -40~40，负数为方向转
+// 负数为反方向转
 void THUNDER_MOTOR::Set_R_Target(float target)
 {
   float target_encoder_num;
-  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
 
+  Thunder.Enable_En_Motor();
+
+  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
   if(Motor_R_Speed_PID.Ref != target_encoder_num)
   {
     PID_Reset(&Motor_R_Speed_PID);
     Motor_R_Speed_PID.Ref = target_encoder_num;
   }
+}
+
+/* 
+ * 控制电机运行，可以设置控制模式：0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+ * 
+ * @parameters:
+ * 
+ * struct MotorRunning_Struct{
+  //0代表left 和 right的控制都起效；1代表left控制起效，right无效; 2代表right控制起效，left无效
+  byte motor_select;
+
+  //0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+  byte running_mode;
+
+  //左电机的转动速度
+  float left_motor_speed;
+  //右电机的转动速度
+  float right_motor_speed;
+  }; 
+ *
+ * @return: 
+ */
+void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
+{
+  switch(running_data.motor_select){
+    case 0:{
+      Set_L_Target(running_data.left_motor_speed);
+      Set_R_Target(running_data.right_motor_speed);
+      break;
+    }
+    case 1:{
+      Set_L_Target(running_data.left_motor_speed);
+      break;
+    }
+    case 2:{
+      Set_R_Target(running_data.right_motor_speed);
+      break;
+    }
+    default:
+      return;
+    break;
+  }
+  
+  // 运行模式，0: 无模式；1：控制时间（秒）；2：控制角度（度）；3:控制圈数（圈）
+  switch(running_data.running_mode){
+    case 0:{
+      // 不用停止电机，立刻返回，
+      return;
+    break;
+    }
+    case 1:{
+      delay(1000*running_data.mode_data);
+    break;
+    }
+    case 2:{
+      int32_t last_left_RotateValue;
+      int32_t last_right_RotateValue;
+
+      last_left_RotateValue = Get_L_RotateValue();
+      last_right_RotateValue = Get_R_RotateValue();
+
+      if(running_data.motor_select == 1){
+        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < running_data.mode_data ){
+        }
+      }else if(running_data.motor_select == 2){
+        while( abs( Get_R_RotateValue() - last_right_RotateValue ) < running_data.mode_data ){
+        }
+      }else{
+        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < running_data.mode_data || 
+              abs( Get_R_RotateValue() - last_right_RotateValue ) < running_data.mode_data ){
+          if( abs( Get_L_RotateValue() - last_left_RotateValue ) >= running_data.mode_data ){
+              Set_L_Target(0);
+          }
+          if( abs( Get_R_RotateValue() - last_right_RotateValue ) >= running_data.mode_data ){
+              Set_R_Target(0);
+          }
+        }
+      }
+    break;
+    }
+    case 3:{
+      int32_t last_left_RotateValue;
+      int32_t last_right_RotateValue;
+      int32_t circle2degrees;
+
+      circle2degrees = running_data.mode_data * 360;
+      last_left_RotateValue = Get_L_RotateValue();
+      last_right_RotateValue = Get_R_RotateValue();
+
+      if(running_data.motor_select == 1){
+        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < circle2degrees ){
+        }
+      }else if(running_data.motor_select == 2){
+        while( abs( Get_R_RotateValue() - last_right_RotateValue ) < circle2degrees ){
+        }
+      }else{
+        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < circle2degrees || 
+              abs( Get_R_RotateValue() - last_right_RotateValue ) < circle2degrees ){
+          if( abs( Get_L_RotateValue() - last_left_RotateValue ) >= circle2degrees ){
+              Set_L_Target(0);
+          }
+          if( abs( Get_R_RotateValue() - last_right_RotateValue ) >= circle2degrees ){
+              Set_R_Target(0);
+          }
+        }
+      }
+    break;
+    }
+    default:
+    break;
+  }
+  
+  //运行完后，停止被控制的电机
+  switch(running_data.motor_select){
+    case 0:{
+      Set_L_Target(0);
+      Set_R_Target(0);
+      break;
+    }
+    case 1:{
+      Set_L_Target(0);
+      break;
+    }
+    case 2:{
+      Set_R_Target(0);
+      break;
+    }
+    default:
+      return;
+    break;
+  }
+}
+
+/* 
+ * 控制电机转向运行，可以设置控制模式：0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+ * 
+ * @parameters:
+ * 
+ * struct MotorTurnning_Struct{
+    //0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+    byte turnning_mode;
+
+    float mode_data;
+
+    // 取值范围 -100~100
+    float turn_percent;
+    float motor_speed;
+  };
+ *
+ * @return: 
+ */
+void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
+{
+  Set_Car_Speed_Direction(turnning_data.motor_speed, turnning_data.turn_percent);
+
+  // 运行模式，0: 无模式；1：控制时间（秒）；2：控制角度（度）；3:控制圈数（圈）
+  switch(turnning_data.turnning_mode){
+    case 0:{
+      // 不用停止电机，立刻返回，
+      return;
+    break;
+    }
+    case 1:{
+      delay(1000*turnning_data.mode_data);
+    break;
+    }
+    case 2:{
+      int32_t last_RotateValue;
+
+      if(turnning_data.turn_percent >= 0){
+        last_RotateValue = Get_L_RotateValue();
+        while( abs( Get_L_RotateValue() - last_RotateValue ) < turnning_data.mode_data ){
+        }
+      }else{
+        last_RotateValue = Get_R_RotateValue();
+        while( abs( Get_R_RotateValue() - last_RotateValue ) < turnning_data.mode_data ){
+        }
+      }
+
+    break;
+    }
+    case 3:{
+      int32_t last_RotateValue;
+      int32_t circle2degrees;
+
+      circle2degrees = turnning_data.mode_data * 360;
+      
+      if(turnning_data.turn_percent >= 0){
+        last_RotateValue = Get_L_RotateValue();
+        while( abs( Get_L_RotateValue() - last_RotateValue ) < circle2degrees ){
+        }
+      }else{
+        last_RotateValue = Get_R_RotateValue();
+        while( abs( Get_R_RotateValue() - last_RotateValue ) < circle2degrees ){
+        }
+      }
+    break;
+    }
+    default:
+    break;
+  }
+
+  Set_Car_Speed_Direction(0, 0);
 }
 
 void THUNDER_MOTOR::Calculate_Left_Control()
@@ -558,8 +801,10 @@ void THUNDER_MOTOR::Drive_Car_Control()
 
   if(drive_car_pid.last_pid_time == 0){
     time_interval = 10;
+    drive_car_pid.last_pid_time = millis();
   }else{
     time_interval = millis() - drive_car_pid.last_pid_time;
+    drive_car_pid.last_pid_time = millis();
   }
   left_speed = Encoder_Counter_Left;
   left_speed = left_speed * 10.0 / time_interval;
@@ -631,6 +876,10 @@ void THUNDER_MOTOR::Drive_Car_Control()
  */
 void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
 {
+  Thunder.Enable_Drive_Car();
+
+  All_PID_Init();
+
   if( speed > 100.0 ){
     drive_speed = 100.0;
   }else if( speed < -100.0 ){
@@ -738,7 +987,12 @@ inline void Update_Rotate_Value()
  */
 int32_t THUNDER_MOTOR::Get_L_RotateValue()
 {
-  return rotate_RawValue_Left;
+  double rotate_value;
+
+  rotate_value = rotate_RawValue_Left;
+  rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;
+  
+  return rotate_value;
 }
 /*
  * 获取右轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
@@ -750,7 +1004,12 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
  */
 int32_t THUNDER_MOTOR::Get_R_RotateValue()
 {
-  return rotate_RawValue_Right;
+  double rotate_value;
+
+  rotate_value = rotate_RawValue_Right;
+  rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;
+  
+  return rotate_value;
 }
 /*
  * 清零左轮旋转量记录，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效

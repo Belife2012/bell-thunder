@@ -1717,6 +1717,34 @@ void DOT_MATRIX_LED::Play_LED_String(const char *playString)
   }else display_start_X = 0;
   
 }
+/* 
+ * 显示数字（可以整数，负数，小数），小数保留最大3位，会进行四舍五入
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void DOT_MATRIX_LED::Play_LED_String(double number){
+  int number_int;
+  String number_char;
+
+  number_int = (int)number;
+
+  if( (double)number_int == number ){
+    number_char = String(number_int);
+  }else{
+    number_char = String(number, 3);
+  }
+  // Serial.println( number_char.c_str() );
+
+  Play_LED_String( number_char.c_str() );
+
+}
+void DOT_MATRIX_LED::Play_LED_String(int number){
+  Play_LED_String( (double)number );
+}
+void DOT_MATRIX_LED::Play_LED_String(float number){
+  Play_LED_String( (double)number );
+}
 
 /* 
  * 滚动显示字符时，每次调用此函数，会刷新LED点阵屏为滚动显示的下一帧
@@ -1932,27 +1960,4 @@ void DOT_MATRIX_LED::Clear_Single_Dot(uint8_t x, uint8_t y)
   }
 
   HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
-}
-
-/* 
- * 显示数字（可以整数，负数，小数），小数保留最大3位，会进行四舍五入
- * 
- * @parameters: 
- * @return: 
- */
-void DOT_MATRIX_LED::Display_Number(float number){
-  int number_int;
-  String number_char;
-
-  number_int = (int)number;
-
-  if( (float)number_int == number ){
-    number_char = String(number_int);
-  }else{
-    number_char = String(number, 3);
-  }
-  // Serial.println( number_char.c_str() );
-
-  Play_LED_String( number_char.c_str() );
-
 }

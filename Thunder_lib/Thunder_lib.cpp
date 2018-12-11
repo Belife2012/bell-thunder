@@ -91,7 +91,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 4, 39};
+const uint8_t Version_FW[4] = {'T', 0, 4, 40};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -163,6 +163,9 @@ void THUNDER::Stop_All(void)
 
   Thunder_Motor.Motor_Move(1, 0, 1); // 参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
   Thunder_Motor.Motor_Move(2, 0, 2); // 参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
+
+  // Servo_Turn(1, 90);
+  // Servo_Turn(2, 90);
 }
 
 // 电池电压检测初始化配置
@@ -318,6 +321,14 @@ void THUNDER::Enable_En_Motor(void)
 void THUNDER::Disable_En_Motor(void)
 {
   En_Motor_Flag = 0;
+
+  // 清除PID控制的变量
+  Thunder_Motor.Set_L_Target(0);
+  Thunder_Motor.Set_R_Target(0);
+  Thunder_Motor.All_PID_Init();
+
+  Thunder_Motor.Set_L_Motor_Output(0);
+  Thunder_Motor.Set_R_Motor_Output(0);
 }
 
 // 舵机初始化配置
@@ -754,9 +765,9 @@ void THUNDER::Motor_Slow_Go()
 int THUNDER::Car_Shake_Left_Right(int dir)
 {
   if(dir == 1){
-    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, -50);
   }else{
-    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, 50);
   }
   Line_last_time = millis();
   current_time = millis();
@@ -773,9 +784,9 @@ int THUNDER::Car_Shake_Left_Right(int dir)
   }
 
   if(dir == 1){
-    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, 50);
   }else{
-    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, -50);
   }
   Line_last_time = millis();
   current_time = millis();
@@ -807,9 +818,9 @@ int THUNDER::Car_Rotate_90_Left_Right(int dir)
   int current_L_R_diffrotate;
 
   if(dir == 1){
-    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, -50);
   }else{
-    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, 50);
   }
   current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
   last_L_R_diffrotate = current_L_R_diffrotate;
@@ -827,9 +838,9 @@ int THUNDER::Car_Rotate_90_Left_Right(int dir)
   }
 
   if(dir == 1){
-    Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, 50);
   }else{
-    Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+    Thunder_Motor.Set_Car_Speed_Direction(15, -50);
   }
   current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
   last_L_R_diffrotate = current_L_R_diffrotate;
@@ -881,7 +892,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       // Speaker.Play_Song(7); //test用---------
       if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
       {
-        Thunder_Motor.Set_Car_Speed_Direction(15, 360);
+        Thunder_Motor.Set_Car_Speed_Direction(15, 100);
         line_state = 5;
       }
       else if (line_state == 0) // 忽然从全黑变为全零过程中出线 
@@ -942,7 +953,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       }
       else if (line_state == 1) //偏右的过程中出线，快速漂移打转(弯道转弯)
       {
-        Thunder_Motor.Set_Car_Speed_Direction(20, -150);
+        Thunder_Motor.Set_Car_Speed_Direction(20, -40);
         while(1){
           Line_last_time = millis(); // 不改变line_state，刷新时间
           Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
@@ -955,7 +966,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       }
       else if (line_state == 2) //偏左的过程中出线，快速漂移打转(弯道转弯)
       {
-        Thunder_Motor.Set_Car_Speed_Direction(20, 150);
+        Thunder_Motor.Set_Car_Speed_Direction(20, 40);
         while(1){
           Line_last_time = millis(); // 不改变line_state，刷新时间
           Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
@@ -968,14 +979,14 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       }
       else
       {
-        Thunder_Motor.Set_Car_Speed_Direction(15, -360);
+        Thunder_Motor.Set_Car_Speed_Direction(15, -100);
       }
     }
     else if (IR_Data[0] == 0) //Serial.printf("* 偏左，右转 \n");
     {
       if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
       {
-        Thunder_Motor.Set_Car_Speed_Direction(15, -180);
+        Thunder_Motor.Set_Car_Speed_Direction(15, -50);
         Line_last_time = millis(); // 不改变运动状态
         line_out_flag = 1;
         continue; // 这种情况是越界的情况，保持前运动状态继续运动，直到状态回归
@@ -983,9 +994,9 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       line_out_flag = 0;
         // 如果上次偏右时间不够200ms，那可能这里是处于直线状态的，转弯幅度要小
         if( current_time < R_last_time + MAYBE_STRAIGHT_DIRECTION ){  
-          Thunder_Motor.Set_Car_Speed_Direction(20, 30);
+          Thunder_Motor.Set_Car_Speed_Direction(20, 10);
         }else{
-          Thunder_Motor.Set_Car_Speed_Direction(20, 50);
+          Thunder_Motor.Set_Car_Speed_Direction(20, 20);
         }
         
       if (line_state == 2)
@@ -1001,14 +1012,14 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       else
       {
         line_state = 4; // 偏左时间小于 50ms，急转偏右运动一小段时间
-        Thunder_Motor.Set_Car_Speed_Direction(25, 60);
+        Thunder_Motor.Set_Car_Speed_Direction(25, 30);
       }
     }
     else if (IR_Data[1] == 0) //Serial.printf("* 偏右，左转 \n");
     {
       if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
       {
-        Thunder_Motor.Set_Car_Speed_Direction(15, 180);
+        Thunder_Motor.Set_Car_Speed_Direction(15, 50);
         Line_last_time = millis(); // 不改变运动状态
         line_out_flag = 2;
         continue; // 保持前运动状态继续运动
@@ -1016,9 +1027,9 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       line_out_flag = 0;
         // 如果上次偏右时间不够200ms，那可能这里是处于直线状态的，转弯幅度要小
         if( current_time < L_last_time + MAYBE_STRAIGHT_DIRECTION ){
-          Thunder_Motor.Set_Car_Speed_Direction(20, -30);
+          Thunder_Motor.Set_Car_Speed_Direction(20, -10);
         }else{
-          Thunder_Motor.Set_Car_Speed_Direction(20, -50);
+          Thunder_Motor.Set_Car_Speed_Direction(20, -20);
         }
         
       if (line_state == 1)
@@ -1033,7 +1044,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       }
       else
       {
-        Thunder_Motor.Set_Car_Speed_Direction(25, -60);
+        Thunder_Motor.Set_Car_Speed_Direction(25, -30);
         line_state = 3; // 偏右时间小于 50ms，急转偏右运动一小段时间
       }
     }
