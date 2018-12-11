@@ -602,50 +602,36 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
       delay(1000*running_data.mode_data);
     break;
     }
-    case 2:{
-      int32_t last_left_RotateValue;
-      int32_t last_right_RotateValue;
-
-      last_left_RotateValue = Get_L_RotateValue();
-      last_right_RotateValue = Get_R_RotateValue();
-
-      if(running_data.motor_select == 1){
-        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < running_data.mode_data ){
-        }
-      }else if(running_data.motor_select == 2){
-        while( abs( Get_R_RotateValue() - last_right_RotateValue ) < running_data.mode_data ){
-        }
-      }else{
-        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < running_data.mode_data || 
-              abs( Get_R_RotateValue() - last_right_RotateValue ) < running_data.mode_data ){
-          if( abs( Get_L_RotateValue() - last_left_RotateValue ) >= running_data.mode_data ){
-              Set_L_Target(0);
-          }
-          if( abs( Get_R_RotateValue() - last_right_RotateValue ) >= running_data.mode_data ){
-              Set_R_Target(0);
-          }
-        }
-      }
-    break;
-    }
-    case 3:{
+    case 2:
+    case 3:
+    {
       int32_t last_left_RotateValue;
       int32_t last_right_RotateValue;
       int32_t circle2degrees;
 
-      circle2degrees = running_data.mode_data * 360;
+      if(running_data.running_mode == 2){
+        circle2degrees = running_data.mode_data;
+      }else{
+        circle2degrees = running_data.mode_data * 360;
+      }
+
       last_left_RotateValue = Get_L_RotateValue();
       last_right_RotateValue = Get_R_RotateValue();
 
       if(running_data.motor_select == 1){
-        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < circle2degrees ){
+        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < circle2degrees 
+              && running_data.left_motor_speed != 0 ){
         }
       }else if(running_data.motor_select == 2){
-        while( abs( Get_R_RotateValue() - last_right_RotateValue ) < circle2degrees ){
+        while( abs( Get_R_RotateValue() - last_right_RotateValue ) < circle2degrees 
+              && running_data.right_motor_speed != 0 ){
         }
       }else{
-        while( abs( Get_L_RotateValue() - last_left_RotateValue ) < circle2degrees || 
-              abs( Get_R_RotateValue() - last_right_RotateValue ) < circle2degrees ){
+        while( ( abs( Get_L_RotateValue() - last_left_RotateValue ) < circle2degrees 
+              && running_data.left_motor_speed != 0 ) || 
+              ( abs( Get_R_RotateValue() - last_right_RotateValue ) < circle2degrees 
+              && running_data.right_motor_speed != 0 )
+             ){
           if( abs( Get_L_RotateValue() - last_left_RotateValue ) >= circle2degrees ){
               Set_L_Target(0);
           }
@@ -654,8 +640,9 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
           }
         }
       }
-    break;
     }
+    break;
+
     default:
     break;
   }
@@ -716,6 +703,7 @@ void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
     }
     case 2:{
       int32_t last_RotateValue;
+      if(turnning_data.motor_speed == 0) break;
 
       if(turnning_data.turn_percent >= 0){
         last_RotateValue = Get_L_RotateValue();
@@ -732,6 +720,7 @@ void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
     case 3:{
       int32_t last_RotateValue;
       int32_t circle2degrees;
+      if(turnning_data.motor_speed == 0) break;
 
       circle2degrees = turnning_data.mode_data * 360;
       

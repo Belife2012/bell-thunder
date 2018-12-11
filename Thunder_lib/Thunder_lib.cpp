@@ -320,11 +320,11 @@ void THUNDER::Enable_En_Motor(void)
 // 关闭编码电机计算
 void THUNDER::Disable_En_Motor(void)
 {
-  En_Motor_Flag = 0;
-
   // 清除PID控制的变量
   Thunder_Motor.Set_L_Target(0);
   Thunder_Motor.Set_R_Target(0);
+  
+  En_Motor_Flag = 0;
   Thunder_Motor.All_PID_Init();
 
   Thunder_Motor.Set_L_Motor_Output(0);
