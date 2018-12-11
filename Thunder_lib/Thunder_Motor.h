@@ -201,6 +201,8 @@ class THUNDER_MOTOR
     void Set_R_Target(float target);  // 设定右轮目标速度(编码器计数值)
     void Control_Motor_Running(MotorRunning_Struct &running_data);
     void Control_Motor_Turnning(MotorTurnning_Struct &turnning_data);
+    MotorRunning_Struct motor_running_data;
+    MotorTurnning_Struct motor_turnning_data;
 
     void Update_Encoder_Value();
 
