@@ -55,7 +55,9 @@ void XT1511_I2C::Set_LED_Num(uint8_t number)
   rc = write(XT1511_I2C_CONTROL_REG, &number, sizeof(number));
   if (rc != 0)
   {
-    Serial.println(F(" SSS___ 彩灯 XT1511_I2C_CONTROL 配置失败 ___SSS"));
+    #ifdef DEBUG_PRINT_ERROR
+    Serial.println("# XT1511_I2C_CONTROL fail");
+    #endif
   }
 }
 
@@ -79,7 +81,9 @@ void XT1511_I2C::Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b)
   rc = write(address, rgb, sizeof(rgb));
   if (rc != 0)
   {
-    Serial.println(F("SSS___ 写人单个彩灯数据失败 ___SSS"));
+    #ifdef DEBUG_PRINT_ERROR
+    Serial.println("# XT1511_I2C Set LED fail");
+    #endif
   }
 
   byte startIndex;
@@ -103,7 +107,9 @@ void XT1511_I2C::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
   rc = write(address, data, size);
   if (rc != 0)
   {
-    Serial.println(F("SSS___ 写人一组彩灯数据失败 ___SSS"));
+    #ifdef DEBUG_PRINT_ERROR
+    Serial.println("# XT1511_I2C Set LEDs fail");
+    #endif
   }
 
   for (byte i = 0; i < size; i++)
@@ -159,7 +165,9 @@ void XT1511_I2C::LED_Show(uint8_t number)
   rc = write(XT1511_I2C_COM_SHOW, &reg, sizeof(reg)); //COM全开
   if (rc != 0)
   {
-    Serial.println(F("SSS___ 彩灯 XT1511_I2C_COM_SHOW 写入失败 ___SSS"));
+    #ifdef DEBUG_PRINT_ERROR
+    Serial.println("# XT1511_I2C show fail");
+    #endif
   }
 }
 

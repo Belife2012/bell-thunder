@@ -34,6 +34,23 @@ byte TOUCH_I2C::Get_Status(byte *readValue)
 }
 
 /* 
+ * 复位工作模式：自动模式，未按下亮绿灯，按下亮红灯
+ * 
+ * @parameters: 
+ * @return: 
+ */
+byte TOUCH_I2C::Reset_Mode(void)
+{
+  unsigned char ctl_data, ret;
+
+  ctl_data = 0;
+
+  ret = write(TOUCH_ADDRESS_CONTROL, &ctl_data, 1);
+
+  return ret;
+}
+
+/* 
  * 设置触碰模块的LED灯颜色，范围 0-255
  * 
  * @parameters: 全部传入0 值时，即为关闭LED灯

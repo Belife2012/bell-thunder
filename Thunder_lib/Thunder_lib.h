@@ -117,6 +117,10 @@
 // 光电模块
 #define LIGHT_ADDR_DEVICE   0x52   //光电模块I2C器件地址
 
+// 按钮及LED指示
+#define START_BUTTON        12
+#define PROCESS_LED         2
+
 // 雷霆
 extern THUNDER_BLE Thunder_BLE;
 extern THUNDER_MOTOR Thunder_Motor;
@@ -143,10 +147,15 @@ extern LIGHTDETECT_I2C Light_Sensor;
 extern DOT_MATRIX_LED Dot_Matrix_LED;
 extern HT16D35B HT16D35B;// IIC Address: 0x69
 
+typedef enum {
+  PROCESS_STOP = 0,
+  PROCESS_RUN
+} enum_Process_Status;
+
 class THUNDER
 {
   private:
-    // 舵机
+    // 舵机 PWM频率50Hz，0度时 脉宽最小500us，180度时 脉宽最大2500us，开机舵机居中为 90度
     // 20000[us] * 计数值 / 8191 = 输出[us]
     int Servo_MIN = 205;
     int Servo_Range = 819; 
@@ -234,6 +243,8 @@ class THUNDER
     uint8_t line_state = 0;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
   // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
     uint8_t history_data[2]; 
+
+    enum_Process_Status process_status = PROCESS_STOP;
 
     // 巡线模式
     uint8_t line_tracing_running = false;

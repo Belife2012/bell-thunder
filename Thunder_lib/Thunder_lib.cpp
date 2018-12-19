@@ -91,7 +91,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 4, 40};
+const uint8_t Version_FW[4] = {'T', 0, 4, 41};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -357,11 +357,11 @@ void THUNDER::Servo_Turn(int servo, int angle)
 
   if (servo == 1) //A口
   {
-    ledcWrite(SERVO_CHANNEL_0, Servo_MIN + Servo_Range * angle / 180); //大的舵机，最小260，最大950
+    ledcWrite(SERVO_CHANNEL_0, Servo_MIN + Servo_Range * angle / 180);
   }
   else if (servo == 2) //B口
   {
-    ledcWrite(SERVO_CHANNEL_1, Servo_MIN + Servo_Range * angle / 180); //大的舵机，最小260，最大950
+    ledcWrite(SERVO_CHANNEL_1, Servo_MIN + Servo_Range * angle / 180);
   }
   else
   {

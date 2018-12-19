@@ -38,6 +38,7 @@
 HT16D35B::HT16D35B(int slave_address)
 {
   _device_address = slave_address;
+  device_detected = 0;
 }
 
 // 初始化设置
@@ -103,6 +104,7 @@ byte HT16D35B::Setup(void)
     return (rc);
   }
 
+  device_detected = 1;
   Serial.printf("Init LED Matrix end\n\n");
   return 0;
 }
@@ -112,7 +114,21 @@ byte HT16D35B::Setup(void)
 // 参数size --> 数据长度
 byte HT16D35B::LED_Show(const unsigned char *data, int size)
 {
-  byte rc;
+  byte rc, reg_value;
+
+  // 测试 HTHT16D35B IIC是否连上，是否需要重新Setup()
+  reg_value = 0xff;
+  rc = write(HT16D35B_CONTROL_COM, &reg_value, sizeof(reg_value)); //COM全开
+  if (rc != 0)
+  {
+  #ifdef PRINT_DEBUG_ERROR
+    Serial.printf("# HT16D35B IIC Error! \n");
+  #endif
+    device_detected = 0;
+    return (rc);
+  }else if(device_detected == 0){
+    Setup();
+  }
 
   Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address); // 开启发送
@@ -133,6 +149,7 @@ byte HT16D35B::LED_Show(const unsigned char *data, int size)
     Serial.printf("### LED IIC Error! ###%d#### \n", rc);
   #endif
   }
+  
   return (rc);
 }
 
