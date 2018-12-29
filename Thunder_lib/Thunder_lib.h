@@ -49,6 +49,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "data_type.h"
 
 // 音频
 #include "WT588.h"
@@ -118,8 +119,11 @@
 #define LIGHT_ADDR_DEVICE   0x52   //光电模块I2C器件地址
 
 // 按钮及LED指示
-#define START_BUTTON        12
-#define PROCESS_LED         2
+#define BUTTON_START        12
+#define LED_INDICATION      2
+#define BUTTON_FILTER_PARAM 50    // 小于50ms的按键状态被滤除
+#define BUTTON_LONG_PRESS_TIME      1500  // 长按的时间长度
+#define BUTTON_CONTINUE_CLICK_TIME  600   // 连续click的最大间隔
 
 // 雷霆
 extern THUNDER_BLE Thunder_BLE;
@@ -147,10 +151,8 @@ extern LIGHTDETECT_I2C Light_Sensor;
 extern DOT_MATRIX_LED Dot_Matrix_LED;
 extern HT16D35B HT16D35B;// IIC Address: 0x69
 
-typedef enum {
-  PROCESS_STOP = 0,
-  PROCESS_RUN
-} enum_Process_Status;
+// 按键与指示灯
+extern uint32_t led_indication_counter;
 
 class THUNDER
 {
@@ -171,6 +173,29 @@ class THUNDER
     uint32_t Battery_Value; //记录每次采集电压值时的电压值
     uint8_t lowpower_flag = 0; // 1 为低电压状态
 
+    /* 按键、指示灯LED */
+    // 毫秒为单位，精度为10ms
+    struct struct_Led_Indication_Param{
+      uint8_t led_indication_once_flag; // 当为 1 时，指示灯只做一次动作
+      uint8_t led_indication_amount;
+      uint32_t led_indication_period;
+      uint32_t led_indication_on_duty;
+      uint32_t led_indication_off_duty;
+      uint32_t wait_led_timer = 0;
+    } led_indication_param;
+    uint32_t wait_key_timer = 0;
+    uint32_t button_press_time;
+    uint32_t button_release_time; 
+    uint32_t button_press_result_time;
+    uint32_t button_release_result_time; 
+    uint8_t button_press_counter;
+    uint8_t button_status_record;
+    uint8_t button_active;
+
+    // 程序切换
+    enum_Process_Status process_status = PROCESS_STOP;
+    enum_Process_Status program_user;
+
     // 巡线IR
     // [0]是左边数据，[1]是右边数据
     uint8_t IR_Data[2];
@@ -180,11 +205,20 @@ class THUNDER
     unsigned long Line_last_led_time = 0;
     unsigned long Line_last_sound_time = 0;
 
-    // 150 100 50 -50
+    #ifdef LIGHT_ROBOT_MODEL
+    // 轻构型
     int Line_H_Speed = 90;
     int Line_M_Speed = 70;
     int Line_L_Speed = 50;
     int Line_B_Speed = -50;
+    #else
+    // 重构型
+    int Line_H_Speed = 100;
+    int Line_M_Speed = 90;
+    int Line_L_Speed = 70;
+    int Line_B_Speed = -70;
+    #endif
+
 
     // 串口通信标志位
     uint8_t Usart_Communication = 0;
@@ -244,8 +278,6 @@ class THUNDER
   // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
     uint8_t history_data[2]; 
 
-    enum_Process_Status process_status = PROCESS_STOP;
-
     // 巡线模式
     uint8_t line_tracing_running = false;
 
@@ -258,6 +290,20 @@ class THUNDER
     uint32_t Get_Battery_Data(void); // 获取电池电压
     uint32_t Get_Battery_Value();
     void Indicate_Lowpower(uint32_t Battery_Voltage); // 电压低于 8V 后的提示
+
+    /* 按键、指示灯LED */
+    void Update_Function_Timer();
+    void Setup_Led_Indication();
+    void Set_Led_Indication_param();
+    void Update_Led_Indication_Status(uint32_t &current_counter);
+    void Setup_Button_Start();
+    uint8_t Get_Button_Start_Status();
+    enum_Key_Value Check_Button_Start_Value();
+    void Set_Process_Status(enum_Process_Status new_status);
+    void Update_Process_Status(enum_Key_Value button_event);
+    void Set_Program_User(enum_Process_Status new_program_user);
+    void Set_Program_Run_Index(enum_Process_Status new_program);
+    void Toggle_Progran_mode();
 
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算

@@ -2,6 +2,7 @@
 #include <Thunder_lib.h>
 
 TASK_MESG Task_Mesg;
+uint32_t led_indication_counter;
 
 /**************************************Deamon Thread*******************************************/
 void Driver_Flush(void *pvParameters)
@@ -103,6 +104,29 @@ void Operator_Mode_Deamon(void *pvParameters)
       // Thunder.Line_Tracing_Speed_Ctrl();
     }
     vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+/* 
+ * 轮询 按键、指示灯LED 等等交互的外设
+ * 巡查周期为10ms
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void Polling_Check(void *pvParameters)
+{
+  // 单位为ms
+  led_indication_counter = 0;
+
+  for(;;)
+  {
+    /* 指示灯LED轮询，模拟PWM */
+    Thunder.Update_Function_Timer();
+    Thunder.Update_Led_Indication_Status(led_indication_counter);
+    Thunder.Check_Button_Start_Value();
+
+    vTaskDelay(pdMS_TO_TICKS(POLLING_CHECK_PERIOD));
+    led_indication_counter += POLLING_CHECK_PERIOD;
   }
 }
 
@@ -334,6 +358,8 @@ void TASK_MESG::Create_Deamon_Threads()
   Serial.println("3");
   xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operatorModeDeamon", 4096, NULL, 1, NULL, 1);
   Serial.println("4");
+  xTaskCreatePinnedToCore(Polling_Check, "pollingCheck", 4096, NULL, 1, NULL, 1);
+  Serial.println("5");
 
   deamon_task_running = 1;
   Serial.println("Deamons ready");

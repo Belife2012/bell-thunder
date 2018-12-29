@@ -12,6 +12,8 @@
 #define MAX_APPS_TASK_COUNTER 1
 #define APP_TASK_PRIORITY_MAX 5
 
+#define POLLING_CHECK_PERIOD    10
+
 typedef enum
 {
   FLUSH_COMMUNICATIONS = 0,
@@ -22,6 +24,8 @@ typedef enum
   FLUSH_BATTERY_MEASURE,
   FLUSH_MAX_NUM
 } enum_Flush_Type;
+
+extern uint32_t led_indication_counter;
 
 void setup_1(void);
 void loop_1(void);

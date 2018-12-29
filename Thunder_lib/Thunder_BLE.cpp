@@ -269,6 +269,8 @@ void THUNDER_BLE::Setup_BLE()
   // 改蓝牙默认功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
   esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P7);  
 
+  Setup_Ble_Security();
+
   // 增加广播内容
   pAdvertising = pServer->getAdvertising();
   BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
@@ -313,6 +315,23 @@ void THUNDER_BLE::Setup_BLE()
   pServer->getAdvertising()->start(); // 开始广播
 
   Serial.printf("BLE Init end\n");
+}
+
+void THUNDER_BLE::Setup_Ble_Security()
+{
+  BLESecurity ble_security;
+
+  BLEDevice::setEncryptionLevel(ESP_BLE_SEC_ENCRYPT);
+
+  //set static passkey
+  uint32_t passkey = 123456;
+  esp_ble_gap_set_security_param(ESP_BLE_SM_PASSKEY, &passkey, sizeof(uint32_t));
+  ble_security.setAuthenticationMode(ESP_LE_AUTH_BOND);
+  ble_security.setCapability(ESP_IO_CAP_NONE);
+  ble_security.setInitEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
+  ble_security.setRespEncryptionKey(ESP_BLE_ENC_KEY_MASK | ESP_BLE_ID_KEY_MASK);
+  ble_security.setKeySize();
+
 }
 
 // 发送蓝牙数据

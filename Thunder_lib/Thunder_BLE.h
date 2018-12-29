@@ -89,6 +89,8 @@ class THUNDER_BLE
 
     BLEAdvertising *pAdvertising;
 
+    void Setup_Ble_Security();
+
   public:
     // 内存读取
     uint64_t Get_ID(void);              // 获取并返回芯片ID

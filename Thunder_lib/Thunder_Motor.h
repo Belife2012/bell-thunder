@@ -64,7 +64,7 @@
 #define MOTOR_R_IN1         13
 #define MOTOR_R_IN2         23
 
-#define MOTOR_MAX_DUTY      5500 //最大8191 // 8191 = 2 ^ 13 - 1 //电机选型的原因在此进行最大输出限制   //安全duty 5500
+#define MOTOR_MAX_DUTY      8191 //最大8191 // 8191 = 2 ^ 13 - 1 //电机选型的原因在此进行最大输出限制   //安全duty 5500
 
 // 编码器
 #define DEGREES_EVERY_CIRCLE      360

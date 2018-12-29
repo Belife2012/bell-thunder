@@ -1,0 +1,26 @@
+#ifndef __DATA_TYPE_H__
+#define __DATA_TYPE_H__
+
+typedef enum {
+  PROCESS_USER_1 = 0,
+  PROCESS_USER_2,
+  PROCESS_USER_3,
+  PROCESS_USER_4,
+  PROCESS_THUNDER_GO,
+  PROCESS_INDICATE_SWITCH,
+  PROCESS_WAIT_SWITCH,
+  PROCESS_STOP,
+  PROCESS_READY_RUN
+} enum_Process_Status;
+
+typedef enum{
+  KEY_NONE = 0,
+  KEY_LONG_NO_RELEASE,
+  KEY_LONG_RELEASE,
+  KEY_CLICK_ONE,
+  KEY_CLICK_TWO,
+  KEY_CLICK_THREE,
+  KEY_CLICK_FOUR
+} enum_Key_Value;
+
+#endif
