@@ -144,7 +144,7 @@ void THUNDER::Setup_All(void)
   Task_Mesg.Set_Flush_Task(FLUSH_MOTOR_PID_CTRL);  // 把 电机闭环控制 交给后台守护线程进行
   Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL);  // 把 滚动显示的刷新工作 交给后台守护线程进行
   Task_Mesg.Set_Flush_Task(FLUSH_BATTERY_MEASURE); // 每300ms检测一次电池电压，以保证每次测量都有之前的数据作为滤波数据
-  // Task_Mesg.Set_Flush_Task(FLUSH_COMMUNICATIONS);  // 开启UART指令、BLE指令 通信控制功能
+  Task_Mesg.Set_Flush_Task(FLUSH_COMMUNICATIONS);  // 开启UART指令、BLE指令 通信控制功能
   Task_Mesg.Create_Deamon_Threads();               // 创建并开始 守护线程
 
   Serial.printf("\n*** Initial Completes ***\n\n");
@@ -2454,111 +2454,50 @@ void THUNDER::Start_Show(void)
   delay(200);
 }
 
-// 等待蓝牙连接动画 (有串口数据也跳出)
-#if 0 // 测试超声波 连续IIC 读取出错 问题
-void THUNDER::Wait_BLE(void)
+/* 
+ * 设置need_communication 的接口函数
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void THUNDER::Set_Need_Communication(bool flag)
 {
-  float US_Data_cm = 0;
-  while((deviceConnected == false) & (Usart_Communication == 0))
-  {
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
-    
-  US_Data_cm = US.Get_US_cm();
-  if(US_Data_cm < 1.0){
-    Serial.printf("### US_Data_cm : %.1f [cm]################1###############\n", US_Data_cm);
-  }else{
-    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
-  }
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
-  delay(5);
-  US_Data_cm = US.Get_US_cm();
-  if(US_Data_cm < 1.0){
-    Serial.printf("### US_Data_cm : %.1f [cm]#################2##############\n", US_Data_cm);
-  }else{
-    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
-  }
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
-    
-  US_Data_cm = US.Get_US_cm();
-  if(US_Data_cm < 1.0){
-    Serial.printf("### US_Data_cm : %.1f [cm]#################3##############\n", US_Data_cm);
-  }else{
-    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
-  }
-
-  // uint16_t lightValue = 0;
-  // while((deviceConnected == false) & (Usart_Communication == 0))
-  // {
-  //   Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
-    
-  // lightValue = Light_Sensor.Get_Light_Value();
-  // Serial.printf("light Value: %d \n", lightValue);
-
-  //   delay(200);
-  //   Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
-
-  // delay(5);
-  // lightValue = Light_Sensor.Get_Light_Value();
-  // Serial.printf("light Value: %d \n", lightValue);
-
-  //   delay(200);
-  //   Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
-
-  // lightValue = Light_Sensor.Get_Light_Value();
-  // Serial.printf("light Value: %d \n", lightValue);
-
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
-    delay(200);
-    Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
-    delay(200);
-
-    if(Serial.available())
-    {
-      Usart_Communication = 1;
-    }  
-  }
+  need_communication = flag;
 }
-#else
+
 // 等待蓝牙连接动画 (有串口数据也跳出)
 void THUNDER::Wait_Communication(void)
 {
-  while ((deviceConnected == false) & (Usart_Communication == 0))
+  if(need_communication == true)
   {
-    if (lowpower_flag == 0)
+    while ((deviceConnected == false) & (Usart_Communication == 0))
     {
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
-      delay(200);
-      Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
-      delay(200);
-    }
-    if (Serial.available())
-    {
-      Usart_Communication = 1;
+      if (lowpower_flag == 0)
+      {
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
+        delay(200);
+        Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
+        delay(200);
+      }
+      if (Serial.available())
+      {
+        Usart_Communication = 1;
+      }
     }
   }
 }
-#endif
 
 // 设置将要播放的内置动画编号
 void THUNDER::Set_LED_Show_No(uint8_t Show_No)
@@ -2979,7 +2918,7 @@ void THUNDER::Check_BLE_Communication(void)
 // 通信确认，串口
 void THUNDER::Check_UART_Communication(void)
 {
-  // 等待有连接（蓝牙 或者 串口）后再进行后续的动作
+  // 检查并等待蓝牙连接
   Wait_Communication();
 
   Get_Serial_Command();
@@ -3009,6 +2948,7 @@ void THUNDER::Check_UART_Communication(void)
 // 协议解析
 void THUNDER::Check_Protocol(void)
 {
+  float rev_motor_speed;
   switch (Rx_Data[0])
   {
   case 0x00:
@@ -3084,21 +3024,72 @@ void THUNDER::Check_Protocol(void)
     break;
 
   case 0xB1:            //控制单个电机
+  #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
     Disable_En_Motor(); // En_Motor_Flag = 0;
-
     Thunder_Motor.Motor_Move(Rx_Data[1], Rx_Data[2], Rx_Data[3]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
+  #else
+    rev_motor_speed = (float)Rx_Data[2] * 0.39;
+    if (Rx_Data[1] == 1)
+    {
+      if (Rx_Data[3] == 1)
+      {
+        Thunder_Motor.Set_L_Target(rev_motor_speed);
+      }
+      else
+      {
+        Thunder_Motor.Set_L_Target((-1) * rev_motor_speed);
+      }
+    }
+    else
+    {
+      if (Rx_Data[3] == 1)
+      {
+        Thunder_Motor.Set_R_Target(rev_motor_speed);
+      }
+      else
+      {
+        Thunder_Motor.Set_R_Target((-1) * rev_motor_speed);
+      }
+    }
+  #endif
     break;
 
   case 0xB2:            //控制两个电机
+  #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
     Disable_En_Motor(); // En_Motor_Flag = 0;
-
+    if( Rx_Data[2] != 1 && Rx_Data[4] != 1 ){
+      if( Rx_Data[1] < Rx_Data[3] ){
+        Rx_Data[1] = Rx_Data[3];
+      }else{
+        Rx_Data[3] = Rx_Data[1];
+      }
+    }
     Thunder_Motor.Motor_Move(1, Rx_Data[1], Rx_Data[2]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
     Thunder_Motor.Motor_Move(2, Rx_Data[3], Rx_Data[4]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
+  #else
+    rev_motor_speed = (float)Rx_Data[1] * 0.39;
+    if (Rx_Data[2] == 1)
+    {
+      Thunder_Motor.Set_L_Target(rev_motor_speed);
+    }
+    else
+    {
+      Thunder_Motor.Set_L_Target((-1) * rev_motor_speed);
+    }
+
+    rev_motor_speed = (float)Rx_Data[3] * 0.39;
+    if (Rx_Data[4] == 1)
+    {
+      Thunder_Motor.Set_R_Target(rev_motor_speed);
+    }
+    else
+    {
+      Thunder_Motor.Set_R_Target((-1) * rev_motor_speed);
+    }
+  #endif
     break;
 
   case 0xB3:           //控制单个闭环电机
-    Enable_En_Motor(); // En_Motor_Flag = 1;
-
     if (Rx_Data[1] == 1)
     {
       if (Rx_Data[3] == 1)
@@ -3124,8 +3115,6 @@ void THUNDER::Check_Protocol(void)
     break;
 
   case 0xB4:           //控制两个闭环电机
-    Enable_En_Motor(); // En_Motor_Flag = 1;
-
     if (Rx_Data[2] == 1)
     {
       Thunder_Motor.Set_L_Target(Rx_Data[1]);

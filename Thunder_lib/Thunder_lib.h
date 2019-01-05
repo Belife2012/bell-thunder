@@ -72,8 +72,8 @@
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
 
-// 使用新的 Version 变量Version_FW
-// #define VERSION            0.21   // version
+/* 通用宏 */
+#define MOTOR_WITHOUT_CTRL_FOR_USER   1
 
 // I2C
 #define SDA_PIN            21   // SDA_PIN
@@ -221,6 +221,7 @@ class THUNDER
 
 
     // 串口通信标志位
+    bool need_communication = false;
     uint8_t Usart_Communication = 0;
 
     // 内置表情/动画
@@ -305,6 +306,9 @@ class THUNDER
     void Set_Program_Run_Index(enum_Process_Status new_program);
     void Toggle_Progran_mode();
 
+    /* 程序切换 */
+    enum_Program_Index program_change_to = PROGRAM_RUNNING;
+
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算
     void Enable_En_Motor(void);   // 打开编码电机计算
@@ -340,6 +344,7 @@ class THUNDER
     void Check_UART_Communication(void); // 通信确认，串口
     void Check_Protocol(void);      // 协议解析
     void Reset_Rx_Data(void);       // 清空接收数据
+    void Set_Need_Communication(bool);
 
     // 传感器端口选择
     uint8_t Select_Sensor_Channel(uint8_t sensorChannel);

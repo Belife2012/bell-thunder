@@ -74,10 +74,10 @@ void Deamon_Motor(void *pvParameters)
     }
     if(Thunder.line_tracing_running == true){
       // 巡线阶段，PID运算周期为 10ms
-      vTaskDelay(pdMS_TO_TICKS(10));
+      vTaskDelay(pdMS_TO_TICKS(MOTOR_CONTROL_PERIOD));
     }else{
       // 电机 PID运算周期为 50ms
-      vTaskDelay(pdMS_TO_TICKS(10));
+      vTaskDelay(pdMS_TO_TICKS(MOTOR_CONTROL_PERIOD));
     }
   }
 }
@@ -131,12 +131,46 @@ void Polling_Check(void *pvParameters)
 }
 
 /************************************new app Thread*****************************************/
+void Programs_System(void)
+{
+  if(Thunder.program_change_to == PROGRAM_USER_1)
+  {
+    Program_1();
+
+    Thunder.program_change_to = PROGRAM_RUNNING;
+  }
+  else if(Thunder.program_change_to == PROGRAM_USER_2)
+  {
+    Program_2();
+
+    Thunder.program_change_to = PROGRAM_RUNNING;
+  }
+  else if(Thunder.program_change_to == PROGRAM_USER_3)
+  {
+    Program_3();
+
+    Thunder.program_change_to = PROGRAM_RUNNING;
+  }
+  else if(Thunder.program_change_to == PROGRAM_USER_4)
+  {
+    Program_4();
+
+    Thunder.program_change_to = PROGRAM_RUNNING;
+  }
+  else if(Thunder.program_change_to == PROGRAM_THUNDER_GO)
+  {
+    Program_ThunderGo();
+    
+    Thunder.program_change_to = PROGRAM_RUNNING;
+  }
+}
+
 void New_Loop_Task(void *pvParameters)
 {
-  setup_1();
+  pvParameters();
   for (;;)
   {
-    loop_1();
+    loop_1_1();
   }
 }
 
@@ -319,15 +353,17 @@ void TASK_MESG::Exit_Task_Critical()
  * @return: 返回0表示创建成功
  *          返回1表示创建数目已经达到最大值，不能继续创建
  */
-uint8_t TASK_MESG::Create_New_Loop()
+uint8_t TASK_MESG::Create_New_Loop(uint8_t program_sequence, 
+                  func_Program_Setup program_setup, func_Program_Loop program_loop )
 {
   if (tasks_num >= MAX_APPS_TASK_COUNTER)
   {
     return 1;
   }
 
+  struct_Apps_Order
   /***create New tasks, Priority: 1~7 ***/
-  xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, NULL, 1, &Task_Apps[0], 1);
+  xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, NULL, 1, &Task_Apps[tasks_num], 1);
   tasks_num++;
 
   return 0;

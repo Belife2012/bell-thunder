@@ -9,10 +9,11 @@
 
 // #define COMPATIBILITY_OLD_ESP_LIB
 
-#define MAX_APPS_TASK_COUNTER 1
+#define MAX_APPS_TASK_COUNTER 5
 #define APP_TASK_PRIORITY_MAX 5
 
-#define POLLING_CHECK_PERIOD    10
+#define POLLING_CHECK_PERIOD    (10)
+#define MOTOR_CONTROL_PERIOD    (10)
 
 typedef enum
 {
@@ -25,10 +26,24 @@ typedef enum
   FLUSH_MAX_NUM
 } enum_Flush_Type;
 
+typedef void(*func_Program_Setup)(void);
+typedef void(*func_Program_Loop)(void);
+
+typedef struct{
+  uint8_t sequence;
+  uint8_t index;
+  func_Program_Setup Mysetup;
+  func_Program_Loop Myloop;
+} struct_Apps_Order;
+
 extern uint32_t led_indication_counter;
 
-void setup_1(void);
-void loop_1(void);
+void Programs_System(void);
+void Program_1(void);
+void Program_2(void);
+void Program_3(void);
+void Program_4(void);
+void Program_ThunderGo(void);
 
 class TASK_MESG
 {
@@ -36,7 +51,9 @@ public:
   TASK_MESG();
   ~TASK_MESG();
 
-  uint8_t Create_New_Loop();
+  uint8_t Create_New_Loop(uint8_t program_sequence, 
+                          func_Program_Setup program_setup, 
+                          func_Program_Loop program_loop );
   void Create_Deamon_Threads();
   void Remove_Deamon_Threads();
   void Set_Flush_Task(byte flushType);

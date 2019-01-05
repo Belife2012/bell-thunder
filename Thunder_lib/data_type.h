@@ -2,6 +2,15 @@
 #define __DATA_TYPE_H__
 
 typedef enum {
+  PROGRAM_USER_1 = 0,
+  PROGRAM_USER_2,
+  PROGRAM_USER_3,
+  PROGRAM_USER_4,
+  PROGRAM_THUNDER_GO,
+  PROGRAM_RUNNING
+} enum_Program_Index;
+
+typedef enum {
   PROCESS_USER_1 = 0,
   PROCESS_USER_2,
   PROCESS_USER_3,

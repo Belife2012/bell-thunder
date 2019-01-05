@@ -178,6 +178,8 @@ void THUNDER_MOTOR::Enable_PID_Timer(void)
   PID_Timer_Enable = 1;
 }
 
+#if (MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_TB6612)
+
 // 配置电机
 void THUNDER_MOTOR::Setup_Motor()
 {
@@ -196,15 +198,15 @@ void THUNDER_MOTOR::Setup_Motor()
 // 配置电机速度
 // 参数1-->通道
 // 参数2-->功率
-void THUNDER_MOTOR::set_speed(uint8_t channel, uint32_t value) 
+void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed)
 {
-  if(value > valueMax)
+  if(speed > valueMax)
   {
-    value = valueMax;
+    speed = valueMax;
   }
-  uint32_t duty = (MOTOR_MAX_DUTY / valueMax) * value;
+  uint32_t duty = (MOTOR_MAX_DUTY / valueMax) * speed;
 
-  ledcWrite(channel, duty); //0-MOTOR_MAX_DUTY
+  ledcWrite(motor_channel, duty); //0-MOTOR_MAX_DUTY
 }
 
 // 开环电机控制函数
@@ -245,6 +247,90 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
     set_speed(MOTOR_CHANNEL_3, speed);
   }
 }
+
+#elif(MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_PT5126)
+
+// 配置电机
+void THUNDER_MOTOR::Setup_Motor()
+{
+  ledcSetup(MOTOR_CHANNEL_2,MOTOR_BASE_FREQ,MOTOR_TIMER_13_BIT);
+  ledcSetup(MOTOR_CHANNEL_3,MOTOR_BASE_FREQ,MOTOR_TIMER_13_BIT);
+  ledcSetup(MOTOR_CHANNEL_4,MOTOR_BASE_FREQ,MOTOR_TIMER_13_BIT);
+  ledcSetup(MOTOR_CHANNEL_5,MOTOR_BASE_FREQ,MOTOR_TIMER_13_BIT);
+
+  ledcAttachPin(PWM_L_A,MOTOR_CHANNEL_2);
+  ledcAttachPin(PWM_L_B,MOTOR_CHANNEL_3);
+  ledcAttachPin(PWM_R_A,MOTOR_CHANNEL_4);
+  ledcAttachPin(PWM_R_B,MOTOR_CHANNEL_5);
+
+  pinMode(PWM_L_A, OUTPUT);
+  pinMode(PWM_L_B, OUTPUT);
+  pinMode(PWM_R_A, OUTPUT);
+  pinMode(PWM_R_B, OUTPUT);
+}
+
+// 配置电机速度
+// 参数1-->通道
+// 参数2-->功率
+void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed) 
+{
+  uint8_t channel = 0;
+  uint16_t speed_pulse = 0;
+  if(speed > MOTOR_INPUT_MAX)
+  {
+    speed = MOTOR_INPUT_MAX;
+  }
+  switch(motor_channel)
+  {
+    case PWM_L_A:channel = MOTOR_CHANNEL_2;
+                 break;
+    case PWM_L_B:channel = MOTOR_CHANNEL_3;
+                 break;
+    case PWM_R_A:channel = MOTOR_CHANNEL_4;
+                 break;
+    case PWM_R_B:channel = MOTOR_CHANNEL_5;
+                 break;
+    default: break;       
+  }
+  speed_pulse = (uint16_t)(((float)speed / MOTOR_INPUT_MAX) * MOTOR_MAX_DUTY);
+  ledcWrite(channel,speed_pulse);
+
+}
+
+// 开环电机控制函数
+// 参数1-->电机编号；1或者2
+// 参数2-->速度；范围为0-255
+// 参数3-->方向, 0为反向，1为正向
+void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
+{
+  if(motor == 1)
+  {
+    if(direction == 1)
+    {  
+      set_speed(PWM_L_A,speed);
+      set_speed(PWM_L_B,0);
+    }
+    else if(direction == 2)
+    {
+      set_speed(PWM_L_A,0);
+      set_speed(PWM_L_B,speed);
+    }
+  }
+  else if(motor == 2)
+  {
+    if(direction == 1)
+    {  
+      set_speed(PWM_R_A,0);
+      set_speed(PWM_R_B,speed);
+    }
+    else if(direction == 2)
+    {
+      set_speed(PWM_R_A,speed);
+      set_speed(PWM_R_B,0);
+    }
+  }
+}
+#endif
 
 // 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
 void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
@@ -520,36 +606,6 @@ void THUNDER_MOTOR::PID_Speed()
   }
 }
 
-// 负数为反方向转
-void THUNDER_MOTOR::Set_L_Target(float target)
-{
-  float target_encoder_num;
-
-  Thunder.Enable_En_Motor();
-
-  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
-  if(Motor_L_Speed_PID.Ref != target_encoder_num)
-  {
-    PID_Reset(&Motor_L_Speed_PID);
-    Motor_L_Speed_PID.Ref = target_encoder_num;
-  }
-}
-
-// 负数为反方向转
-void THUNDER_MOTOR::Set_R_Target(float target)
-{
-  float target_encoder_num;
-
-  Thunder.Enable_En_Motor();
-
-  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
-  if(Motor_R_Speed_PID.Ref != target_encoder_num)
-  {
-    PID_Reset(&Motor_R_Speed_PID);
-    Motor_R_Speed_PID.Ref = target_encoder_num;
-  }
-}
-
 /* 
  * 控制电机运行，可以设置控制模式：0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
  * 
@@ -789,16 +845,16 @@ void THUNDER_MOTOR::Drive_Car_Control()
   float left_speed, right_speed;
 
   if(drive_car_pid.last_pid_time == 0){
-    time_interval = 10;
+    time_interval = MOTOR_CONTROL_PERIOD;
     drive_car_pid.last_pid_time = millis();
   }else{
     time_interval = millis() - drive_car_pid.last_pid_time;
     drive_car_pid.last_pid_time = millis();
   }
   left_speed = Encoder_Counter_Left;
-  left_speed = left_speed * 10.0 / time_interval;
+  left_speed = left_speed * (float)MOTOR_CONTROL_PERIOD / time_interval;
   right_speed = Encoder_Counter_Right;
-  right_speed = right_speed * 10.0 / time_interval;
+  right_speed = right_speed * (float)MOTOR_CONTROL_PERIOD / time_interval;
 
 // Serial.printf("LeftSpeed:%f, RightSpeed:%f \n", left_speed, right_speed);
 
@@ -902,17 +958,52 @@ void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
   // Serial.printf("Left target:%f, Right target:%f \n", drive_car_pid.left_speed_target, drive_car_pid.right_speed_target);
 }
 
-// 获取左轮速度(编码器计数值), 这个数值是每个PID周期采集到的计数器数值
-// 获取这个值，需要打开PID定时器
-// 在一个PID周期内获取的值是相同的
+/* 
+ * 负数为反方向转
+ * PID闭环控制电机转速，PID控制周期为 MOTOR_CONTROL_PERIOD
+ * PID控制周期采集的编码器数值最大为 MAX_DRIVE_SPEED
+ * 最大PID控制速度 = MAX_DRIVE_SPEED * 1000 / MOTOR_CONTROL_PERIOD * 60 / ENCODER_NUM_EVERY_CIRCLE
+ *                = 277.78(转/分)
+ *                = 4.63(转/秒)
+ * 
+ * @parameters: target是最大PID控制速度的百分比
+ * @return: 
+ */
+void THUNDER_MOTOR::Set_L_Target(float target)
+{
+  float target_encoder_num;
+
+  Thunder.Enable_En_Motor();
+
+  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
+  if(Motor_L_Speed_PID.Ref != target_encoder_num)
+  {
+    PID_Reset(&Motor_L_Speed_PID);
+    Motor_L_Speed_PID.Ref = target_encoder_num;
+  }
+}
+void THUNDER_MOTOR::Set_R_Target(float target)
+{
+  float target_encoder_num;
+
+  Thunder.Enable_En_Motor();
+
+  target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
+  if(Motor_R_Speed_PID.Ref != target_encoder_num)
+  {
+    PID_Reset(&Motor_R_Speed_PID);
+    Motor_R_Speed_PID.Ref = target_encoder_num;
+  }
+}
+
+/*
+ * 获取左右轮速度, 这个数值是电机最大PID控制速度 的 百分比
+ * 获取这个值，需要打开PID定时器
+ */
 int16_t THUNDER_MOTOR::Get_L_Speed(void)
 {
   return Encoder_Counter_Left * 100 / MAX_DRIVE_SPEED;
 }
-
-// 获取右轮速度(编码器计数值), 这个数值是每个PID周期采集到的计数器数值
-// 获取这个值，需要打开PID定时器
-// 在一个PID周期内获取的值是相同的
 int16_t THUNDER_MOTOR::Get_R_Speed(void)
 {
   return Encoder_Counter_Right * 100 / MAX_DRIVE_SPEED;
@@ -970,6 +1061,7 @@ inline void Update_Rotate_Value()
  * 获取左轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
  * 电机编码器磁铁是四对磁极对，减速比是27
  * 编码器的计数器，计算了信号上下沿的数量，所以转一圈，编码器数值为216，实际测量也是
+ * 轮子(没有轮胎)周长：16cm
  * 
  * @parameters: 
  * @return: 
@@ -983,14 +1075,6 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
   
   return rotate_value;
 }
-/*
- * 获取右轮旋转量，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
- * 电机编码器磁铁是四对磁极对，减速比是27
- * 编码器的计数器，计算了信号上下沿的数量，所以转一圈，编码器数值为216，实际测量也是
- * 
- * @parameters: 
- * @return: 
- */
 int32_t THUNDER_MOTOR::Get_R_RotateValue()
 {
   double rotate_value;

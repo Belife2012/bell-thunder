@@ -51,12 +51,17 @@
 #include <Arduino.h>
 #include <Task_Mesg.h>
 
+#define MOTOR_DRIVER_IC_TB6612    (0x01)
+#define MOTOR_DRIVER_IC_PT5126    (0x02)
+#define MOTOR_DRIVER_IC           MOTOR_DRIVER_IC_TB6612
+
 // 电机
 // TB6612驱动驱动直流无刷电机
+#if (MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_TB6612)
 #define MOTOR_CHANNEL_2     2   //0--16
 #define MOTOR_CHANNEL_3     3
 #define MOTOR_TIMER_13_BIT  13 //分辨率13位
-#define MOTOR_BASE_FREQ     1000 //频率
+#define MOTOR_BASE_FREQ     10000 //频率
 #define MOTOR_L_PWM         18
 #define MOTOR_L_IN1         32
 #define MOTOR_L_IN2         19
@@ -64,7 +69,28 @@
 #define MOTOR_R_IN1         13
 #define MOTOR_R_IN2         23
 
+#elif (MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_PT5126)
+#define MOTOR_CHANNEL_2     2   //0--15
+#define MOTOR_CHANNEL_3     3
+#define MOTOR_CHANNEL_4     4   //0--15
+#define MOTOR_CHANNEL_5     5
+#define MOTOR_TIMER_13_BIT  13 //分辨率13位
+#define MOTOR_BASE_FREQ     10000 //频率
+// #define MOTOR_L_PWM         18
+// #define MOTOR_L_IN1         32
+// #define MOTOR_L_IN2         19
+// #define MOTOR_R_PWM         27
+// #define MOTOR_R_IN1         13
+// #define MOTOR_R_IN2         23
+#define PWM_L_A 32
+#define PWM_L_B 19
+#define PWM_R_A 13
+#define PWM_R_B 23
+
+#endif
+
 #define MOTOR_MAX_DUTY      8191 //最大8191 // 8191 = 2 ^ 13 - 1 //电机选型的原因在此进行最大输出限制   //安全duty 5500
+#define MOTOR_INPUT_MAX     255
 
 // 编码器
 #define DEGREES_EVERY_CIRCLE      360
@@ -234,7 +260,7 @@ class THUNDER_MOTOR
     // timer中断
     hw_timer_t * PID_Timer = NULL;
 
-    void set_speed(uint8_t channel, uint32_t value);
+    void set_speed(uint8_t motor_channel,uint32_t speed);
     float motor_PID(struct PID_Struct_t *pid);      // PID计算
     void Calculate_Left_Control();
     void Calculate_Right_Control();
