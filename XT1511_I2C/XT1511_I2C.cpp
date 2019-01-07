@@ -123,6 +123,9 @@ void XT1511_I2C::LED_OFF(void)
 {
   byte rc;
 
+  Set_LED_Dynamic(0);
+  memset(LEDs_Data, 0, RGB_LED_DATA_SIZE);
+
   Task_Mesg.Take_Semaphore_IIC();
   Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(XT1511_I2C_COM_OFF);

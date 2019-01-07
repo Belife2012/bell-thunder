@@ -92,7 +92,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 5, 41};
+const uint8_t Version_FW[4] = {'T', 0, 6, 42};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -155,6 +155,18 @@ void THUNDER::Setup_All(void)
 #endif
 
   Serial.printf("Battery Vlotage: %fV\n", ((float)Get_Battery_Data() / 1000));
+}
+
+void THUNDER::Reset_All_Components()
+{
+  Stop_All();
+  delay(50);
+  Set_Need_Communication(false);
+  delay(50);
+  
+  Dot_Matrix_LED.Setup();
+  I2C_LED.LED_OFF();
+
 }
 
 // 全部终止(电机)
@@ -646,6 +658,8 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_WAIT_SWITCH:
+    Task_Mesg.Clear_All_Loops();
+
     led_indication_param.led_indication_period = 1000;
     led_indication_param.led_indication_on_duty = 1000;
     led_indication_param.led_indication_off_duty = 0;
@@ -814,31 +828,31 @@ void THUNDER::Set_Program_Run_Index(enum_Process_Status new_program)
   case PROCESS_USER_1:
   {
     Set_Process_Status(PROCESS_USER_1);
-
+    program_change_to = PROGRAM_USER_1;
     break;
   }
   case PROCESS_USER_2:
   {
     Set_Process_Status(PROCESS_USER_2);
-
+    program_change_to = PROGRAM_USER_2;
     break;
   }
   case PROCESS_USER_3:
   {
     Set_Process_Status(PROCESS_USER_3);
-
+    program_change_to = PROGRAM_USER_3;
     break;
   }
   case PROCESS_USER_4:
   {
     Set_Process_Status(PROCESS_USER_4);
-
+    program_change_to = PROGRAM_USER_4;
     break;
   }
   case PROCESS_THUNDER_GO:
   { //
     Set_Process_Status(PROCESS_THUNDER_GO);
-
+    program_change_to = PROGRAM_THUNDER_GO;
     break;
   }
   default:
@@ -2468,33 +2482,22 @@ void THUNDER::Set_Need_Communication(bool flag)
 // 等待蓝牙连接动画 (有串口数据也跳出)
 void THUNDER::Wait_Communication(void)
 {
-  if(need_communication == true)
+  uint32_t show_index = 6;
+  while( (deviceConnected == false) && (Usart_Communication == 0) && (need_communication == true) )
   {
-    while ((deviceConnected == false) & (Usart_Communication == 0))
+    if (lowpower_flag == 0)
     {
-      if (lowpower_flag == 0)
-      {
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(6); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(7); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(8); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(9); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(10); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(11); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(12); //单色点阵图案
-        delay(200);
-        Dot_Matrix_LED.Play_LED_HT16F35B_Show(13); //单色点阵图案
-        delay(200);
+      Dot_Matrix_LED.Play_LED_HT16F35B_Show(show_index); //单色点阵图案
+      if(show_index == 13){
+        show_index = 6;
+      }else{
+        show_index++;
       }
-      if (Serial.available())
-      {
-        Usart_Communication = 1;
-      }
+      delay(200);
+    }
+    if (Serial.available())
+    {
+      Usart_Communication = 1;
     }
   }
 }
@@ -3288,8 +3291,9 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
     {
       I2C_channel_opened = 0x00;
       Serial.printf("### TCA9548 Write I2C Channel Error: %d \n", ret);
-      delay(100);
+      // delay(100);
     }
+#if 0 // 每次的传感器操作都需要调用，为了速度，不能进行读写比较
     else
     {
       // read TCA9548
@@ -3311,9 +3315,10 @@ uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
       else
       {
         Serial.println("### TCA9548 Read not equal Write");
-        delay(200);
+        // delay(200);
       }
     }
+#endif
   }
 
   return ret;

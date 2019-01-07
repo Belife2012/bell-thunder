@@ -177,11 +177,11 @@ class THUNDER
     // 毫秒为单位，精度为10ms
     struct struct_Led_Indication_Param{
       uint8_t led_indication_once_flag; // 当为 1 时，指示灯只做一次动作
-      uint8_t led_indication_amount;
-      uint32_t led_indication_period;
-      uint32_t led_indication_on_duty;
-      uint32_t led_indication_off_duty;
-      uint32_t wait_led_timer = 0;
+      uint8_t led_indication_amount; // 一次动作闪灯多少回
+      uint32_t led_indication_period; // 一次重复动作的时间（一次动作可能闪多次）
+      uint32_t led_indication_on_duty; // 闪一次的亮灯时间
+      uint32_t led_indication_off_duty; // 闪一次的熄灯时间
+      uint32_t wait_led_timer = 0; // 设置好后等待多久开始闪灯动作
     } led_indication_param;
     uint32_t wait_key_timer = 0;
     uint32_t button_press_time;
@@ -283,6 +283,7 @@ class THUNDER
     uint8_t line_tracing_running = false;
 
     void Setup_All(void); // 所有模块初始化
+    void Reset_All_Components(); // 复位各个组件
     void Stop_All(void);  // 全部终止(电机)
 
     // 电池电压

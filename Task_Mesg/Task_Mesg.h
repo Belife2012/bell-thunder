@@ -34,7 +34,7 @@ typedef struct{
   uint8_t index;
   func_Program_Setup Mysetup;
   func_Program_Loop Myloop;
-} struct_Apps_Order;
+} struct_Apps_Param;
 
 extern uint32_t led_indication_counter;
 
@@ -54,6 +54,7 @@ public:
   uint8_t Create_New_Loop(uint8_t program_sequence, 
                           func_Program_Setup program_setup, 
                           func_Program_Loop program_loop );
+  void Clear_All_Loops();
   void Create_Deamon_Threads();
   void Remove_Deamon_Threads();
   void Set_Flush_Task(byte flushType);
@@ -78,6 +79,7 @@ public:
 
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
+  struct_Apps_Param *task_param[MAX_APPS_TASK_COUNTER];
   UBaseType_t former_Priority;
   portMUX_TYPE spinlockMUX;
 

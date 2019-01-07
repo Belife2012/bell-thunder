@@ -136,41 +136,36 @@ void Programs_System(void)
   if(Thunder.program_change_to == PROGRAM_USER_1)
   {
     Program_1();
-
     Thunder.program_change_to = PROGRAM_RUNNING;
   }
   else if(Thunder.program_change_to == PROGRAM_USER_2)
   {
     Program_2();
-
     Thunder.program_change_to = PROGRAM_RUNNING;
   }
   else if(Thunder.program_change_to == PROGRAM_USER_3)
   {
     Program_3();
-
     Thunder.program_change_to = PROGRAM_RUNNING;
   }
   else if(Thunder.program_change_to == PROGRAM_USER_4)
   {
     Program_4();
-
     Thunder.program_change_to = PROGRAM_RUNNING;
   }
   else if(Thunder.program_change_to == PROGRAM_THUNDER_GO)
   {
     Program_ThunderGo();
-    
     Thunder.program_change_to = PROGRAM_RUNNING;
   }
 }
 
 void New_Loop_Task(void *pvParameters)
 {
-  pvParameters();
+  ( (struct_Apps_Param *)pvParameters )->Mysetup();
   for (;;)
   {
-    loop_1_1();
+    ( (struct_Apps_Param *)pvParameters )->Myloop();
   }
 }
 
@@ -182,6 +177,7 @@ TASK_MESG::TASK_MESG()
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
     Task_Apps[i] = NULL;
+    task_param[i] = NULL;
   }
 
   // 创建 IIC互斥体
@@ -358,15 +354,42 @@ uint8_t TASK_MESG::Create_New_Loop(uint8_t program_sequence,
 {
   if (tasks_num >= MAX_APPS_TASK_COUNTER)
   {
+    Serial.println("ERROS: Apps amount had reached max");
     return 1;
   }
 
-  struct_Apps_Order
+  task_param[tasks_num] = new struct_Apps_Param();
+  task_param[tasks_num]->sequence = program_sequence;
+  task_param[tasks_num]->index = tasks_num;
+  task_param[tasks_num]->Mysetup = program_setup;
+  task_param[tasks_num]->Myloop = program_loop;
   /***create New tasks, Priority: 1~7 ***/
-  xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, NULL, 1, &Task_Apps[tasks_num], 1);
+  xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, (void *)task_param[tasks_num], 1, &Task_Apps[tasks_num], 1);
   tasks_num++;
 
   return 0;
+}
+
+void TASK_MESG::Clear_All_Loops()
+{
+  uint8_t ret;
+
+  for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
+  {
+    if(Task_Apps[i] != NULL)
+    {
+      vTaskDelete(Task_Apps[i]);
+      Task_Apps[i] = NULL;
+    }
+    if(task_param[i] != NULL)
+    {
+      delete task_param[i];
+      task_param[i] = NULL;
+    }
+  }
+
+  tasks_num = 0;
+  Thunder.Reset_All_Components();
 }
 
 /*

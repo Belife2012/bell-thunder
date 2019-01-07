@@ -42,6 +42,9 @@
 #define XT1511_I2C_COM_UODATA                (0xA1)    // 按照现有数据刷新
 #define XT1511_I2C_COM_SHOW                  (0xA2)    // 刷新预存数据
 
+#define RGB_LED_AMOUNT      (12)
+#define RGB_LED_DATA_SIZE   (RGB_LED_AMOUNT*3)
+
 typedef enum{
   COLOR_MODE_STATIC = 0,
   COLOR_MODE_BLINK,
@@ -68,8 +71,8 @@ class XT1511_I2C
 
   private:
       byte _device_address = 0x11;
-      byte LEDs_Data[36];
-      byte LEDs_DataResult[36];
+      byte LEDs_Data[RGB_LED_DATA_SIZE];
+      byte LEDs_DataResult[RGB_LED_DATA_SIZE];
 
       byte LED_Dynamic;
       unsigned int ledDynamicIndex;
