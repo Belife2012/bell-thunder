@@ -70,19 +70,13 @@
 #define MOTOR_R_IN2         23
 
 #elif (MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_PT5126)
-#define MOTOR_CHANNEL_2     2   //0--15
-#define MOTOR_CHANNEL_3     3
-#define MOTOR_CHANNEL_4     4   //0--15
-#define MOTOR_CHANNEL_5     5
-#define MOTOR_TIMER_13_BIT  13 //分辨率13位
-#define MOTOR_BASE_FREQ     10000 //频率
-// #define MOTOR_L_PWM         18
-// #define MOTOR_L_IN1         32
-// #define MOTOR_L_IN2         19
-// #define MOTOR_R_PWM         27
-// #define MOTOR_R_IN1         13
-// #define MOTOR_R_IN2         23
-#define PWM_L_A 32
+#define MOTOR_CHANNEL_2      2   //0--16
+#define MOTOR_CHANNEL_3      3
+#define MOTOR_CHANNEL_4      4  //0--16
+#define MOTOR_CHANNEL_5      5
+#define MOTOR_TIMER_13_BIT   13 //分辨率13位
+#define MOTOR_BASE_FREQ      10000 //频率
+#define PWM_L_A 27
 #define PWM_L_B 19
 #define PWM_R_A 13
 #define PWM_R_B 23
@@ -91,6 +85,7 @@
 
 #define MOTOR_MAX_DUTY      8191 //最大8191 // 8191 = 2 ^ 13 - 1 //电机选型的原因在此进行最大输出限制   //安全duty 5500
 #define MOTOR_INPUT_MAX     255
+#define LIMIT_SPEED         10  //电机停止速度，滑行速度
 
 // 编码器
 #define DEGREES_EVERY_CIRCLE      360
@@ -208,6 +203,8 @@ class THUNDER_MOTOR
     // 开环电机
     void Setup_Motor(void);                                 // 配置电机
     void Motor_Move(int motor, int speed, int direction);   // 开环电机控制函数
+    void Motor_Brake(int motor);
+    void Motor_Free(int motor);
     void Set_L_Motor_Output( int M_output );
     void Set_R_Motor_Output( int M_output );
     void Set_L_Motor_Power( int Lpower );
@@ -242,7 +239,7 @@ class THUNDER_MOTOR
     int32_t Get_R_RotateValue(void); // 获取右轮旋转量（这个值是累积的，调用清零接口时才会清零）
     void Clear_L_RotateValue(void); // 清零左轮旋转量
     void Clear_R_RotateValue(void); // 清零右轮旋转量
-   
+  
   private:
     // 电机
     boolean inPin1 = LOW;

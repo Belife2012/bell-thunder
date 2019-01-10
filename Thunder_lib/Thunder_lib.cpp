@@ -135,7 +135,7 @@ void THUNDER::Setup_All(void)
 
   Thunder_Motor.Setup_Motor();     // 配置电机
   Thunder_Motor.Setup_Motor_PID(); // 配置左右两个电机编码器
-  Stop_All();               // 打开编码电机计算
+  Stop_All();               // 
 
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
 
@@ -174,13 +174,7 @@ void THUNDER::Stop_All(void)
 {
   Serial.printf("Stop Motor... \n");
 
-  Thunder_Motor.Set_L_Target(0); // 50ms 最大40  //编码器计数值
-  Thunder_Motor.Set_R_Target(0);
-
   Disable_En_Motor(); // 关闭编码电机计算
-
-  Thunder_Motor.Motor_Move(1, 0, 1); // 参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
-  Thunder_Motor.Motor_Move(2, 0, 2); // 参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
 
   // Servo_Turn(1, 90);
   // Servo_Turn(2, 90);
@@ -420,7 +414,13 @@ void THUNDER::Update_Led_Indication_Status(uint32_t &current_counter)
   {
     if (current_counter >= led_indication_param.led_indication_period)
     {
-      if (led_indication_param.led_indication_on_duty != 0)
+      if (led_indication_param.led_indication_once_flag == 1)
+      {
+        led_indication_param.led_indication_once_flag = 0;
+        Set_Process_Status(PROCESS_STOP);
+      }
+      
+      if (led_indication_param.led_indication_on_duty != 0 && led_indication_param.wait_led_timer == 0)
       {
         digitalWrite(LED_INDICATION, HIGH);
       }
@@ -428,16 +428,12 @@ void THUNDER::Update_Led_Indication_Status(uint32_t &current_counter)
       {
         digitalWrite(LED_INDICATION, LOW);
       }
+      
       current_counter = 0;
     }
     else if (current_counter >= (led_indication_param.led_indication_on_duty + led_indication_param.led_indication_off_duty) * led_indication_param.led_indication_amount)
     {
       digitalWrite(LED_INDICATION, LOW);
-      if (led_indication_param.led_indication_once_flag == 1)
-      {
-        led_indication_param.led_indication_once_flag = 0;
-        Set_Process_Status(PROCESS_STOP);
-      }
     }
     else
     {
@@ -609,49 +605,50 @@ enum_Key_Value THUNDER::Check_Button_Start_Value()
  */
 void THUNDER::Set_Process_Status(enum_Process_Status new_status)
 {
-  led_indication_param.wait_led_timer = 0;
+  led_indication_param.wait_led_timer = 700;
   led_indication_param.led_indication_once_flag = 0;
   process_status = new_status;
 
   switch (process_status)
   {
   case PROCESS_STOP:
-    led_indication_param.led_indication_period = 0;
-    led_indication_param.led_indication_on_duty = 0;
-    led_indication_param.led_indication_off_duty = 0;
+    led_indication_param.led_indication_period = 2000;
+    led_indication_param.led_indication_on_duty = 1900;
+    led_indication_param.led_indication_off_duty = 100;
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_THUNDER_GO:
-    led_indication_param.led_indication_period = 5000;
-    led_indication_param.led_indication_on_duty = 500;
+    led_indication_param.led_indication_period = 3000;
+    led_indication_param.led_indication_on_duty = 700;
     led_indication_param.led_indication_off_duty = 100;
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_USER_1:
-    led_indication_param.led_indication_period = 5000;
+    led_indication_param.led_indication_period = 3000;
     led_indication_param.led_indication_on_duty = 100;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_USER_2:
-    led_indication_param.led_indication_period = 5000;
+    led_indication_param.led_indication_period = 3000;
     led_indication_param.led_indication_on_duty = 100;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 2;
     break;
   case PROCESS_USER_3:
-    led_indication_param.led_indication_period = 5000;
+    led_indication_param.led_indication_period = 3000;
     led_indication_param.led_indication_on_duty = 100;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 3;
     break;
   case PROCESS_USER_4:
-    led_indication_param.led_indication_period = 5000;
+    led_indication_param.led_indication_period = 3000;
     led_indication_param.led_indication_on_duty = 100;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 4;
     break;
   case PROCESS_INDICATE_SWITCH:
+    led_indication_param.wait_led_timer = 0;
     led_indication_param.led_indication_period = 100;
     led_indication_param.led_indication_on_duty = 50;
     led_indication_param.led_indication_off_duty = 50;
@@ -659,10 +656,10 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     break;
   case PROCESS_WAIT_SWITCH:
     Task_Mesg.Clear_All_Loops();
-
-    led_indication_param.led_indication_period = 1000;
-    led_indication_param.led_indication_on_duty = 1000;
-    led_indication_param.led_indication_off_duty = 0;
+    led_indication_param.wait_led_timer = 0;
+    led_indication_param.led_indication_period = 700;
+    led_indication_param.led_indication_on_duty = 600;
+    led_indication_param.led_indication_off_duty = 100;
     led_indication_param.led_indication_amount = 1;
     break;
   }
@@ -753,7 +750,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     if (button_event == KEY_LONG_RELEASE)
     {
       // 设置一个倒计时，没有按键动作，时间则回到 PROCESS_STOP 系统状态
-      wait_key_timer = 3000;
+      // wait_key_timer = 3000;
       Set_Process_Status(PROCESS_WAIT_SWITCH);
     }
 
@@ -812,8 +809,8 @@ void THUNDER::Set_Program_User(enum_Process_Status new_program_user)
   led_indication_param.led_indication_amount = (uint8_t)new_program_user + 1;
   led_indication_param.wait_led_timer = 700;
   led_indication_param.led_indication_once_flag = 1;
-  led_indication_param.led_indication_period = 5000;
-  led_indication_param.led_indication_on_duty = 250;
+  led_indication_param.led_indication_period = 2000;
+  led_indication_param.led_indication_on_duty = 150;
   led_indication_param.led_indication_off_duty = 250;
   Set_Led_Indication_param();
 
@@ -2908,7 +2905,7 @@ void THUNDER::Check_BLE_Communication(void)
       Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
       Thunder_BLE.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
 
-      for (uint32_t i = 0; i < 6; i++)
+      for (uint32_t i = 0; i < COMMUNICATION_DATA_LENGTH_MAX; i++)
       {
         Serial.printf("%x ", Tx_Data[i]);
       }
@@ -3060,13 +3057,7 @@ void THUNDER::Check_Protocol(void)
   case 0xB2:            //控制两个电机
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
     Disable_En_Motor(); // En_Motor_Flag = 0;
-    if( Rx_Data[2] != 1 && Rx_Data[4] != 1 ){
-      if( Rx_Data[1] < Rx_Data[3] ){
-        Rx_Data[1] = Rx_Data[3];
-      }else{
-        Rx_Data[3] = Rx_Data[1];
-      }
-    }
+   
     Thunder_Motor.Motor_Move(1, Rx_Data[1], Rx_Data[2]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
     Thunder_Motor.Motor_Move(2, Rx_Data[3], Rx_Data[4]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
   #else
@@ -3228,7 +3219,7 @@ void THUNDER::Check_Protocol(void)
 // 清空接收数据
 void THUNDER::Reset_Rx_Data()
 {
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < COMMUNICATION_DATA_LENGTH_MAX; i++)
   {
     Rx_Data[i] = 0;
   }

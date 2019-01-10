@@ -204,7 +204,7 @@ void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed)
   {
     speed = valueMax;
   }
-  uint32_t duty = (MOTOR_MAX_DUTY / valueMax) * speed;
+  uint32_t duty = (speed * MOTOR_MAX_DUTY) / valueMax;
 
   ledcWrite(motor_channel, duty); //0-MOTOR_MAX_DUTY
 }
@@ -228,23 +228,57 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
   
   if(motor == 1)
   {
-    digitalWrite(MOTOR_L_IN1, inPin1);  
-    digitalWrite(MOTOR_L_IN2, inPin2);  
-
-    // digitalWrite(MOTOR_L_IN1, inPin2);  
-    // digitalWrite(MOTOR_L_IN2, inPin1);  
-
-    set_speed(MOTOR_CHANNEL_2, speed);
+    if(speed > LIMIT_SPEED){
+      digitalWrite(MOTOR_L_IN1, inPin1);  
+      digitalWrite(MOTOR_L_IN2, inPin2);  
+      set_speed(MOTOR_CHANNEL_2, speed);
+    }else{
+      digitalWrite(MOTOR_L_IN1, LOW);
+      digitalWrite(MOTOR_L_IN2, LOW);
+      ledcWrite(MOTOR_CHANNEL_2, 0);
+    }
   }
   else if(motor == 2)
   {  
-    digitalWrite(MOTOR_R_IN1, inPin2);
-    digitalWrite(MOTOR_R_IN2, inPin1);
+    if(speed > LIMIT_SPEED){
+      digitalWrite(MOTOR_R_IN1, inPin2);
+      digitalWrite(MOTOR_R_IN2, inPin1);
+      set_speed(MOTOR_CHANNEL_3, speed);
+    }else{
+      digitalWrite(MOTOR_R_IN1, LOW);
+      digitalWrite(MOTOR_R_IN2, LOW);
+      ledcWrite(MOTOR_CHANNEL_3, 0);
+    }
+  }
+}
 
-    // digitalWrite(MOTOR_R_IN1, inPin1);
-    // digitalWrite(MOTOR_R_IN2, inPin2);
-
-    set_speed(MOTOR_CHANNEL_3, speed);
+void THUNDER_MOTOR::Motor_Brake(int motor)
+{
+  if(motor == 1){
+    digitalWrite(MOTOR_L_IN1, HIGH);
+    digitalWrite(MOTOR_L_IN2, HIGH);
+    ledcWrite(MOTOR_CHANNEL_2, 0);
+  }else if(motor == 2){
+    digitalWrite(MOTOR_R_IN1, HIGH);
+    digitalWrite(MOTOR_R_IN2, HIGH);
+    ledcWrite(MOTOR_CHANNEL_3, 0);
+  }
+}
+// 开环电机滑行函数
+// 参数1-->电机编号；1或者2
+void THUNDER_MOTOR::Motor_Free(int motor)
+{
+  if(motor == 1)
+  {
+    digitalWrite(MOTOR_L_IN1, LOW);
+    digitalWrite(MOTOR_L_IN2, LOW);
+    ledcWrite(MOTOR_CHANNEL_2, 0);
+  }
+  else if(motor == 2)
+  {
+    digitalWrite(MOTOR_R_IN1, LOW);
+    digitalWrite(MOTOR_R_IN2, LOW);
+    ledcWrite(MOTOR_CHANNEL_3, 0);
   }
 }
 
@@ -272,7 +306,7 @@ void THUNDER_MOTOR::Setup_Motor()
 // 配置电机速度
 // 参数1-->通道
 // 参数2-->功率
-void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed) 
+void THUNDER_MOTOR::set_speed(uint8_t motor_channel,int speed) 
 {
   uint8_t channel = 0;
   uint16_t speed_pulse = 0;
@@ -294,7 +328,6 @@ void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed)
   }
   speed_pulse = (uint16_t)(((float)speed / MOTOR_INPUT_MAX) * MOTOR_MAX_DUTY);
   ledcWrite(channel,speed_pulse);
-
 }
 
 // 开环电机控制函数
@@ -303,31 +336,87 @@ void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed)
 // 参数3-->方向, 0为反向，1为正向
 void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
 {
+  if(speed > 255)
+  {
+    speed = 255;
+  }
+  else if(speed < 0)
+  {
+    speed = 0;
+  }
   if(motor == 1)
   {
-    if(direction == 1)
-    {  
-      set_speed(PWM_L_A,speed);
-      set_speed(PWM_L_B,0);
+    if(speed > LIMIT_SPEED)
+    {
+      if(direction == 1)
+      {  
+        set_speed(PWM_L_A,MOTOR_MAX_DUTY);
+        set_speed(PWM_L_B,MOTOR_MAX_DUTY - speed);
+      }
+      else if(direction == 2)
+      {
+        set_speed(PWM_L_A,MOTOR_MAX_DUTY - speed);
+        set_speed(PWM_L_B,MOTOR_MAX_DUTY);
+      }
     }
-    else if(direction == 2)
+    else
     {
       set_speed(PWM_L_A,0);
-      set_speed(PWM_L_B,speed);
+      set_speed(PWM_L_B,0);
     }
   }
   else if(motor == 2)
   {
-    if(direction == 1)
-    {  
-      set_speed(PWM_R_A,0);
-      set_speed(PWM_R_B,speed);
-    }
-    else if(direction == 2)
+    if(speed > LIMIT_SPEED)
     {
-      set_speed(PWM_R_A,speed);
+      if(direction == 1)
+      {  
+        set_speed(PWM_R_A,MOTOR_MAX_DUTY - speed);
+        set_speed(PWM_R_B,MOTOR_MAX_DUTY);
+      }
+      else if(direction == 2)
+      {
+        set_speed(PWM_R_A,MOTOR_MAX_DUTY);
+        set_speed(PWM_R_B,MOTOR_MAX_DUTY - speed);
+      }
+    }
+    else
+    {
+      set_speed(PWM_R_A,0);
       set_speed(PWM_R_B,0);
     }
+  }
+}
+
+// 开环电机刹车函数
+// 参数1-->电机编号；1或者2
+void THUNDER_MOTOR::Motor_Brake(int motor)
+{
+  if(motor == 1)
+  {
+    set_speed(PWM_L_A,MOTOR_MAX_DUTY);
+    set_speed(PWM_L_B,MOTOR_MAX_DUTY);
+  }
+  else if(motor == 2)
+  {
+    set_speed(PWM_R_A,MOTOR_MAX_DUTY);
+    set_speed(PWM_R_B,MOTOR_MAX_DUTY);
+  }
+}
+
+// 开环电机滑行函数
+// 参数1-->电机编号；1或者2
+void THUNDER_MOTOR::Motor_Free(int motor)
+{
+  if(motor == 1)
+  {
+    set_speed(PWM_L_A,0);
+    set_speed(PWM_L_B,0);
+  }
+  else if(motor == 2)
+  {
+    set_speed(PWM_R_A,0);
+    set_speed(PWM_R_B,0);
   }
 }
 #endif

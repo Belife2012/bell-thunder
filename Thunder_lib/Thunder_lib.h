@@ -103,8 +103,9 @@
 #define AUDIO               16   // AUDIO脚
 #define BUSY                4    // BUSY脚
 
-// // 自定义蓝牙名称
+// 通信
 // #define ADD_BLE_NAME        0x00   //自定义蓝牙名称存储地址
+#define COMMUNICATION_DATA_LENGTH_MAX   (6)
 
 // 超声波模块
 #define ADD_I2C_US          0x01   //超声波模块I2C器件地址
@@ -151,9 +152,6 @@ extern LIGHTDETECT_I2C Light_Sensor;
 extern DOT_MATRIX_LED Dot_Matrix_LED;
 extern HT16D35B HT16D35B;// IIC Address: 0x69
 
-// 按键与指示灯
-extern uint32_t led_indication_counter;
-
 class THUNDER
 {
   private:
@@ -183,7 +181,7 @@ class THUNDER
       uint32_t led_indication_off_duty; // 闪一次的熄灯时间
       uint32_t wait_led_timer = 0; // 设置好后等待多久开始闪灯动作
     } led_indication_param;
-    uint32_t wait_key_timer = 0;
+    uint32_t wait_key_timer = 0;// 倒计时器
     uint32_t button_press_time;
     uint32_t button_release_time; 
     uint32_t button_press_result_time;

@@ -36,6 +36,7 @@ typedef struct{
   func_Program_Loop Myloop;
 } struct_Apps_Param;
 
+/* 按键与指示灯 */
 extern uint32_t led_indication_counter;
 
 void Programs_System(void);
