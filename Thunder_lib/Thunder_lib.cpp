@@ -49,9 +49,10 @@
 #include "esp_adc_cal.h"
 #include "print_macro.h"
 #include "Disk_Manager.h"
+#include "Bell_Barbette.h"
+#include "common.h"
 
 THUNDER Thunder;
-
 THUNDER_BLE Thunder_BLE;
 THUNDER_MOTOR Thunder_Motor;
 
@@ -80,9 +81,15 @@ TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
 // 光电传感器
 LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
 
+// 炮台模组
+Bell_Barbette Thunder_Barbette;
+
 // 蓝牙
-uint8_t Rx_Data[16] = {0};
+uint8_t Rx_Data[21] = {0};
 uint8_t Tx_Data[16] = {0};
+uint8_t uart_position = 0;
+uint8_t uart_recv_finish = 0;
+uint8_t add_sum;
 bool deviceConnected = false;
 bool ble_command_busy = false;
 
@@ -92,7 +99,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 6, 42};
+const uint8_t Version_FW[4] = {'T', 0, 7, 42};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -2766,129 +2773,255 @@ void THUNDER::Get_Serial_Command()
 {
   while (Serial.available())
   {
-    Rx_Data[0] = Serial.read(); //Serial.parseInt();  //读取整数
+    if(uart_recv_finish == 1){
+      break;
+    }
+    Rx_Data[uart_position] = Serial.read(); //Serial.parseInt();  //读取整数
 
 #ifdef DEBUG_UART_COMMAND
     Serial.printf("* recv UART cmd: %x *\n", Rx_Data[0]);
 #endif
-    //////////////////////////////////////// 其它特殊指令 //////////////////////////////////
+    int i;
     switch (Rx_Data[0])
     {
-    case 0xA1: // 蓝牙命名指令数据
-    {
-      uint8_t SUM = 0;
-      int i;
-      for (i = 1; i < BLE_NAME_SIZE; i++)
+      case UART_GENERAL_BLE_NAME: // 蓝牙命名指令数据
       {
-        if (Serial.available())
+        add_sum = 0;
+        for (i = 1; i < BLE_NAME_SIZE; i++)
         {
-          Rx_Data[i] = Serial.read();
+          if (Serial.available())
+          {
+            Rx_Data[i] = Serial.read();
+          }
+          else
+          {
+            break;
+          }
+          BLE_Name_Data[i - 1] = Rx_Data[i];
+
+          add_sum += Rx_Data[i - 1];
         }
-        else
+        BLE_Name_Data[i - 2] = '\0';
+
+        if (add_sum != Rx_Data[i - 1])
         {
+          Serial.printf(" # %x add_sum error \n",Rx_Data[0]);
+          Reset_Rx_Data();
+        }else{
+          uart_recv_finish = 1; // 接收完成，标志可以进行处理
+        }
+        break;
+      }
+      case UART_GENERAL_LEFT_RGBLED: //刷新左侧彩色灯
+      {
+        add_sum = Rx_Data[0];
+        for (i = 1; i < 19; i++)
+        {
+          Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
+          add_sum += Thunder.I2C_LED_BUFF1[i - 1];
+          // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
+        }
+
+        if (add_sum != Serial.read())
+        {
+          Serial.printf(" # %x add_sum error \n",Rx_Data[0]);
+          Reset_Rx_Data();
+        }else{
+          uart_recv_finish = 1; // 接收完成，标志可以进行处理
+        }
+        break;
+      }
+      case UART_GENERAL_RIGHT_RGBLED: //刷新右侧彩色灯
+      {
+        add_sum = Rx_Data[0];
+        for (i = 1; i < 19; i++)
+        {
+          Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
+          add_sum += Thunder.I2C_LED_BUFF2[i - 1];
+          // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
+        }
+
+        if (add_sum != Serial.read())
+        {
+          Serial.printf(" # %x add_sum error \n",Rx_Data[0]);
+          Reset_Rx_Data();
+        }else{
+          uart_recv_finish = 1; // 接收完成，标志可以进行处理
+        }
+        break;
+      }
+      case UART_GENERAL_DEBUG_PRE_LED: //单色点阵灯一次性刷新前半部分灯
+      {
+        add_sum = Rx_Data[0];
+        for (i = 1; i < 15; i++)
+        {
+          Thunder.LED_BUFF_Dot[i] = Serial.read();
+          add_sum += Thunder.LED_BUFF_Dot[i];
+        }
+
+        if (add_sum != Serial.read())
+        {
+          Serial.printf(" # %x add_sum error \n",Rx_Data[0]);
+          Reset_Rx_Data();
+        }else{
+          uart_recv_finish = 1; // 接收完成，标志可以进行处理
+        }
+        break;
+      }
+      case UART_GENERAL_DEBUG_SUF_LED: //单色点阵灯一次性刷新后半部分灯
+      {
+        add_sum = Rx_Data[0];
+        for (i = 1; i < 15; i++)
+        {
+          Thunder.LED_BUFF_Dot[i + 14] = Serial.read();
+          add_sum += Thunder.LED_BUFF_Dot[i + 14];
+        }
+
+        if (add_sum != Serial.read())
+        {
+          Serial.printf(" # %x add_sum error \n",Rx_Data[0]);
+          Reset_Rx_Data();
+        }else{
+          uart_recv_finish = 1; // 接收完成，标志可以进行处理
+        }
+        break;
+      }
+      case UART_CALL_SPECIAL_FUNCTION:
+      {
+        if(uart_position == 0){
+          add_sum = Rx_Data[0];
+          while(Serial.available() == 0) ;// 等待第二个字节：长度信息
+          uart_position++;
+          Rx_Data[COMMUNICATION_DATA_LOC_LENGTH] = Serial.read();
+        }
+
+        if( Rx_Data[COMMUNICATION_DATA_LOC_LENGTH] >= 3
+            && Rx_Data[COMMUNICATION_DATA_LOC_LENGTH] <= COMMUNICATION_DATA_LENGTH_MAX)
+        {
+          add_sum += Rx_Data[uart_position];
+          uart_position++;
+          for (; uart_position < Rx_Data[COMMUNICATION_DATA_LOC_LENGTH]; uart_position++)
+          {
+            if (Serial.available())
+            {
+              Rx_Data[uart_position] = Serial.read();
+              if(uart_position < Rx_Data[COMMUNICATION_DATA_LOC_LENGTH] - 1){
+                add_sum += Rx_Data[uart_position];
+              }
+            }
+            else
+            { 
+              break;
+            }
+          }
+          // 指令包接收完毕，进行校验
+          if(uart_position == Rx_Data[COMMUNICATION_DATA_LOC_LENGTH]){
+            if(add_sum != Rx_Data[Rx_Data[COMMUNICATION_DATA_LOC_LENGTH] - 1]){
+              Serial.printf(" # %x add_sum error=%x\n",Rx_Data[0],add_sum);
+              Reset_Rx_Data();
+              uart_position = 0; // 校验失败，复位接收
+            }else{
+              Rx_Data[COMMUNICATION_DATA_LENGTH_MAX] = Rx_Data[COMMUNICATION_DATA_LOC_LENGTH];
+              uart_recv_finish = 1; // 接收完成，标志可以进行处理
+            }
+          }
+        }else{
+          uart_position = 0; // 格式不对，复位接收
+        }
+
+        break;
+      }
+      case UART_BARBETTE_CTRL:
+      case UART_BARBETTE_INFO:
+      {
+        uart_position++;
+        while(Serial.available() > 0 && uart_position < (Rx_Data[2] + 5)) 
+        {
+          Rx_Data[uart_position] = (uint8_t)Serial.read();
+          uart_position++;
+          if(uart_position == (Rx_Data[2] + 5))
+          {
+            break;
+          }
+        }
+        if(uart_position == (Rx_Data[2] + 5))
+        {
+          uint16_t check_sum = 0;
+          uint16_t compute_crc = 0;
+
+          uart_position = 0;
+          check_sum = Rx_Data[Rx_Data[2] + 3];
+          check_sum = (check_sum << 8) | Rx_Data[Rx_Data[2] + 4];
+          compute_crc = crc16(Rx_Data,Rx_Data[2] + 3);
+          if(compute_crc == check_sum)
+          {
+            uart_recv_finish = 1;
+          }else{
+            Serial.printf(" # %x crc16 error \n",Rx_Data[0]);
+            memset(Rx_Data,0,20);
+          }
+        }
+
+        break;
+      }
+      case UART_GENERAL_IR_SENSOR:
+      case UART_GENERAL_US_SENSOR:
+      case UART_GENERAL_COLOR_SENSOR:
+      case UART_GENERAL_BATTERY_SENSOR:
+      case UART_GENERAL_VERSION_INFO:
+      case UART_GENERAL_SEARCH_LINE:
+      case UART_GENERAL_SERVO_CTRL:
+      case UART_GENERAL_PLAY_VOICE:
+      case UART_GENERAL_MOTOR_SINGLE:
+      case UART_GENERAL_MOTOR_DOUBLE:
+      case UART_GENERAL_MOTOR_SINGLE_PID:
+      case UART_GENERAL_MOTOR_DOUBLE_PID:
+      case UART_GENERAL_GET_MOTOR_SPEED:
+      case UART_GENERAL_SINGLE_RGBLED:
+      case UART_GENERAL_DEBUG_LED:
+      case UART_GENERAL_PICTURE_LED:
+      case UART_GENERAL_ANIMATION_LED:
+      {
+        // 老版协议的固定长度为 6 = 1+5
+        if(Serial.available() == 5){
+          Rx_Data[1] = Serial.read();
+          Rx_Data[2] = Serial.read();
+          Rx_Data[3] = Serial.read();
+          Rx_Data[4] = Serial.read();
+          Rx_Data[5] = Serial.read();
+        }else{
+          Serial.println("flush start");
+          while(Serial.available() > 0){
+            Rx_Data[6] = Serial.read();
+          }
+          Serial.println("flush end");
+          Reset_Rx_Data();
           break;
         }
-        BLE_Name_Data[i - 1] = Rx_Data[i];
 
-        SUM += Rx_Data[i - 1];
-      }
-      BLE_Name_Data[i - 2] = '\0';
+        if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
+        {
+          Serial.printf(" # %x add_sum error \n",Rx_Data[0]);
+          while(Serial.available() > 0){
+            Rx_Data[6] = Serial.read();
+          }
+          Reset_Rx_Data();
+        }else{
+          uart_recv_finish = 1; // 接收完成，标志可以进行处理
+        }
 
-      if (SUM != Rx_Data[i - 1])
-      {
-        Serial.printf(" # SUM error 0xA1 #\n");
-        Serial.printf(" # SUM: %x #\n", SUM);
-        Serial.printf(" # recv SUM: %x #\n", Rx_Data[i - 1]);
-        Reset_Rx_Data();
+        break;
       }
-      break;
-    }
-    case 0xC2: //刷新左侧彩色灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 19; i++)
+      default: // 其他包头，清除Serial 缓存
       {
-        Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
-        SUM += Thunder.I2C_LED_BUFF1[i - 1];
-        // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
-      }
+        Serial.println("flush start");
+        while(Serial.available() > 0){
+          Rx_Data[6] = Serial.read();
+        }
+        Serial.println("flush end");
 
-      if (SUM != Serial.read())
-      {
-        Serial.printf("\n#  0xC2 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
-        Reset_Rx_Data();
+        break;
       }
-      break;
-    }
-    case 0xC3: //刷新右侧彩色灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 19; i++)
-      {
-        Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
-        SUM += Thunder.I2C_LED_BUFF2[i - 1];
-        // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
-      }
-
-      if (SUM != Serial.read())
-      {
-        Serial.printf("\n# 0xC3 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
-        Reset_Rx_Data();
-      }
-      break;
-    }
-    case 0xD3: //单色点阵灯一次性刷新前半部分灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 15; i++)
-      {
-        Thunder.LED_BUFF_Dot[i] = Serial.read();
-        SUM += Thunder.LED_BUFF_Dot[i];
-      }
-
-      if (SUM != Serial.read())
-      {
-        Serial.printf("\n# 0xD3 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
-        Reset_Rx_Data();
-      }
-      break;
-    }
-    case 0xD4: //单色点阵灯一次性刷新后半部分灯
-    {
-      uint8_t SUM = Rx_Data[0];
-      for (int i = 1; i < 15; i++)
-      {
-        Thunder.LED_BUFF_Dot[i + 14] = Serial.read();
-        SUM += Thunder.LED_BUFF_Dot[i + 14];
-      }
-
-      if (SUM != Serial.read())
-      {
-        Serial.printf("\n# 0xD4 cmd CKsum error #\n");
-        Serial.printf("* SUM: %x *\n", SUM);
-        Reset_Rx_Data();
-      }
-      break;
-    }
-    default:
-    {
-      Rx_Data[1] = Serial.read();
-      Rx_Data[2] = Serial.read();
-      Rx_Data[3] = Serial.read();
-      Rx_Data[4] = Serial.read();
-      Rx_Data[5] = Serial.read();
-
-      if (Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
-      {
-        Serial.printf("# Rx_Data[0]: %x CKsum error # \n", Rx_Data[0]);
-        Serial.printf("* SUM error __ Rx_Data[5]: %x __ sum: %x *\n", Rx_Data[5], (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
-        Reset_Rx_Data();
-      }
-      break;
-    }
     }
   }
 }
@@ -2905,7 +3038,7 @@ void THUNDER::Check_BLE_Communication(void)
       Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
       Thunder_BLE.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
 
-      for (uint32_t i = 0; i < COMMUNICATION_DATA_LENGTH_MAX; i++)
+      for (uint32_t i = 0; i < COMMUNICATION_FIXED_LENGTH_MAX; i++)
       {
         Serial.printf("%x ", Tx_Data[i]);
       }
@@ -2922,9 +3055,11 @@ void THUNDER::Check_UART_Communication(void)
   Wait_Communication();
 
   Get_Serial_Command();
-  if (Rx_Data[0] != 0 && !ble_command_busy)
+  if (uart_recv_finish == 1 && !ble_command_busy)
   {
     Check_Protocol();
+    uart_position = 0;
+    uart_recv_finish = 0;
     if (Tx_Data[0] != 0)
     {
       Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
@@ -2955,9 +3090,9 @@ void THUNDER::Check_Protocol(void)
     // Serial.printf("SSSSSSSSSS 串口乱入 SSSSSSSSSS\n");
     break;
 
-  case 0x51:              // IR数据读取
+  case UART_GENERAL_IR_SENSOR:              // IR数据读取
     Get_IR_Data(IR_Data); //更新IR数据
-    Tx_Data[0] = 0x51;
+    Tx_Data[0] = UART_GENERAL_IR_SENSOR;
     Tx_Data[1] = IR_Data[0];
     Tx_Data[2] = IR_Data[1];
     Tx_Data[3] = 0x00;
@@ -2965,9 +3100,9 @@ void THUNDER::Check_Protocol(void)
     // Serial.printf("SSSSSSSSSS ___ IR_Data[0] : %d ___ IR_Data[1] : %d ___ SSSSSSSSSS\n",IR_Data[0],IR_Data[1]);
     break;
 
-  case 0x52:                 // 获取US数据 16进制两个8位
+  case UART_GENERAL_US_SENSOR:                 // 获取US数据 16进制两个8位
     US.Get_US_Data(US_Data); //更新US数据
-    Tx_Data[0] = 0x52;
+    Tx_Data[0] = UART_GENERAL_US_SENSOR;
     Tx_Data[1] = US_Data[0];
     Tx_Data[2] = US_Data[1] >> 8;
     Tx_Data[3] = 0x00;
@@ -2975,11 +3110,11 @@ void THUNDER::Check_Protocol(void)
     // Serial.printf("SSSSSSSSSS ___ US_Data[0] : %x ___ US_Data[1] : %x ___ SSSSSSSSSS\n",US_Data[0],US_Data[1]);
     break;
 
-  case 0x53: // 获取颜色传感器数据 RGBC分4个8位传
+  case UART_GENERAL_COLOR_SENSOR: // 获取颜色传感器数据 RGBC分4个8位传
     Colour_Sensor.Get_RGBC_Data(RGBC);
     Colour_Sensor.RGBtoHSV(RGBC, HSV); // 计算HSV
 
-    Tx_Data[0] = 0x53;
+    Tx_Data[0] = UART_GENERAL_COLOR_SENSOR;
     Tx_Data[1] = RGBC[0] >> 4; //R >> 8
     Tx_Data[2] = RGBC[1] >> 4; //G >> 8
     Tx_Data[3] = RGBC[2] >> 4; //B >> 8
@@ -2990,17 +3125,17 @@ void THUNDER::Check_Protocol(void)
     // Serial.printf("SSSSSSSSSS H  %f ___ S : %f ___ V : %f ___ 颜色 : %d SSSSSSSSSS\n",HSV[0],HSV[1],HSV[2],Colour_Num);  //HSV
     break;
 
-  case 0x54: //获取电池电压数据
+  case UART_GENERAL_BATTERY_SENSOR: //获取电池电压数据
     // Get_Battery_Data();
-    Tx_Data[0] = 0x54;
+    Tx_Data[0] = UART_GENERAL_BATTERY_SENSOR;
     Tx_Data[1] = Battery_Value >> 8; //读取一次电池电压
     Tx_Data[2] = Battery_Value;
     Tx_Data[3] = 0;
     Tx_Data[4] = 0;
     break;
 
-  case 0x55: //获取固件版本号
-    Tx_Data[0] = 0x55;
+  case UART_GENERAL_VERSION_INFO: //获取固件版本号
+    Tx_Data[0] = UART_GENERAL_VERSION_INFO;
 
     // 复制版本号的“整数”和“小数” 到 发送Buffer
     Tx_Data[1] = Version_FW[0];
@@ -3010,20 +3145,20 @@ void THUNDER::Check_Protocol(void)
 
     break;
 
-  case 0xA1:                                  //蓝牙命名  //仅限通过蓝牙，串口不支持重命名
+  case UART_GENERAL_BLE_NAME:                                  //蓝牙命名
     Thunder_BLE.Write_BLE_Name(ADD_BLE_NAME); //从地址0开始写入命名的蓝牙
     break;
 
-  case 0xA2:                            //控制舵机
+  case UART_GENERAL_SERVO_CTRL:                            //控制舵机
     Servo_Turn(Rx_Data[1], Rx_Data[2]); //参数1：1-->机械臂，2-->机械爪；参数2：角度[%](0~100)
     break;
 
-  case 0xA3:                       //控制声音播放
+  case UART_GENERAL_PLAY_VOICE:                       //控制声音播放
     Speaker.Play_Song(Rx_Data[1]); //播放第编号段音频
     Speaker.Set_Sound_Volume(Rx_Data[2]);
     break;
 
-  case 0xB1:            //控制单个电机
+  case UART_GENERAL_MOTOR_SINGLE:            //控制单个电机
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
     Disable_En_Motor(); // En_Motor_Flag = 0;
     Thunder_Motor.Motor_Move(Rx_Data[1], Rx_Data[2], Rx_Data[3]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
@@ -3054,7 +3189,7 @@ void THUNDER::Check_Protocol(void)
   #endif
     break;
 
-  case 0xB2:            //控制两个电机
+  case UART_GENERAL_MOTOR_DOUBLE:            //控制两个电机
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
     Disable_En_Motor(); // En_Motor_Flag = 0;
    
@@ -3083,7 +3218,7 @@ void THUNDER::Check_Protocol(void)
   #endif
     break;
 
-  case 0xB3:           //控制单个闭环电机
+  case UART_GENERAL_MOTOR_SINGLE_PID:           //控制单个闭环电机
     if (Rx_Data[1] == 1)
     {
       if (Rx_Data[3] == 1)
@@ -3108,7 +3243,7 @@ void THUNDER::Check_Protocol(void)
     }
     break;
 
-  case 0xB4:           //控制两个闭环电机
+  case UART_GENERAL_MOTOR_DOUBLE_PID:           //控制两个闭环电机
     if (Rx_Data[2] == 1)
     {
       Thunder_Motor.Set_L_Target(Rx_Data[1]);
@@ -3128,11 +3263,11 @@ void THUNDER::Check_Protocol(void)
     }
     break;
 
-  case 0xB5: //获取当前电机速度(编码器计数值)  需要在Enable_En_Motor()状态下
+  case UART_GENERAL_GET_MOTOR_SPEED: //获取当前电机速度(编码器计数值)  需要在Enable_En_Motor()状态下
     L_Speed = Thunder_Motor.Get_L_Speed();
     R_Speed = Thunder_Motor.Get_R_Speed();
 
-    Tx_Data[0] = 0xB5;
+    Tx_Data[0] = UART_GENERAL_GET_MOTOR_SPEED;
     if (L_Speed >= 0)
     {
       Tx_Data[1] = L_Speed;
@@ -3157,37 +3292,37 @@ void THUNDER::Check_Protocol(void)
     // Serial.printf("L_Speed:%d; R_Speed:%d; \n",Thunder_Motor.Get_L_Speed(),Thunder_Motor.Get_R_Speed());
     break;
 
-  case 0xC1:                                                              //控制单个彩色灯颜色
+  case UART_GENERAL_SINGLE_RGBLED:                                                              //控制单个彩色灯颜色
     I2C_LED.Set_LED_Data(Rx_Data[1], Rx_Data[2], Rx_Data[3], Rx_Data[4]); //第几个灯(1开始)，R,G,B
     I2C_LED.LED_Updata();                                                 //按照现有数据刷新
     break;
 
-  case 0xC2:                                                        //控制左侧彩色灯颜色
+  case UART_GENERAL_LEFT_RGBLED:                                                        //控制左侧彩色灯颜色
     I2C_LED.Set_LEDs_Data(1, I2C_LED_BUFF1, sizeof(I2C_LED_BUFF1)); //写入多个寄存器数据
     I2C_LED.LED_Updata();                                           //按照现有数据刷新
     break;
-  case 0xC3:                                                        //控制右侧彩色灯颜色
+  case UART_GENERAL_RIGHT_RGBLED:                                                        //控制右侧彩色灯颜色
     I2C_LED.Set_LEDs_Data(7, I2C_LED_BUFF2, sizeof(I2C_LED_BUFF2)); //写入多个寄存器数据
     I2C_LED.LED_Updata();                                           //按照现有数据刷新
     break;
 
-  case 0xD1: //控制单色点阵灯开关
+  case UART_GENERAL_DEBUG_LED: //控制单色点阵灯开关
     LED_BUFF_Dot[Rx_Data[1]] = Rx_Data[2];
     HT16D35B.LED_Show(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
     break;
 
-  case 0xD2: //显示预设的单色点阵灯图案
+  case UART_GENERAL_PICTURE_LED: //显示预设的单色点阵灯图案
     Dot_Matrix_LED.Play_LED_HT16F35B_Show(Rx_Data[1]);
     break;
 
-  case 0xD3: //单色点阵灯一次性刷新前半部分灯
+  case UART_GENERAL_DEBUG_PRE_LED: //单色点阵灯一次性刷新前半部分灯
     HT16D35B.LED_Show(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
     break;
-  case 0xD4: //单色点阵灯一次性刷新后半部分灯
+  case UART_GENERAL_DEBUG_SUF_LED: //单色点阵灯一次性刷新后半部分灯
     HT16D35B.LED_Show(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
     break;
 
-  case 0xE1: //内置单色点阵图案动画显示命令
+  case UART_GENERAL_ANIMATION_LED: //内置单色点阵图案动画显示命令
     Set_LED_Show_No(Rx_Data[1]);
     break;
 
@@ -3195,7 +3330,7 @@ void THUNDER::Check_Protocol(void)
     line_tracing_running = false;
     Stop_All();
     break;
-  case 0x66: //_______________________ Demo ___________________
+  case UART_GENERAL_SEARCH_LINE: //_______________________ Demo ___________________
     if (Rx_Data[1] == 1)
     {
       // Serial.printf("* 巡线 *\n");
@@ -3209,7 +3344,87 @@ void THUNDER::Check_Protocol(void)
     }
     Stop_All();
     break;
+  case UART_CALL_SPECIAL_FUNCTION:
+    for(int i=0; i < Rx_Data[COMMUNICATION_DATA_LENGTH_MAX]; i++)
+    {
+      Serial.printf("%x ", Rx_Data[i]);
+    }
+    Serial.println();
+    break;
 
+  case UART_BARBETTE_CTRL:
+    if(Rx_Data[1] == 0x01)
+    {
+      int speed_x, speed_y;
+      int power_left, power_right;
+      int max_power = 0;
+
+      speed_y = (int16_t)(((float)Rx_Data[3] - 126) / 3.0) * (float)(3 - (float)Rx_Data[7]);
+      speed_x = (int16_t)(((float)Rx_Data[6] - 126) / 3.0) * (float)(3 - (float)Rx_Data[7]);
+      power_left = speed_y + speed_x; 
+      power_right = speed_y - speed_x; 
+
+      max_power = abs(speed_y) + abs(speed_x);
+      if(max_power < 126)
+      {
+        max_power = 126;
+      }
+      power_left = map(power_left,-max_power,max_power,-255,255);
+      power_right = map(power_right,-max_power,max_power,-255,255);
+
+      Thunder_Motor.Set_L_Motor_Output(power_left);
+      Thunder_Motor.Set_R_Motor_Output(power_right);
+      
+      static bool last_status = 0;
+      if(Rx_Data[8] != last_status)
+      {
+        Thunder_Barbette.Auto_Fire(Rx_Data[8]);
+
+        last_status = Rx_Data[8];
+      }
+      if((Rx_Data[5] > 129) || (Rx_Data[5] < 125))
+      {
+        Thunder_Barbette.Adjust_Pos(Rx_Data[5]); 
+      }
+    }
+    break;
+  case UART_BARBETTE_INFO:
+    uint8_t return_data[20];
+    uint16_t get_bullet, compute_crc;
+    uint32_t get_used_time;
+
+    if(Rx_Data[1] == 0x01)
+    {
+      return_data[0] = 0xbd;
+      return_data[1] = 0x01;
+      return_data[2] = 0x02;
+      get_bullet = Thunder_Barbette.Get_Bullet();
+      return_data[3] = (get_bullet >> 8) & 0xff;
+      return_data[4] = get_bullet & 0xff;
+      compute_crc = crc16(return_data,5);
+      return_data[5] = (compute_crc >> 8) & 0xff;
+      return_data[6] = compute_crc & 0xff;
+      Serial.write(return_data,7);
+      memset(return_data,0,20);
+    }
+    else if(Rx_Data[1] == 0x02)
+    {
+      return_data[0] = 0xbd;
+      return_data[1] = 0x02;
+      return_data[2] = 0x04;
+      get_used_time = Thunder_Barbette.Get_Used_Time();
+      return_data[3] = (get_used_time >> 24) & 0xff;
+      return_data[4] = (get_used_time >> 16) & 0xff;
+      return_data[5] = (get_used_time >> 8) & 0xff;
+      return_data[6] = get_used_time & 0xff;
+      compute_crc = crc16(return_data,7);
+      return_data[7] = (compute_crc >> 8) & 0xff;
+      return_data[8] = compute_crc & 0xff;
+      Serial.write(return_data,9);
+      memset(return_data,0,20);
+    }
+
+    break;
   default:
     Serial.printf("# No cmd#\n");
     break;
@@ -3219,10 +3434,7 @@ void THUNDER::Check_Protocol(void)
 // 清空接收数据
 void THUNDER::Reset_Rx_Data()
 {
-  for (int i = 0; i < COMMUNICATION_DATA_LENGTH_MAX; i++)
-  {
-    Rx_Data[i] = 0;
-  }
+  memset(Rx_Data, 0, COMMUNICATION_FIXED_LENGTH_MAX);
   ble_command_busy = false;
 }
 

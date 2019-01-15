@@ -11,23 +11,23 @@ void Driver_Flush(void *pvParameters)
   uint32_t character_roll_time;
   uint32_t battery_measure_time;
   uint32_t color_led_ctrl_time;
-  uint32_t communications_time;
+  // uint32_t communications_time;
 
   character_roll_time = millis();
   battery_measure_time = millis();
   color_led_ctrl_time = millis();
-  communications_time = millis();
+  // communications_time = millis();
   for (;;)
   {
     current_time = millis();
     // 
-    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
+    /* if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
       if(current_time - communications_time > 50){
         Thunder.Check_UART_Communication();
         communications_time = millis();
       }
-    }
+    } */
     // 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
     {
@@ -81,7 +81,7 @@ void Deamon_Motor(void *pvParameters)
     }
   }
 }
-void Proc_Command(void *pvParameters)
+void Proc_Ble_Command(void *pvParameters)
 {
   for (;;)
   {
@@ -93,6 +93,17 @@ void Proc_Command(void *pvParameters)
       // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
       Thunder.Check_BLE_Communication();
     }
+  }
+}
+void Proc_Uart_Command(void *pvParameters)
+{
+  for (;;)
+  {
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
+    {
+      Thunder.Check_UART_Communication();
+    }
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }
 void Operator_Mode_Deamon(void *pvParameters)
@@ -413,12 +424,14 @@ void TASK_MESG::Create_Deamon_Threads()
   Serial.println("1");
   xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 3, NULL, 1);
   Serial.println("2");
-  xTaskCreatePinnedToCore(Proc_Command, "procCommand", 4096, NULL, 4, NULL, 1);
+  xTaskCreatePinnedToCore(Proc_Ble_Command, "procBleCommand", 4096, NULL, 4, NULL, 1);
   Serial.println("3");
-  xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operatorModeDeamon", 4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(Proc_Uart_Command, "procUartCommand", 4096, NULL, 4, NULL, 1);
   Serial.println("4");
-  xTaskCreatePinnedToCore(Polling_Check, "pollingCheck", 4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operatorModeDeamon", 4096, NULL, 1, NULL, 1);
   Serial.println("5");
+  xTaskCreatePinnedToCore(Polling_Check, "pollingCheck", 4096, NULL, 1, NULL, 1);
+  Serial.println("6");
 
   deamon_task_running = 1;
   Serial.println("Deamons ready");

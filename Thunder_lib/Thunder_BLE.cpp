@@ -65,12 +65,12 @@ void Analyze_BLE_Data(std::string &recv_data)
   Serial.printf("\n*>%x*\n",recv_data[0]);
   #endif
   
+  uint8_t SUM = 0;
+  int i;
   switch(recv_data[0]){
-    case 0xA1:  // 蓝牙命名指令数据
+    case UART_GENERAL_BLE_NAME:  // 蓝牙命名指令数据
     {
-      uint8_t SUM = 0;
       Rx_Data[0] = recv_data[0];
-      int i;
       for (i = 1; i < recv_data.length() - 1; i++)
       {
         if(i < BLE_NAME_SIZE){
@@ -84,18 +84,16 @@ void Analyze_BLE_Data(std::string &recv_data)
       if(SUM != recv_data[recv_data.length()-1])
       {
         Rx_Data[0] = 0;
-        Serial.printf(" # SUM error 0xA1 #\n");
-        Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
         Thunder.Reset_Rx_Data();
       }
       break;
     }
-    case 0xC2:   // 刷新左侧彩色灯
+    case UART_GENERAL_LEFT_RGBLED:   // 刷新左侧彩色灯
     {
-      uint8_t SUM = recv_data[0];
+      SUM = recv_data[0];
       Rx_Data[0] = recv_data[0];
-      for (int i = 1; i < 19; i++)
+      for (i = 1; i < 19; i++)
       {
         Thunder.I2C_LED_BUFF1[i-1] = recv_data[i];
         SUM += recv_data[i];
@@ -104,18 +102,16 @@ void Analyze_BLE_Data(std::string &recv_data)
       if(SUM != recv_data[19])
       {
         Rx_Data[0] = 0;
-        Serial.printf(" # SUM error 0xC2 #\n");
-        Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
         Thunder.Reset_Rx_Data();
       }
       break;
     }
-    case 0xC3:   // 刷新右侧彩色灯
+    case UART_GENERAL_RIGHT_RGBLED:   // 刷新右侧彩色灯
     {
-      uint8_t SUM = recv_data[0];
+      SUM = recv_data[0];
       Rx_Data[0] = recv_data[0];
-      for (int i = 1; i < 19; i++)
+      for (i = 1; i < 19; i++)
       {
         Thunder.I2C_LED_BUFF2[i-1] = recv_data[i];
         SUM += recv_data[i];
@@ -124,18 +120,16 @@ void Analyze_BLE_Data(std::string &recv_data)
       if(SUM != recv_data[19])
       {
         Rx_Data[0] = 0;
-        Serial.printf(" # SUM error 0xC3 #\n");
-        Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
         Thunder.Reset_Rx_Data();
       }
       break;
     }
-    case 0xD3:   // 单色点阵灯一次性刷新前半部分灯
+    case UART_GENERAL_DEBUG_PRE_LED:   // 单色点阵灯一次性刷新前半部分灯
     {
-      uint8_t SUM = recv_data[0];
+      SUM = recv_data[0];
       Rx_Data[0] = recv_data[0];
-      for (int i = 1; i < 15; i++)
+      for (i = 1; i < 15; i++)
       {
         Thunder.LED_BUFF_Dot[i] = recv_data[i];
         SUM += recv_data[i];
@@ -144,18 +138,16 @@ void Analyze_BLE_Data(std::string &recv_data)
       if(SUM != recv_data[15])
       {
         Rx_Data[0] = 0;
-        Serial.printf(" # SUM error 0xD3 #\n");
-        Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
         Thunder.Reset_Rx_Data();
       }
       break;
     }
-    case 0xD4:   // 单色点阵灯一次性刷新后半部分灯
+    case UART_GENERAL_DEBUG_SUF_LED:   // 单色点阵灯一次性刷新后半部分灯
     {
-      uint8_t SUM = recv_data[0];
+      SUM = recv_data[0];
       Rx_Data[0] = recv_data[0];
-      for (int i = 1; i < 15; i++)
+      for (i = 1; i < 15; i++)
       {
         Thunder.LED_BUFF_Dot[i+14] = recv_data[i];
         SUM += recv_data[i];
@@ -164,24 +156,46 @@ void Analyze_BLE_Data(std::string &recv_data)
       if(SUM != recv_data[15])
       {
         Rx_Data[0] = 0;
-        Serial.printf(" # SUM error 0xD4 #\n");
-        Serial.printf(" # SUM: %x #\n",SUM);
-        Serial.printf(" # recv SUM: %x #\n",recv_data[recv_data.length()-1]);
+        Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
         Thunder.Reset_Rx_Data();
+      }
+      break;
+    }
+    case UART_CALL_SPECIAL_FUNCTION:
+    {
+      int last_index;
+
+      Rx_Data[COMMUNICATION_DATA_LENGTH_MAX] = recv_data.length();
+      last_index = Rx_Data[COMMUNICATION_DATA_LENGTH_MAX] - 1;
+      if( Rx_Data[COMMUNICATION_DATA_LENGTH_MAX] <=  COMMUNICATION_DATA_LENGTH_MAX){
+        for (i = 0; i < last_index; i++)
+        {
+          Rx_Data[i] = recv_data[i];
+          SUM += Rx_Data[i];
+        }
+        if(SUM != recv_data[last_index]){
+          Serial.printf("* F1 SUM: %x *\n", SUM);
+          Thunder.Reset_Rx_Data();
+        }else{
+          Rx_Data[last_index] = recv_data[last_index];
+        }
       }
       break;
     }
     default:  // 一般指令数据
     {
-      for (int i = 0; i < recv_data.length(); i++)
+      for (i = 0; i < recv_data.length(); i++)
       {
         Rx_Data[i] = recv_data[i];
+
+        if(i >= (sizeof(Rx_Data) - 1)) break;
       }
       if(Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
       {
         Serial.printf(" # SUM error: Rx_Data[5]=%x calSum=%x #\n",Rx_Data[5],(uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
         Thunder.Reset_Rx_Data();
       }
+
       break;
     }
   }

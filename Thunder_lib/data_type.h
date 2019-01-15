@@ -32,4 +32,41 @@ typedef enum{
   KEY_CLICK_FOUR
 } enum_Key_Value;
 
+/* 串口指令的数据包相关宏 旧协议 */
+#define UART_GENERAL_IR_SENSOR           (0x51)
+#define UART_GENERAL_US_SENSOR           (0x52)
+#define UART_GENERAL_COLOR_SENSOR        (0x53)
+#define UART_GENERAL_BATTERY_SENSOR      (0x54)
+#define UART_GENERAL_VERSION_INFO        (0x55)
+
+#define UART_GENERAL_SEARCH_LINE         (0x66)
+
+#define UART_GENERAL_BLE_NAME            (0xA1)
+#define UART_GENERAL_SERVO_CTRL          (0xA2)
+#define UART_GENERAL_PLAY_VOICE          (0xA3)
+
+#define UART_GENERAL_MOTOR_SINGLE        (0xB1)
+#define UART_GENERAL_MOTOR_DOUBLE        (0xB2)
+#define UART_GENERAL_MOTOR_SINGLE_PID    (0xB3)
+#define UART_GENERAL_MOTOR_DOUBLE_PID    (0xB4)
+#define UART_GENERAL_GET_MOTOR_SPEED     (0xB5)
+
+#define UART_GENERAL_SINGLE_RGBLED       (0xC1)
+#define UART_GENERAL_LEFT_RGBLED         (0xC2)
+#define UART_GENERAL_RIGHT_RGBLED        (0xC3)
+
+#define UART_GENERAL_DEBUG_LED           (0xD1) // 与点阵屏的扫面相关
+#define UART_GENERAL_PICTURE_LED         (0xD2)
+#define UART_GENERAL_DEBUG_PRE_LED       (0xD3) // 
+#define UART_GENERAL_DEBUG_SUF_LED       (0xD4) // 
+
+#define UART_GENERAL_ANIMATION_LED       (0xE1)
+/* 新协议 */
+#define UART_CALL_SPECIAL_FUNCTION       (0xF1)
+/* 炮台协议 */
+#define UART_BARBETTE_CTRL               (0xAB)
+#define UART_BARBETTE_INFO               (0xDB)
+
+
+
 #endif

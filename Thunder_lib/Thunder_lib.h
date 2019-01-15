@@ -105,7 +105,10 @@
 
 // 通信
 // #define ADD_BLE_NAME        0x00   //自定义蓝牙名称存储地址
-#define COMMUNICATION_DATA_LENGTH_MAX   (6)
+#define COMMUNICATION_DATA_LENGTH_MAX     (20)
+#define COMMUNICATION_DATA_LENGTH_MIN     (3) // 包头、长度、校验
+#define COMMUNICATION_DATA_LOC_LENGTH     (1) // 数据包长度信息所在位置
+#define COMMUNICATION_FIXED_LENGTH_MAX    (6)
 
 // 超声波模块
 #define ADD_I2C_US          0x01   //超声波模块I2C器件地址
