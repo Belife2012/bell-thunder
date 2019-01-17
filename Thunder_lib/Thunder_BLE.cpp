@@ -294,6 +294,7 @@ void THUNDER_BLE::Setup_BLE()
   ////////////////////////////////////////////////////////////////////////////
   std::string strServiceData = "";
   
+  /* 广播包单元的格式：长度+类型+数据 */
   strServiceData += (char)02;     // Len
   strServiceData += (char)0x01;   // Type
   strServiceData += (char)0x06;
@@ -304,7 +305,7 @@ void THUNDER_BLE::Setup_BLE()
 
   Serial.println("AdvertisementData:");
   for(int i=0; i<oAdvertisementData.getPayload().length(); i++){
-    Serial.printf( " %d", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
+    Serial.printf( " 0x%02x", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
   }
   Serial.println();
 

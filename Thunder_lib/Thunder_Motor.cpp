@@ -306,7 +306,7 @@ void THUNDER_MOTOR::Setup_Motor()
 // 配置电机速度
 // 参数1-->通道
 // 参数2-->功率
-void THUNDER_MOTOR::set_speed(uint8_t motor_channel,int speed) 
+void THUNDER_MOTOR::set_speed(uint8_t motor_channel, uint32_t speed) 
 {
   uint8_t channel = 0;
   uint16_t speed_pulse = 0;
@@ -326,7 +326,7 @@ void THUNDER_MOTOR::set_speed(uint8_t motor_channel,int speed)
                  break;
     default: break;       
   }
-  speed_pulse = (uint16_t)(((float)speed / MOTOR_INPUT_MAX) * MOTOR_MAX_DUTY);
+  speed_pulse = ( (speed * MOTOR_MAX_DUTY) / MOTOR_INPUT_MAX );
   ledcWrite(channel,speed_pulse);
 }
 
@@ -350,13 +350,13 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
     {
       if(direction == 1)
       {  
-        set_speed(PWM_L_A,MOTOR_MAX_DUTY);
-        set_speed(PWM_L_B,MOTOR_MAX_DUTY - speed);
+        set_speed(PWM_L_A, MOTOR_INPUT_MAX);
+        set_speed(PWM_L_B, MOTOR_INPUT_MAX - speed);
       }
       else if(direction == 2)
       {
-        set_speed(PWM_L_A,MOTOR_MAX_DUTY - speed);
-        set_speed(PWM_L_B,MOTOR_MAX_DUTY);
+        set_speed(PWM_L_A, MOTOR_INPUT_MAX - speed);
+        set_speed(PWM_L_B, MOTOR_INPUT_MAX);
       }
     }
     else
@@ -371,13 +371,13 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
     {
       if(direction == 1)
       {  
-        set_speed(PWM_R_A,MOTOR_MAX_DUTY - speed);
-        set_speed(PWM_R_B,MOTOR_MAX_DUTY);
+        set_speed(PWM_R_A,MOTOR_INPUT_MAX - speed);
+        set_speed(PWM_R_B,MOTOR_INPUT_MAX);
       }
       else if(direction == 2)
       {
-        set_speed(PWM_R_A,MOTOR_MAX_DUTY);
-        set_speed(PWM_R_B,MOTOR_MAX_DUTY - speed);
+        set_speed(PWM_R_A,MOTOR_INPUT_MAX);
+        set_speed(PWM_R_B,MOTOR_INPUT_MAX - speed);
       }
     }
     else
@@ -394,13 +394,13 @@ void THUNDER_MOTOR::Motor_Brake(int motor)
 {
   if(motor == 1)
   {
-    set_speed(PWM_L_A,MOTOR_MAX_DUTY);
-    set_speed(PWM_L_B,MOTOR_MAX_DUTY);
+    set_speed(PWM_L_A,MOTOR_INPUT_MAX);
+    set_speed(PWM_L_B,MOTOR_INPUT_MAX);
   }
   else if(motor == 2)
   {
-    set_speed(PWM_R_A,MOTOR_MAX_DUTY);
-    set_speed(PWM_R_B,MOTOR_MAX_DUTY);
+    set_speed(PWM_R_A,MOTOR_INPUT_MAX);
+    set_speed(PWM_R_B,MOTOR_INPUT_MAX);
   }
 }
 

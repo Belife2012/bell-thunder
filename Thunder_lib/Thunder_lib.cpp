@@ -99,7 +99,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 7, 42};
+const uint8_t Version_FW[4] = {'T', 0, 7, 43};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -900,15 +900,17 @@ void THUNDER::Enable_En_Motor(void)
 // 关闭编码电机计算
 void THUNDER::Disable_En_Motor(void)
 {
-  // 清除PID控制的变量
-  Thunder_Motor.Set_L_Target(0);
-  Thunder_Motor.Set_R_Target(0);
+  if( En_Motor_Flag != 0 ){
+    // 清除PID控制的变量
+    Thunder_Motor.Set_L_Target(0);
+    Thunder_Motor.Set_R_Target(0);
 
-  En_Motor_Flag = 0;
-  Thunder_Motor.All_PID_Init();
+    En_Motor_Flag = 0;
+    Thunder_Motor.All_PID_Init();
 
-  Thunder_Motor.Set_L_Motor_Output(0);
-  Thunder_Motor.Set_R_Motor_Output(0);
+    Thunder_Motor.Set_L_Motor_Output(0);
+    Thunder_Motor.Set_R_Motor_Output(0);
+  }
 }
 
 // 舵机初始化配置
@@ -3160,7 +3162,7 @@ void THUNDER::Check_Protocol(void)
 
   case UART_GENERAL_MOTOR_SINGLE:            //控制单个电机
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
-    Disable_En_Motor(); // En_Motor_Flag = 0;
+    Disable_En_Motor();
     Thunder_Motor.Motor_Move(Rx_Data[1], Rx_Data[2], Rx_Data[3]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
   #else
     rev_motor_speed = (float)Rx_Data[2] * 0.39;
@@ -3191,7 +3193,7 @@ void THUNDER::Check_Protocol(void)
 
   case UART_GENERAL_MOTOR_DOUBLE:            //控制两个电机
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
-    Disable_En_Motor(); // En_Motor_Flag = 0;
+    Disable_En_Motor();
    
     Thunder_Motor.Motor_Move(1, Rx_Data[1], Rx_Data[2]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
     Thunder_Motor.Motor_Move(2, Rx_Data[3], Rx_Data[4]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
@@ -3335,7 +3337,7 @@ void THUNDER::Check_Protocol(void)
     {
       // Serial.printf("* 巡线 *\n");
       // 使用开环控制电机，然后在巡线里面 以偏离黑线的时间长度作为参量 做速度闭环控制
-      Disable_En_Motor(); // En_Motor_Flag = 0;
+      Disable_En_Motor();
       line_tracing_running = true;
     }
     else if (Rx_Data[1] == 0)
