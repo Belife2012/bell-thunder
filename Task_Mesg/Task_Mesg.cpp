@@ -87,11 +87,22 @@ void Proc_Ble_Command(void *pvParameters)
   {
     // 等待 xSemaphore_BLE, 如果没有give xSemaphore_BLE, 这个task是阻塞状态的
     // Serial.println("wait BLE command...");
-    Task_Mesg.Take_Semaphore_BLE();
+    int ble_mesg_type;
+    ble_mesg_type = Task_Mesg.Take_Semaphore_BLE();
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
       // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
-      Thunder.Check_BLE_Communication();
+      if(ble_mesg_type == 1){
+        Task_Mesg.ble_connect_type = 1;
+        Thunder.Check_BLE_Communication();
+      }else if(ble_mesg_type ==2){
+        if(Task_Mesg.ble_connect_type == 0){
+          Task_Mesg.ble_connect_type = 2;
+          Ble_Client.Connect_Ble_Server();
+        }else if(Task_Mesg.ble_connect_type == 2){
+          Thunder.Check_BLE_Communication();
+        }
+      }
     }
   }
 }
@@ -113,6 +124,9 @@ void Operator_Mode_Deamon(void *pvParameters)
     if(Thunder.line_tracing_running == true){
       Thunder.Line_Tracing();
       // Thunder.Line_Tracing_Speed_Ctrl();
+    }
+    if(Task_Mesg.ble_connect_type == 0){
+      Ble_Client.Scan_Ble_Server();
     }
     vTaskDelay(pdMS_TO_TICKS(50));
   }
@@ -201,8 +215,16 @@ TASK_MESG::TASK_MESG()
     }
   }
   // 创建 BLE二进制信号量
-  xSemaphore_BLE = xSemaphoreCreateBinary();
+  /* xSemaphore_BLE = xSemaphoreCreateBinary();
   if (xSemaphore_BLE == NULL)
+  {
+    while (1)
+    {
+      Serial.println("Semaphore_BLE create fail");
+    }
+  } */
+  Queue_Semaphore_BLE = xQueueCreate(1, sizeof(int));
+  if (Queue_Semaphore_BLE == NULL)
   {
     while (1)
     {
@@ -282,21 +304,53 @@ void TASK_MESG::Give_Semaphore_IIC()
  * @parameters:
  * @return
  */
-void TASK_MESG::Take_Semaphore_BLE()
+/* void TASK_MESG::Take_Semaphore_BLE()
 {
   do
   {
   } while ( xSemaphoreTake(xSemaphore_BLE, portMAX_DELAY) != pdTRUE );
+} */
+int TASK_MESG::Take_Semaphore_BLE()
+{
+  int recv;
+
+  do
+  {
+  } while ( xQueueReceive(Queue_Semaphore_BLE, &recv, portMAX_DELAY) != pdTRUE );
+
+  return recv;
 }
+
 /* 
  * BLECharacteristicCallbacks onWrite函数 give xSemaphore_BLE
  * 
  * @parameters:
  * @return
  */
-void TASK_MESG::Give_Semaphore_BLE()
+/* void TASK_MESG::Give_Semaphore_BLE()
 {
   xSemaphoreGive(xSemaphore_BLE);
+} */
+void TASK_MESG::Give_Semaphore_BLE(int ble_mesg_type)
+{
+  xQueueSend( Queue_Semaphore_BLE, ( void * )&ble_mesg_type, ( TickType_t ) 0 );
+}
+
+/* 
+ * 作为BLE client，scan完成后得到相应的Server，发出信号量 xSemaphore_BLE_scanned
+ * 
+ * @parameters: 
+ * @return: 
+ */
+void TASK_MESG::Take_Semaphore_BLE_Scanned()
+{
+  do
+  {
+  } while ( xSemaphoreTake(xSemaphore_BLE_scanned, portMAX_DELAY) != pdTRUE );
+}
+void TASK_MESG::Give_Semaphore_BLE_Scanned()
+{
+  xSemaphoreGive(xSemaphore_BLE_scanned);
 }
 
 /* 

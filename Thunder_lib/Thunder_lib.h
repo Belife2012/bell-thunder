@@ -68,6 +68,7 @@
 
 // 雷霆
 #include <Thunder_BLE.h>
+#include <Ble_Client.h>
 #include <Thunder_Display.h>
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
@@ -131,6 +132,7 @@
 
 // 雷霆
 extern THUNDER_BLE Thunder_BLE;
+extern BLE_CLIENT Ble_Client;
 extern THUNDER_MOTOR Thunder_Motor;
 
 // 音频

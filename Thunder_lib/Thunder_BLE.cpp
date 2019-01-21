@@ -46,16 +46,20 @@ class MyServerCallbacks: public BLEServerCallbacks
     void onConnect(BLEServer* pServer) 
     {
       deviceConnected = true;
-      Serial.printf("* BLE Connected: %d *\n", pServer->getConnectedCount());
-      // Thunder_Motor.Setup_PID_Timer();
+      Serial.printf("* BLE server Connected\n");
+      
+      pServer->getAdvertising()->stop();
     };
 
-    void onDisconnect(BLEServer* pServer) 
+    void onDisconnect(BLEServer* pServer)
     {
       deviceConnected = false;
-      Serial.printf("# BLE DisConnect: %d #\n", pServer->getConnectedCount());
+      Task_Mesg.ble_connect_type = 0;
+      Serial.printf("# BLE server DisConnect\n");
       Thunder.Stop_All();
       Speaker.Play_Song(45);   // 断开声音
+
+      pServer->getAdvertising()->start();
     }
 };
 
@@ -213,7 +217,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
         // 分析BLE数据后，如果指令Rx_Data[0] 不为 0 ，则give BLE信号
         if(Rx_Data[0] != 0){
-          Task_Mesg.Give_Semaphore_BLE();
+          Task_Mesg.Give_Semaphore_BLE(1);
         }
       }
     }
@@ -273,63 +277,83 @@ void THUNDER_BLE::Setup_BLE()
     BLEDevice::init(User_BLE_Name);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
   }
 
-  BLEServer *pServer = BLEDevice::createServer(); // 创建BLE服务器
-  pServer->setCallbacks(new MyServerCallbacks()); // 如果连接上蓝牙，deviceConnected置1
+  New_Ble_Server_Service();
+}
 
-  BLEService *pService = pServer->createService(SERVICE_UUID);  // 创建BLE服务
-  
-  // 改蓝牙广播功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);      
-  // 改蓝牙默认功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
-  esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P7);  
+void THUNDER_BLE::New_Ble_Server_Service()
+{
+  if(pServer == NULL)
+  {
+    pServer = BLEDevice::createServer(); // 创建BLE服务器
+    pServer->setCallbacks(new MyServerCallbacks()); // 如果连接上蓝牙，deviceConnected置1
+      
+    // 改蓝牙广播功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+    esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P7);      
+    // 改蓝牙默认功率  最小： ESP_PWR_LVL_N14 ， 最大： ESP_PWR_LVL_P7
+    esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, ESP_PWR_LVL_P7);  
 
-  Setup_Ble_Security();
+    Setup_Ble_Security();
 
-  // 增加广播内容
-  pAdvertising = pServer->getAdvertising();
-  BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
-  oAdvertisementData.setPartialServices(BLEUUID(SERVICE_UUID));     // 广播UUIDs
-  oAdvertisementData.setPartialServices(BLEUUID(ADVERTISING_UUID)); // 广播UUIDs
+    // 增加广播内容
+    pAdvertising = pServer->getAdvertising();
+    BLEAdvertisementData oAdvertisementData = BLEAdvertisementData();
+    oAdvertisementData.setPartialServices(BLEUUID(SERVICE_UUID));     // 广播UUIDs
+    oAdvertisementData.setPartialServices(BLEUUID(ADVERTISING_UUID)); // 广播UUIDs
 
-  ////////////////////////////////////////////////////////////////////////////
-  std::string strServiceData = "";
-  
-  /* 广播包单元的格式：长度+类型+数据 */
-  strServiceData += (char)02;     // Len
-  strServiceData += (char)0x01;   // Type
-  strServiceData += (char)0x06;
-  oAdvertisementData.addData(strServiceData);
+    ////////////////////////////////////////////////////////////////////////////
+    std::string strServiceData = "";
+    
+    /* 广播包单元的格式：长度+类型+数据 */
+    strServiceData += (char)02;     // Len
+    strServiceData += (char)0x01;   // Type
+    strServiceData += (char)0x06;
+    oAdvertisementData.addData(strServiceData);
 
-  // pAdvertising->setAdvertisementData(oAdvertisementData);
-  /////////////////////////////////////////////////////////////////////////////
+    // pAdvertising->setAdvertisementData(oAdvertisementData);
+    /////////////////////////////////////////////////////////////////////////////
 
-  Serial.println("AdvertisementData:");
-  for(int i=0; i<oAdvertisementData.getPayload().length(); i++){
-    Serial.printf( " 0x%02x", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
+    Serial.println("AdvertisementData:");
+    for(int i=0; i<oAdvertisementData.getPayload().length(); i++){
+      Serial.printf( " 0x%02x", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
+    }
+    Serial.println();
+
+    pAdvertising->setAdvertisementData(oAdvertisementData);
+    // pAdvertising->start();
+
   }
-  Serial.println();
+  if(pService == NULL)
+  {
+    pService = pServer->createService(SERVICE_UUID);  // 创建BLE服务
+    // 创建BLE特征
+    pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX, 
+                    BLECharacteristic::PROPERTY_NOTIFY 
+                    | BLECharacteristic::PROPERTY_READ 
+                    | BLECharacteristic::PROPERTY_WRITE 
+                    | BLECharacteristic::PROPERTY_WRITE_NR );
+    // pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX,BLECharacteristic::PROPERTY_NOTIFY);
+    pCharacteristic->addDescriptor(new BLE2902());
+    // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE_NR);   //PROPERTY_READ PROPERTY_WRITE  PROPERTY_NOTIFY PROPERTY_BROADCAST  PROPERTY_INDICATE PROPERTY_WRITE_NR
+    // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE);
+    pCharacteristic->setCallbacks(new MyCallbacks()); // 接收到数据后执行的内容
 
-  pAdvertising->setAdvertisementData(oAdvertisementData);
-  // pAdvertising->start();
-
-
-  // 创建BLE特征
-  pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX, 
-                  BLECharacteristic::PROPERTY_NOTIFY 
-                  | BLECharacteristic::PROPERTY_READ 
-                  | BLECharacteristic::PROPERTY_WRITE 
-                  | BLECharacteristic::PROPERTY_WRITE_NR );
-  // pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX,BLECharacteristic::PROPERTY_NOTIFY);
-  pCharacteristic->addDescriptor(new BLE2902());
-  // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE_NR);   //PROPERTY_READ PROPERTY_WRITE  PROPERTY_NOTIFY PROPERTY_BROADCAST  PROPERTY_INDICATE PROPERTY_WRITE_NR
-  // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE);
-  pCharacteristic->setCallbacks(new MyCallbacks()); // 接收到数据后执行的内容
-
-  pService->start();  // 开启服务
-
+    pService->start();  // 开启服务
+  }
+  
   pServer->getAdvertising()->start(); // 开始广播
 
-  Serial.printf("BLE Init end\n");
+  Serial.printf("BLE Server Service\n");
+}
+
+void THUNDER_BLE::Delete_Ble_Server_Service()
+{
+  if(pServer == NULL || pService == NULL){
+    return;
+  }
+
+  pServer->getAdvertising()->stop();
+  // pServer->removeService(pService);
+  // pService = NULL;
 }
 
 void THUNDER_BLE::Setup_Ble_Security()

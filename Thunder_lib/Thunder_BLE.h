@@ -87,7 +87,9 @@ class THUNDER_BLE
     BLECharacteristic *pCharacteristic;
     std::string User_BLE_Name = "Thunder_";
 
-    BLEAdvertising *pAdvertising;
+    BLEAdvertising *pAdvertising = NULL;
+    BLEService *pService = NULL;
+    BLEServer *pServer = NULL;
 
     void Setup_Ble_Security();
 
@@ -103,9 +105,9 @@ class THUNDER_BLE
 
     // 蓝牙
     void Setup_BLE(void);                           // 配置BLE
+    void New_Ble_Server_Service();
+    void Delete_Ble_Server_Service();
     void Tx_BLE(uint8_t Tx_Data[], int byte_num);   // 发送蓝牙数据
 };
-
-#include <Thunder_lib.h>
 
 #endif

@@ -54,6 +54,7 @@
 
 THUNDER Thunder;
 THUNDER_BLE Thunder_BLE;
+BLE_CLIENT Ble_Client;
 THUNDER_MOTOR Thunder_Motor;
 
 //ADC 校准使用
@@ -99,7 +100,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 7, 43};
+const uint8_t Version_FW[4] = {'T', 0, 8, 43};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -125,7 +126,11 @@ void THUNDER::Setup_All(void)
 
 #ifndef DEBUG_LINE_TRACING
   Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
-  Thunder_BLE.Setup_BLE();    // 配置BLE
+  #if 1
+  Thunder_BLE.Setup_BLE();    // 配置 BLE Server 
+  #else
+  Ble_Client.Setup_Ble_Client();// 配置 BLE Client
+  #endif
 #endif
 
   Disk_Manager.Disk_Manager_Initial();

@@ -67,8 +67,10 @@ public:
   void Resume_Others_AppsTask();
   void Take_Semaphore_IIC();
   void Give_Semaphore_IIC();
-  void Take_Semaphore_BLE();
-  void Give_Semaphore_BLE();
+  int Take_Semaphore_BLE();
+  void Give_Semaphore_BLE(int ble_mesg_type);
+  void Take_Semaphore_BLE_Scanned();
+  void Give_Semaphore_BLE_Scanned();
   void Set_Current_Task_Supreme();
   void Clear_Current_Task_Supreme();
   void Enter_Task_Critical();
@@ -77,6 +79,8 @@ public:
   // 串口“示波器”的数据队列
   QueueHandle_t Queue_encoder_left;
   QueueHandle_t Queue_encoder_right;
+
+  int ble_connect_type = 0;
 
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
@@ -89,7 +93,8 @@ private:
   uint8_t tasks_num;
   uint8_t deamon_task_running;
   volatile SemaphoreHandle_t xSemaphore_IIC;
-  volatile SemaphoreHandle_t xSemaphore_BLE;
+  QueueHandle_t Queue_Semaphore_BLE;
+  volatile SemaphoreHandle_t xSemaphore_BLE_scanned;
 };
 
 extern TASK_MESG Task_Mesg;
