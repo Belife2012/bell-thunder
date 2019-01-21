@@ -216,10 +216,10 @@ class THUNDER
     int Line_B_Speed = -50;
     #else
     // 重构型
-    int Line_H_Speed = 100;
-    int Line_M_Speed = 90;
-    int Line_L_Speed = 70;
-    int Line_B_Speed = -70;
+    int Line_H_Speed = 60;
+    int Line_M_Speed = 50;
+    int Line_L_Speed = 35;
+    int Line_B_Speed = -35;
     #endif
 
 

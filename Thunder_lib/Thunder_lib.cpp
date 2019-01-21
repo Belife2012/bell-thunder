@@ -100,7 +100,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 43};
+const uint8_t Version_FW[4] = {'T', 0, 8, 44};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -187,6 +187,8 @@ void THUNDER::Stop_All(void)
   Serial.printf("Stop Motor... \n");
 
   Disable_En_Motor(); // 关闭编码电机计算
+  Thunder_Motor.Set_L_Motor_Output(0);
+  Thunder_Motor.Set_R_Motor_Output(0);
 
   // Servo_Turn(1, 90);
   // Servo_Turn(2, 90);
@@ -976,8 +978,10 @@ void THUNDER::Get_IR_Data(uint8_t data[])
 
 void THUNDER::Wait_For_Motor_Slow()
 {
-  Thunder_Motor.Set_L_Motor_Power(0);
-  Thunder_Motor.Set_R_Motor_Power(0);
+  // Thunder_Motor.Set_L_Motor_Power(0);
+  // Thunder_Motor.Set_R_Motor_Power(0);
+  Thunder_Motor.Motor_Brake(MOTOR_INDEX_LEFT);
+  Thunder_Motor.Motor_Brake(MOTOR_INDEX_RIGHT);
 
   do
   {
@@ -1005,7 +1009,7 @@ void THUNDER::Wait_For_Motor_Slow()
  */
 #define WAIT_DIRECTION_COMFIRM_TIME 100 //ms
 #define MAYBE_STRAIGHT_DIRECTION 300    //ms
-#define LITTLE_L_R_POWER_DIFF 7
+#define LITTLE_L_R_POWER_DIFF 5
 #define SPIN_L_R_DIFF_ROTATEVALUE 700 //编码器数值的差量300为打转90度
 
 void THUNDER::Line_Tracing(void)
@@ -1033,7 +1037,7 @@ void THUNDER::Line_Tracing(void)
       break;
     }
     Get_IR_Data(IR_Data); //更新巡线传感器数据 //0-->白; 1-->黑
-    // Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
+    Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
     // Serial.printf("*** line_state: %d ***\n", line_state);
 
     current_time = millis();
@@ -1246,7 +1250,8 @@ void THUNDER::Line_Tracing(void)
     {
       if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
       {
-        Thunder_Motor.Set_L_Motor_Power(0);
+        // Thunder_Motor.Set_L_Motor_Power(0);
+        Thunder_Motor.Motor_Brake(MOTOR_INDEX_LEFT);
         Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
         Line_last_time = millis(); // 不改变运动状态
         line_out_flag = 1;
@@ -1286,7 +1291,8 @@ void THUNDER::Line_Tracing(void)
       if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
       {
         Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-        Thunder_Motor.Set_R_Motor_Power(0);
+        // Thunder_Motor.Set_R_Motor_Power(0);
+        Thunder_Motor.Motor_Brake(MOTOR_INDEX_RIGHT);
         Line_last_time = millis(); // 不改变运动状态
         line_out_flag = 1;
         continue; // 保持前运动状态继续运动

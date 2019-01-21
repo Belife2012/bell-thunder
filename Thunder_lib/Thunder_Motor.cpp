@@ -427,7 +427,7 @@ void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
   if( M_output >= 0 ){
     Motor_Move(1, M_output, 1);
   }else{
-    Motor_Move(1, -1*M_output, 0);
+    Motor_Move(1, -1*M_output, 2);
   }
 }
 // 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
@@ -436,7 +436,7 @@ void THUNDER_MOTOR::Set_R_Motor_Output( int M_output ){
   if( M_output >= 0 ){
     Motor_Move(2, M_output, 1);
   }else{
-    Motor_Move(2, -1*M_output, 0);
+    Motor_Move(2, -1*M_output, 2);
   }
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
@@ -448,7 +448,7 @@ void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
   if( M_power >= 0 ){
     Motor_Move(1, M_power, 1);
   }else{
-    Motor_Move(1, -1*M_power, 0);
+    Motor_Move(1, -1*M_power, 2);
   }
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
@@ -460,7 +460,7 @@ void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
   if( M_power >= 0 ){
     Motor_Move(2, (int)M_power, 1);
   }else{
-    Motor_Move(2, -1*(int)M_power, 0);
+    Motor_Move(2, -1*(int)M_power, 2);
   }
 }
 

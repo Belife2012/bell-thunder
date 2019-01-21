@@ -87,6 +87,11 @@
 #define MOTOR_INPUT_MAX     255
 #define LIMIT_SPEED         10  //电机停止速度，滑行速度
 
+#define MOTOR_INDEX_LEFT          (1)
+#define MOTOR_INDEX_RIGHT         (2)
+#define MOTOR_DIRECTION_LEFT      (1)
+#define MOTOR_DIRECTION_RIGHT     (2)
+
 // 编码器
 #define DEGREES_EVERY_CIRCLE      360
 #define ENCODER_NUM_EVERY_CIRCLE  216   // 电机编码器磁铁是四对磁极对，减速比是27
