@@ -56,6 +56,7 @@ THUNDER Thunder;
 THUNDER_BLE Thunder_BLE;
 BLE_CLIENT Ble_Client;
 THUNDER_MOTOR Thunder_Motor;
+REMOTER Ble_Remoter;
 
 //ADC 校准使用
 esp_adc_cal_characteristics_t adc_chars;
@@ -126,7 +127,7 @@ void THUNDER::Setup_All(void)
 
 #ifndef DEBUG_LINE_TRACING
   Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
-  #if 1
+  #if 0
   Thunder_BLE.Setup_BLE();    // 配置 BLE Server 
   #else
   Ble_Client.Setup_Ble_Client();// 配置 BLE Client

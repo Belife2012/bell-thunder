@@ -53,7 +53,7 @@
 
 #define MOTOR_DRIVER_IC_TB6612    (0x01)
 #define MOTOR_DRIVER_IC_PT5126    (0x02)
-#define MOTOR_DRIVER_IC           MOTOR_DRIVER_IC_PT5126
+#define MOTOR_DRIVER_IC           MOTOR_DRIVER_IC_TB6612
 
 // 电机
 // TB6612驱动驱动直流无刷电机

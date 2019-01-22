@@ -39,27 +39,12 @@ static void notifyCallback(
   size_t length,
   bool isNotify) {
 #if (SERVER_STYLE == SERVER_IS_REMOTER)
-    int i=0;
-    for(; i<4 && i<length; i++){
-      Serial.printf("%4d ", (int8_t)pData[i]);
-    }
-    for(; i<length; i++){
-      Serial.printf("%02x ", pData[i]);
-    }
-    Serial.println();
-
-    Rx_Data[0] = (uint8_t)0xb2;
-    Rx_Data[2] = ((pData[1] & (uint8_t)0x80) == 0) ? 1 : 0;
-    Rx_Data[4] = Rx_Data[2];
-    Rx_Data[1] = ((pData[1] & (uint8_t)0x80) == 0) ? ((uint8_t)0x7F - pData[1]) : (pData[1] & (uint8_t)0x7F);
-    Rx_Data[3] = Rx_Data[1];
-    Rx_Data[5] = Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4];
-    Task_Mesg.Give_Semaphore_BLE(2);
+  Ble_Remoter.Analyze_Raw_Data(pData, length);
 #else
-    Serial.print("Notify callback for characteristic ");
-    Serial.print(pBLERemoteCharacteristic->getUUID().toString().c_str());
-    Serial.print(" of data length ");
-    Serial.println(length);
+  Serial.print("Notify callback for characteristic ");
+  Serial.print(pBLERemoteCharacteristic->getUUID().toString().c_str());
+  Serial.print(" of data length ");
+  Serial.println(length);
 #endif
 }
 

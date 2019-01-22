@@ -73,6 +73,9 @@
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
 
+// 遥控器
+#include <Remoter.h>
+
 /* 通用宏 */
 #define MOTOR_WITHOUT_CTRL_FOR_USER   1
 
@@ -156,6 +159,9 @@ extern LIGHTDETECT_I2C Light_Sensor;
 // 单色LED
 extern DOT_MATRIX_LED Dot_Matrix_LED;
 extern HT16D35B HT16D35B;// IIC Address: 0x69
+
+// 遥控器
+extern REMOTER Ble_Remoter;
 
 class THUNDER
 {
