@@ -101,13 +101,13 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 44};
+const uint8_t Version_FW[4] = {'T', 0, 8, 45};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
-// delay(6000);
+  delay(1000);
 #ifdef SERIAL_PRINT_HIGHSPEED
   Serial.begin(500000);
 #else
@@ -125,14 +125,7 @@ void THUNDER::Setup_All(void)
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
   Select_Sensor_AllChannel();
 
-#ifndef DEBUG_LINE_TRACING
   Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
-  #if 0
-  Thunder_BLE.Setup_BLE();    // 配置 BLE Server 
-  #else
-  Ble_Client.Setup_Ble_Client();// 配置 BLE Client
-  #endif
-#endif
 
   Disk_Manager.Disk_Manager_Initial();
 
@@ -140,7 +133,7 @@ void THUNDER::Setup_All(void)
   Setup_IR();             // 巡线IR传感器初始化配置
   Setup_Battery();        // 电池电压检测初始化配置
   Setup_Led_Indication(); // 初始化指示灯LED
-  Setup_Button_Start();   // 初始化程序控制按键：BUTTON_START
+  Setup_Function_Button();   // 初始化程序控制按键：BUTTON_START
 
   Colour_Sensor.Setup();           // 配置颜色传感器
 
@@ -151,6 +144,13 @@ void THUNDER::Setup_All(void)
   Stop_All();               // 
 
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
+  
+  Thunder_BLE.Setup_BLE();
+  // if( ble_type == BLE_TYPE_SERVER ){
+  //   Thunder_BLE.Setup_BLE();    // 配置 BLE Server 
+  // }else if( ble_type == BLE_TYPE_CLIENT ){
+  //   Ble_Client.Setup_Ble_Client();// 配置 BLE Client
+  // }
 
   Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED);      // 把 LED点阵显示动画效果刷新工作 交给后台守护线程进行
   Task_Mesg.Set_Flush_Task(FLUSH_COLOR_LED);       // 把 彩灯刷新工作 交给后台守护线程进行
@@ -168,6 +168,28 @@ void THUNDER::Setup_All(void)
 #endif
 
   Serial.printf("Battery Vlotage: %fV\n", ((float)Get_Battery_Data() / 1000));
+}
+
+void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
+{
+  if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
+    ble_type = BLE_TYPE_SERVER;
+    Task_Mesg.ble_connect_type = 1;
+    Ble_Client.Disconnect_Ble_Server();
+    Ble_Client.Stop_Scan();
+
+    Thunder_BLE.New_Ble_Server_Service(); // 配置 BLE Server 
+
+  }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
+    ble_type = BLE_TYPE_CLIENT;
+    Task_Mesg.ble_connect_type = 0; // 允许启动 client scan
+    Thunder_BLE.Delete_Ble_Server_Service(); // 需要手动操作手机断连BLE后，才能切换
+
+    Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
+
+  }
+
+  return;
 }
 
 void THUNDER::Reset_All_Components()
@@ -470,7 +492,7 @@ void THUNDER::Update_Led_Indication_Status(uint32_t &current_counter)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Setup_Button_Start()
+void THUNDER::Setup_Function_Button()
 {
   pinMode(BUTTON_START, INPUT_PULLDOWN);
   button_press_time = 0;
@@ -492,7 +514,7 @@ void THUNDER::Setup_Button_Start()
  * @parameters: 
  * @return: 确认button按下返回 1，否则返回 0
  */
-uint8_t THUNDER::Get_Button_Start_Status()
+uint8_t THUNDER::Get_Function_Button_Status()
 {
   // digitalRead(BUTTON_START)获取按键状态
   if (digitalRead(BUTTON_START) == 1)
@@ -537,11 +559,11 @@ uint8_t THUNDER::Get_Button_Start_Status()
  * @parameters: 
  * @return: 
  */
-enum_Key_Value THUNDER::Check_Button_Start_Value()
+enum_Key_Value THUNDER::Check_Function_Button_Value()
 {
   enum_Key_Value button_value = KEY_NONE;
 
-  if (Get_Button_Start_Status() == 1)
+  if (Get_Function_Button_Status() == 1)
   {
     // 每次从释放到按下，按下次数增加1
     if (button_status_record == 0)
@@ -606,10 +628,22 @@ enum_Key_Value THUNDER::Check_Button_Start_Value()
 
   if (button_value != KEY_NONE)
   {
+    function_button_event = button_value;
     Update_Process_Status(button_value);
-    Serial.printf("button: %d \n", (uint32_t)button_value);
   }
   return button_value;
+}
+
+bool THUNDER::Check_Function_Button_Event(enum_Key_Value key_event)
+{
+  bool ret = false;
+
+  if(function_button_event == key_event){
+    ret = true;
+    function_button_event = KEY_NONE;
+  }
+
+  return ret;
 }
 
 /* 
@@ -702,14 +736,17 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   { //
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
     else if (button_event == KEY_CLICK_ONE)
     {
+      function_button_event = KEY_NONE;
       Set_Program_Run_Index(program_user);
     }
     else if (button_event == KEY_CLICK_TWO)
     {
+      function_button_event = KEY_NONE;
       Set_Program_Run_Index(PROCESS_THUNDER_GO);
     }
 
@@ -719,6 +756,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   { //
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
 
@@ -728,6 +766,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   {
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
 
@@ -737,6 +776,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   {
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
 
@@ -746,6 +786,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   {
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
 
@@ -755,6 +796,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   {
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
 
@@ -766,6 +808,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     {
       // 设置一个倒计时，没有按键动作，时间则回到 PROCESS_STOP 系统状态
       // wait_key_timer = 3000;
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_WAIT_SWITCH);
     }
 
@@ -775,25 +818,30 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   {
     if (button_event == KEY_LONG_NO_RELEASE)
     {
+      function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
     }
     else if (button_event == KEY_CLICK_ONE)
     {
+      function_button_event = KEY_NONE;
       Set_Program_User(PROCESS_USER_1);
       Disk_Manager.Wirte_Program_User(program_user);
     }
     else if (button_event == KEY_CLICK_TWO)
     {
+      function_button_event = KEY_NONE;
       Set_Program_User(PROCESS_USER_2);
       Disk_Manager.Wirte_Program_User(program_user);
     }
     else if (button_event == KEY_CLICK_THREE)
     {
+      function_button_event = KEY_NONE;
       Set_Program_User(PROCESS_USER_3);
       Disk_Manager.Wirte_Program_User(program_user);
     }
     else if (button_event == KEY_CLICK_FOUR)
     {
+      function_button_event = KEY_NONE;
       Set_Program_User(PROCESS_USER_4);
       Disk_Manager.Wirte_Program_User(program_user);
     }
@@ -914,6 +962,7 @@ void THUNDER::Disable_En_Motor(void)
     Thunder_Motor.Set_R_Target(0);
 
     En_Motor_Flag = 0;
+    Thunder_Motor.PID_Reset();
     Thunder_Motor.All_PID_Init();
 
     Thunder_Motor.Set_L_Motor_Output(0);

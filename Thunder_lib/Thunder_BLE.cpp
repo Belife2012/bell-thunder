@@ -54,7 +54,6 @@ class MyServerCallbacks: public BLEServerCallbacks
     void onDisconnect(BLEServer* pServer)
     {
       deviceConnected = false;
-      Task_Mesg.ble_connect_type = 0;
       Serial.printf("# BLE server DisConnect\n");
       Thunder.Stop_All();
       Speaker.Play_Song(45);   // 断开声音
@@ -226,7 +225,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 // 配置BLE
 void THUNDER_BLE::Setup_BLE()
 {
-  Serial.printf("\nstart Init BLE...\n");
+  Serial.printf("\nstart BLE ...\n");
 
   Read_BLE_Name(ADD_BLE_NAME);  // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
 
@@ -277,7 +276,6 @@ void THUNDER_BLE::Setup_BLE()
     BLEDevice::init(User_BLE_Name);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
   }
 
-  New_Ble_Server_Service();
 }
 
 void THUNDER_BLE::New_Ble_Server_Service()

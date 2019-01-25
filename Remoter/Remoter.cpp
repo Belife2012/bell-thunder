@@ -12,13 +12,14 @@ REMOTER::~REMOTER()
 void REMOTER::Analyze_Raw_Data(const uint8_t* raw_data, const uint8_t length)
 {
     int i=0;
-    for(; i<4 && i<length; i++){
-      Serial.printf("%4d ", (int8_t)raw_data[i]);
-    }
-    for(; i<length; i++){
-      Serial.printf("%02x ", raw_data[i]);
-    }
-    Serial.println();
+    
+    // for(; i<4 && i<length; i++){
+    //   Serial.printf("%4d ", (int8_t)raw_data[i]);
+    // }
+    // for(; i<length; i++){
+    //   Serial.printf("%02x ", raw_data[i]);
+    // }
+    // Serial.println();
 
     if(length == 10){ // KYE_HOME这个键发生事件时，数据长度是3，无法用于计算下面键值
         // 相等才是按键Press，只有一个按键成立

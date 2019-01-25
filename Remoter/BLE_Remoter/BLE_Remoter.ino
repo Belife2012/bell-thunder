@@ -5,7 +5,7 @@ void setup()
 {
   // initial thunder-car all hareware resource
   Thunder.Setup_All();
-  Thunder.Set_Ble_Type(BLE_TYPE_CLIENT); // 选择蓝牙角色模式
+  Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
 
   // 舵机位置初始化
   Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
@@ -54,14 +54,64 @@ void Program_ThunderGo()
 /*******setup函数 loop函数********/
 void setup_1_1()
 {
-
 }
 void loop_1_1()
 {
-  /* 滚动显示字符串 */
-  char alphabet_A[] = "1bell";
-  Dot_Matrix_LED.Play_LED_String(alphabet_A);
-  delay(10000);
+  /* 使用蓝牙手柄 */
+  if(Ble_Remoter.Get_Key_Action(KEY_Y, KEY_PRESSING)){
+    Speaker.Play_Song(1);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_Y, KEY_RELEASING)){
+    Speaker.Play_Song(6);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_X, KEY_PRESSING)){
+    Speaker.Play_Song(95);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_X, KEY_RELEASING)){
+    Speaker.Play_Song(96);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_A, KEY_PRESSING)){
+    Speaker.Play_Song(98);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_A, KEY_RELEASING)){
+    Speaker.Play_Song(99);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_B, KEY_PRESSING)){
+    Speaker.Play_Song(101);
+  }
+  if(Ble_Remoter.Get_Key_Action(KEY_B, KEY_RELEASING)){
+    Speaker.Play_Song(102);
+  }
+
+  if( Ble_Remoter.Get_Key_Value(KEY_UP) ){
+    Thunder_Motor.Set_L_Target(20);
+    Thunder_Motor.Set_R_Target(20);
+  }else if( Ble_Remoter.Get_Key_Value(KEY_DOWN) ){
+    Thunder_Motor.Set_L_Target(-20);
+    Thunder_Motor.Set_R_Target(-20);
+  }else if( Ble_Remoter.Get_Key_Value(KEY_LEFT) ){
+    Thunder_Motor.Set_L_Target(-20);
+    Thunder_Motor.Set_R_Target(20);
+  }else if( Ble_Remoter.Get_Key_Value(KEY_RIGHT) ){
+    Thunder_Motor.Set_L_Target(20);
+    Thunder_Motor.Set_R_Target(-20);
+  }else{
+    Thunder_Motor.Set_L_Target(Ble_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)-Ble_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
+    Thunder_Motor.Set_R_Target(Ble_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)+Ble_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
+  }
+
+  Thunder.Servo_Turn(2, 90+2*Ble_Remoter.Get_Control_Value(KEY_R2_ANALOG)/10);
+
+  /* 使用功能按键 */
+  if(Thunder.Check_Function_Button_Event(KEY_CLICK_ONE)){
+    Speaker.Play_Song(112);
+  }else if(Thunder.Check_Function_Button_Event(KEY_CLICK_TWO)){
+    Speaker.Play_Song(113);
+  }else if(Thunder.Check_Function_Button_Event(KEY_CLICK_THREE)){
+    Speaker.Play_Song(114);
+  }else if(Thunder.Check_Function_Button_Event(KEY_CLICK_FOUR)){
+    Speaker.Play_Song(115);
+  }
 }
 void setup_2_1()
 {

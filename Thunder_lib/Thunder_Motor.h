@@ -217,6 +217,7 @@ class THUNDER_MOTOR
 
     // 闭环电机
     void PID_Reset(struct PID_Struct_t *pid);                               // 重置PID计算过程值
+    void PID_Reset();
     void PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float Kd);  // PID参数初始化
     void All_PID_Init();                                                    // 按默认PID参数初始化左右电机
     void Setup_Motor_PID(void);                                             // 配置左右两个电机编码器

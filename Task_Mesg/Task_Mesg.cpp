@@ -93,7 +93,6 @@ void Proc_Ble_Command(void *pvParameters)
     {
       // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
       if(ble_mesg_type == 1){
-        Task_Mesg.ble_connect_type = 1;
         Thunder.Check_BLE_Communication();
       }else if(ble_mesg_type ==2){
         if(Task_Mesg.ble_connect_type == 0){
@@ -148,7 +147,7 @@ void Polling_Check(void *pvParameters)
     /* 指示灯LED轮询，模拟PWM */
     Thunder.Update_Function_Timer();
     Thunder.Update_Led_Indication_Status(led_indication_counter);
-    Thunder.Check_Button_Start_Value();
+    Thunder.Check_Function_Button_Value();
 
     vTaskDelay(pdMS_TO_TICKS(POLLING_CHECK_PERIOD));
     led_indication_counter += POLLING_CHECK_PERIOD;
@@ -455,6 +454,7 @@ void TASK_MESG::Clear_All_Loops()
 
   tasks_num = 0;
   Thunder.Reset_All_Components();
+  Thunder.Set_Ble_Type(BLE_TYPE_CLIENT); // 每次等待启动时，都是处于 BLE Client
 }
 
 /*

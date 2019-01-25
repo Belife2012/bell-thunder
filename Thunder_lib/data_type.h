@@ -32,6 +32,12 @@ typedef enum{
   KEY_CLICK_FOUR
 } enum_Key_Value;
 
+typedef enum{
+  BLE_TYPE_NONE = 0, // 不启用BLE
+  BLE_TYPE_SERVER,   // 作为BLE Server 连接手机APP遥控
+  BLE_TYPE_CLIENT    // 作为BLE Client 连接蓝牙手柄
+} enum_Ble_Type;
+
 /* 串口指令的数据包相关宏 旧协议 */
 #define UART_GENERAL_IR_SENSOR           (0x51)
 #define UART_GENERAL_US_SENSOR           (0x52)

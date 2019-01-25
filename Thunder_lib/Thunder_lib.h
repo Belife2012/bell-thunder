@@ -200,6 +200,7 @@ class THUNDER
     uint8_t button_press_counter;
     uint8_t button_status_record;
     uint8_t button_active;
+    enum_Key_Value function_button_event = KEY_NONE;
 
     // 程序切换
     enum_Process_Status process_status = PROCESS_STOP;
@@ -232,6 +233,7 @@ class THUNDER
     // 串口通信标志位
     bool need_communication = false;
     uint8_t Usart_Communication = 0;
+    enum_Ble_Type ble_type = BLE_TYPE_NONE;
 
     // 内置表情/动画
     uint8_t LED_show_No = 0;
@@ -307,9 +309,10 @@ class THUNDER
     void Setup_Led_Indication();
     void Set_Led_Indication_param();
     void Update_Led_Indication_Status(uint32_t &current_counter);
-    void Setup_Button_Start();
-    uint8_t Get_Button_Start_Status();
-    enum_Key_Value Check_Button_Start_Value();
+    void Setup_Function_Button();
+    uint8_t Get_Function_Button_Status();
+    enum_Key_Value Check_Function_Button_Value();
+    bool Check_Function_Button_Event(enum_Key_Value key_event);
     void Set_Process_Status(enum_Process_Status new_status);
     void Update_Process_Status(enum_Key_Value button_event);
     void Set_Program_User(enum_Process_Status new_program_user);
@@ -355,6 +358,7 @@ class THUNDER
     void Check_Protocol(void);      // 协议解析
     void Reset_Rx_Data(void);       // 清空接收数据
     void Set_Need_Communication(bool);
+    void Set_Ble_Type(enum_Ble_Type new_type);
 
     // 传感器端口选择
     uint8_t Select_Sensor_Channel(uint8_t sensorChannel);

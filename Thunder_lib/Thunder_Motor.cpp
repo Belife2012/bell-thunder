@@ -493,6 +493,11 @@ void THUNDER_MOTOR::PID_Reset(struct PID_Struct_t *pid)
 
   // pid->Out = 0;  
 }
+void THUNDER_MOTOR::PID_Reset()
+{
+  PID_Reset(&Motor_L_Speed_PID);
+  PID_Reset(&Motor_R_Speed_PID);
+}
 
 // PID参数初始化
 void THUNDER_MOTOR::PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float Kd)
@@ -1067,7 +1072,7 @@ void THUNDER_MOTOR::Set_L_Target(float target)
   target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
   if(Motor_L_Speed_PID.Ref != target_encoder_num)
   {
-    PID_Reset(&Motor_L_Speed_PID);
+    // PID_Reset(&Motor_L_Speed_PID);
     Motor_L_Speed_PID.Ref = target_encoder_num;
   }
 }
@@ -1080,7 +1085,7 @@ void THUNDER_MOTOR::Set_R_Target(float target)
   target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
   if(Motor_R_Speed_PID.Ref != target_encoder_num)
   {
-    PID_Reset(&Motor_R_Speed_PID);
+    // PID_Reset(&Motor_R_Speed_PID);
     Motor_R_Speed_PID.Ref = target_encoder_num;
   }
 }
