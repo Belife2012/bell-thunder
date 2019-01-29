@@ -48,6 +48,7 @@
 #define _THUNDER_H_
 
 #include <Arduino.h>
+#include "Esp.h"
 #include <Wire.h>
 #include "data_type.h"
 
@@ -84,11 +85,19 @@
 #define SCL_PIN            22   // SCL_PIN
 
 // 电池电压
-#define BATTERY_LOW_VALUE   7000  // mV
-#define BATTERY_FILTER_NUM  10
-#define BATTERY_ADC_PIN     35
-#define ADC_R_1             33.0   // 分压电阻 33K:100K
-#define ADC_R_2             100.0
+#if 1
+/* mV 干电池的设置 */
+#define BATTERY_RESTART_VALUE   6000
+#define BATTERY_LOW_VALUE       7000
+#else
+/* mV 镍氢电池的设置 */
+#define BATTERY_RESTART_VALUE   6500
+#define BATTERY_LOW_VALUE       7500
+#endif
+#define BATTERY_FILTER_NUM      10
+#define BATTERY_ADC_PIN         35
+#define ADC_R_1                 33.0   // 分压电阻 33K:100K
+#define ADC_R_2                 100.0
 
 // 舵机
 #define SERVO_CHANNEL_0     0    // use 0 channel of 16 channels (started from zero)
@@ -178,7 +187,7 @@ class THUNDER
 
     // 电池电压
     uint16_t battery_filter_data[BATTERY_FILTER_NUM] = {0,0,0,0,0,0,0,0,0,0};
-    uint16_t Battery_Power = 9000; //初始值设置为9000mV, 记录报警低电压时的电压值，每下降300mv报警一次
+    uint16_t Low_Power_Old = 9000; //初始值设置为9000mV, 记录报警低电压时的电压值，每下降300mv报警一次
     uint32_t Battery_Value; //记录每次采集电压值时的电压值
     uint8_t lowpower_flag = 0; // 1 为低电压状态
 

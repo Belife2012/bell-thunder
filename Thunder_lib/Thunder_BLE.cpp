@@ -36,7 +36,7 @@
 #include <Thunder_BLE.h>
 #include <Thunder_lib.h>
 #include <Task_Mesg.h>
-#include "print_macro.h"
+#include "function_macro.h"
 
 uint8_t BLE_Name_Data[BLE_NAME_SIZE] = {0x00};
 

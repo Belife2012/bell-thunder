@@ -47,7 +47,7 @@
 
 #include <Thunder_lib.h>
 #include "esp_adc_cal.h"
-#include "print_macro.h"
+#include "function_macro.h"
 #include "Disk_Manager.h"
 #include "Bell_Barbette.h"
 #include "common.h"
@@ -101,13 +101,13 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 45};
+const uint8_t Version_FW[4] = {'T', 0, 8, 46};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
-  delay(1000);
+  delay(500);
 #ifdef SERIAL_PRINT_HIGHSPEED
   Serial.begin(500000);
 #else
@@ -146,11 +146,6 @@ void THUNDER::Setup_All(void)
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
   
   Thunder_BLE.Setup_BLE();
-  // if( ble_type == BLE_TYPE_SERVER ){
-  //   Thunder_BLE.Setup_BLE();    // 配置 BLE Server 
-  // }else if( ble_type == BLE_TYPE_CLIENT ){
-  //   Ble_Client.Setup_Ble_Client();// 配置 BLE Client
-  // }
 
   Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED);      // 把 LED点阵显示动画效果刷新工作 交给后台守护线程进行
   Task_Mesg.Set_Flush_Task(FLUSH_COLOR_LED);       // 把 彩灯刷新工作 交给后台守护线程进行
@@ -183,7 +178,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
     ble_type = BLE_TYPE_CLIENT;
     Task_Mesg.ble_connect_type = 0; // 允许启动 client scan
-    Thunder_BLE.Delete_Ble_Server_Service(); // 需要手动操作手机断连BLE后，才能切换
+    Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
 
     Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
 
@@ -343,7 +338,15 @@ uint32_t THUNDER::Get_Battery_Data()
  */
 void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 {
-  if (Battery_Voltage < BATTERY_LOW_VALUE && Battery_Voltage < (Battery_Power - 300))
+  if( Battery_Voltage < BATTERY_RESTART_VALUE){
+    Serial.printf("\nRestart With Power: %dmV\n", Battery_Voltage);
+    delay(50);
+    ESP.restart();
+    delay(500);
+    return;
+  }
+
+  if (Battery_Voltage < BATTERY_LOW_VALUE && Battery_Voltage < (Low_Power_Old - 100))
   {
     lowpower_flag = 1;
 
@@ -356,7 +359,7 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
     Speaker.Play_Song(79);
 
     Serial.printf("\nLow Power: %dmV\n", Battery_Voltage);
-    Battery_Power = Battery_Voltage;
+    Low_Power_Old = Battery_Voltage; 
   }
 }
 
@@ -395,6 +398,9 @@ void THUNDER::Setup_Led_Indication()
   pinMode(LED_INDICATION, OUTPUT);
   digitalWrite(LED_INDICATION, LOW);
 
+#if ( USER_FUNCTION_AMOUNT == 1 )
+  Set_Program_User(PROCESS_USER_1);
+#else 
   // 检查Disk 里面是否存有正确的 program_user
   enum_Process_Status store_program_mode;
   store_program_mode = Disk_Manager.Read_Program_Mode();
@@ -407,6 +413,7 @@ void THUNDER::Setup_Led_Indication()
   {
     Set_Program_User(store_program_mode);
   }
+#endif
 }
 
 /* 
@@ -667,10 +674,17 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_THUNDER_GO:
+#if (USER_FUNCTION_AMOUNT == 1)
+    led_indication_param.led_indication_period = 3000;
+    led_indication_param.led_indication_on_duty = 100;
+    led_indication_param.led_indication_off_duty = 300;
+    led_indication_param.led_indication_amount = 2;
+#else
     led_indication_param.led_indication_period = 3000;
     led_indication_param.led_indication_on_duty = 700;
     led_indication_param.led_indication_off_duty = 100;
     led_indication_param.led_indication_amount = 1;
+#endif
     break;
   case PROCESS_USER_1:
     led_indication_param.led_indication_period = 3000;
@@ -724,6 +738,12 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
  */
 void THUNDER::Update_Process_Status(enum_Key_Value button_event)
 {
+#if ( USER_FUNCTION_AMOUNT == 1 )
+  if((button_event != KEY_CLICK_ONE) && (button_event != KEY_CLICK_TWO)){
+    return;
+  }
+#endif
+
   if (button_event != KEY_NONE)
   {
     // 发生按键事件后，清零等待按键事件的倒计时定时器
