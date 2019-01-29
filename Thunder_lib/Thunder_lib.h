@@ -87,7 +87,7 @@
 // 电池电压
 #if 1
 /* mV 干电池的设置 */
-#define BATTERY_RESTART_VALUE   6000
+#define BATTERY_RESTART_VALUE   5000
 #define BATTERY_LOW_VALUE       7000
 #else
 /* mV 镍氢电池的设置 */
