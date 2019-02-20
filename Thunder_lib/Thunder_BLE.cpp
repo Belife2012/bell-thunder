@@ -378,9 +378,9 @@ void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
 {
   if (deviceConnected) 
   {
-    #ifdef DEBUG_BLE_COMMAND
+#ifdef DEBUG_BLE_COMMAND
     Serial.printf("*<%x*\n", Tx_Data[0]);
-    #endif
+#endif
 
     //发送
     pCharacteristic->setValue(&Tx_Data[0], byte_num); 
@@ -388,7 +388,9 @@ void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
   }
   else
   {
+#ifdef DEBUG_BLE_COMMAND
     Serial.printf("# BLE DisConnected...\n");
+#endif
   }
 
 }

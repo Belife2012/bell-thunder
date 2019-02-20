@@ -10,11 +10,14 @@
 // #define DISABLE_LAUNCH_DISPLAY // 禁止开机界面 
 // #define DEBUG_IR_SENSOR
 
-#define DEBUG_BLE_COMMAND
+// #define DEBUG_BLE_COMMAND // 调试蓝牙收发的指令信息
 
-/*
- * 功能切换
- */
-#define USER_FUNCTION_AMOUNT        1 // 前期使用的模式，为1个；后期需要更改为4个
+#define COMPETITION_FW_001
+
+#ifdef COMPETITION_FW_001
+    #define USER_FUNCTION_AMOUNT        1 // 前期使用的模式，为1个；后期需要更改为4个
+#else
+    #define USER_FUNCTION_AMOUNT        4 // 前期使用的模式，为1个；后期需要更改为4个
+#endif
 
 #endif

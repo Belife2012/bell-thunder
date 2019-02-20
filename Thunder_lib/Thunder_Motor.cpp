@@ -541,11 +541,12 @@ void THUNDER_MOTOR::All_PID_Init()
     drive_car_pid.OutI_left = 0;
     drive_car_pid.OutI_left_last = 0;
     drive_car_pid.OutD_left = 0;
+    drive_car_pid.Out_left = 0;
+    
     drive_car_pid.OutP_right = 0;
     drive_car_pid.OutI_right = 0;
     drive_car_pid.OutI_right_last = 0;
     drive_car_pid.OutD_right = 0;
-    drive_car_pid.Out_left = 0;
     drive_car_pid.Out_right = 0;
 
     PID_Init(&Motor_L_Speed_PID, Kp, Ki, Kd);
@@ -731,16 +732,16 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
 {
   switch(running_data.motor_select){
     case 0:{
-      Set_L_Target(running_data.left_motor_speed);
-      Set_R_Target(running_data.right_motor_speed);
+      Set_L_Motor_Output(running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);
+      Set_R_Motor_Output(running_data.right_motor_speed * MAX_DRIVE_OUTPUT / 100);
       break;
     }
     case 1:{
-      Set_L_Target(running_data.left_motor_speed);
+      Set_L_Motor_Output(running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);
       break;
     }
     case 2:{
-      Set_R_Target(running_data.right_motor_speed);
+      Set_R_Motor_Output(running_data.right_motor_speed * MAX_DRIVE_OUTPUT / 100);
       break;
     }
     default:
@@ -790,10 +791,12 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
               && running_data.right_motor_speed != 0 )
              ){
           if( abs( Get_L_RotateValue() - last_left_RotateValue ) >= circle2degrees ){
-              Set_L_Target(0);
+              Set_L_Motor_Output(0);
+              break;  // 任意一个转到位置，即刻去停止电机
           }
           if( abs( Get_R_RotateValue() - last_right_RotateValue ) >= circle2degrees ){
-              Set_R_Target(0);
+              Set_R_Motor_Output(0);
+              break; // 任意一个转到位置，即刻去停止电机
           }
         }
       }
@@ -807,16 +810,16 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
   //运行完后，停止被控制的电机
   switch(running_data.motor_select){
     case 0:{
-      Set_L_Target(0);
-      Set_R_Target(0);
+      Set_L_Motor_Output(0);
+      Set_R_Motor_Output(0);
       break;
     }
     case 1:{
-      Set_L_Target(0);
+      Set_L_Motor_Output(0);
       break;
     }
     case 2:{
-      Set_R_Target(0);
+      Set_R_Motor_Output(0);
       break;
     }
     default:
@@ -1024,7 +1027,7 @@ void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
 {
   Thunder.Enable_Drive_Car();
 
-  All_PID_Init();
+  // All_PID_Init();
 
   if( speed > 100.0 ){
     drive_speed = 100.0;
@@ -1169,7 +1172,7 @@ inline void Update_Rotate_Value()
  */
 int32_t THUNDER_MOTOR::Get_L_RotateValue()
 {
-  double rotate_value;
+  int32_t rotate_value;
 
   rotate_value = rotate_RawValue_Left;
   rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;
@@ -1178,7 +1181,7 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
 }
 int32_t THUNDER_MOTOR::Get_R_RotateValue()
 {
-  double rotate_value;
+  int32_t rotate_value;
 
   rotate_value = rotate_RawValue_Right;
   rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;

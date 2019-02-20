@@ -1,6 +1,16 @@
 #include "Task_Mesg.h"
 #include <Thunder_lib.h>
 
+#ifdef COMPETITION_FW_001
+  #define MAX_APPS_TASK_COUNTER_AUTOCTRL  (MAX_APPS_TASK_COUNTER)
+
+  TaskHandle_t Task_Apps_AutoCtrl[MAX_APPS_TASK_COUNTER_AUTOCTRL];
+  struct_Apps_Param *task_param_AutoCtrl[MAX_APPS_TASK_COUNTER_AUTOCTRL];
+
+  uint8_t tasks_num_AutoCtrl;
+  bool competition_action_AutoCtrl = false;
+#endif
+
 TASK_MESG Task_Mesg;
 uint32_t led_indication_counter;
 
@@ -34,20 +44,20 @@ void Driver_Flush(void *pvParameters)
       Thunder.LED_Show();
     }
     // 
-    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED))
-    {
-      if(current_time - color_led_ctrl_time > 30){
-        I2C_LED.LED_Flush();
-        color_led_ctrl_time = millis();
-      }
-    }
-    // 
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))
     {
       if (current_time - character_roll_time > 150)
       {
         Dot_Matrix_LED.Play_String_NextFrame();
         character_roll_time = millis();
+      }
+    }
+    // 
+    if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED))
+    {
+      if(current_time - color_led_ctrl_time > 30){
+        I2C_LED.LED_Flush();
+        color_led_ctrl_time = millis();
       }
     }
     // 
@@ -141,6 +151,9 @@ void Polling_Check(void *pvParameters)
 {
   // 单位为ms
   led_indication_counter = 0;
+#ifdef COMPETITION_FW_001
+  static uint32_t timer_AutoCtrl = 0;
+#endif
 
   for(;;)
   {
@@ -151,6 +164,16 @@ void Polling_Check(void *pvParameters)
 
     vTaskDelay(pdMS_TO_TICKS(POLLING_CHECK_PERIOD));
     led_indication_counter += POLLING_CHECK_PERIOD;
+#ifdef COMPETITION_FW_001
+    if(competition_action_AutoCtrl){
+      if(timer_AutoCtrl > 60000){
+        Clear_All_Loops_AutoCtrl();
+      }else{
+        timer_AutoCtrl += POLLING_CHECK_PERIOD;
+      }
+    }
+#endif
+
   }
 }
 
@@ -159,7 +182,13 @@ void Programs_System(void)
 {
   if(Thunder.program_change_to == PROGRAM_USER_1)
   {
+#ifdef COMPETITION_FW_001
+    competition_action_AutoCtrl = true;
+    Ble_Remoter.Disable_Remote();
+    Program_AutoCtrl();
+#else
     Program_1();
+#endif
     Thunder.program_change_to = PROGRAM_RUNNING;
   }
   else if(Thunder.program_change_to == PROGRAM_USER_2)
@@ -202,6 +231,11 @@ TASK_MESG::TASK_MESG()
   {
     Task_Apps[i] = NULL;
     task_param[i] = NULL;
+    
+#ifdef COMPETITION_FW_001
+    Task_Apps_AutoCtrl[i] = NULL;
+    task_param_AutoCtrl[i] = NULL;
+#endif
   }
 
   // 创建 IIC互斥体
@@ -434,10 +468,36 @@ uint8_t TASK_MESG::Create_New_Loop(uint8_t program_sequence,
   return 0;
 }
 
+#ifdef COMPETITION_FW_001
+uint8_t Create_New_Loop_AutoCtrl(uint8_t program_sequence, 
+                  func_Program_Setup program_setup, func_Program_Loop program_loop )
+{
+  if (tasks_num_AutoCtrl >= MAX_APPS_TASK_COUNTER)
+  {
+    Serial.println("ERROS: Apps amount had reached max");
+    return 1;
+  }
+
+  task_param_AutoCtrl[tasks_num_AutoCtrl] = new struct_Apps_Param();
+  task_param_AutoCtrl[tasks_num_AutoCtrl]->sequence = program_sequence;
+  task_param_AutoCtrl[tasks_num_AutoCtrl]->index = tasks_num_AutoCtrl;
+  task_param_AutoCtrl[tasks_num_AutoCtrl]->Mysetup = program_setup;
+  task_param_AutoCtrl[tasks_num_AutoCtrl]->Myloop = program_loop;
+  /***create New tasks, Priority: 1~7 ***/
+  xTaskCreatePinnedToCore(New_Loop_Task, "newLoopTask", 8192, 
+                          (void *)task_param_AutoCtrl[tasks_num_AutoCtrl], 1, 
+                          &Task_Apps_AutoCtrl[tasks_num_AutoCtrl], 1);
+  tasks_num_AutoCtrl++;
+
+  return 0;
+}
+#endif
+
 void TASK_MESG::Clear_All_Loops()
 {
   uint8_t ret;
 
+  Take_Semaphore_IIC();// 拿到资源控制权才开始删除线程
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
     if(Task_Apps[i] != NULL)
@@ -451,11 +511,40 @@ void TASK_MESG::Clear_All_Loops()
       task_param[i] = NULL;
     }
   }
+  Give_Semaphore_IIC();
 
   tasks_num = 0;
   Thunder.Reset_All_Components();
   Thunder.Set_Ble_Type(BLE_TYPE_CLIENT); // 每次等待启动时，都是处于 BLE Client
 }
+
+#ifdef COMPETITION_FW_001
+void Clear_All_Loops_AutoCtrl()
+{
+  Task_Mesg.Take_Semaphore_IIC();
+  for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
+  {
+    if(Task_Apps_AutoCtrl[i] != NULL)
+    {
+      vTaskDelete(Task_Apps_AutoCtrl[i]);
+      Task_Apps_AutoCtrl[i] = NULL;
+    }
+    if(task_param_AutoCtrl[i] != NULL)
+    {
+      delete task_param_AutoCtrl[i];
+      task_param_AutoCtrl[i] = NULL;
+    }
+  }
+  Task_Mesg.Give_Semaphore_IIC();
+
+  tasks_num_AutoCtrl = 0;
+  competition_action_AutoCtrl = false;
+
+  // 创建遥控阶段的线程
+  Program_1();
+  Ble_Remoter.Enable_Remote();
+}
+#endif
 
 /*
  * 创建后台线程，守护电机PID控制和检测通信数据/屏幕刷新控制：
@@ -484,7 +573,7 @@ void TASK_MESG::Create_Deamon_Threads()
   Serial.println("4");
   xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operatorModeDeamon", 4096, NULL, 1, NULL, 1);
   Serial.println("5");
-  xTaskCreatePinnedToCore(Polling_Check, "pollingCheck", 4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(Polling_Check, "pollingCheck", 4096, NULL, 2, NULL, 1);
   Serial.println("6");
 
   deamon_task_running = 1;
@@ -512,6 +601,7 @@ UBaseType_t TASK_MESG::Get_flush_Tasks()
  * @parameters: 
  *      0 通信检查，Thunder.Check_Communication();
  *      1 LED点阵显示刷新，Thunder.LED_Show();
+ *      ......
  * @return: 
  */
 void TASK_MESG::Set_Flush_Task(byte flushType)
@@ -531,11 +621,12 @@ void TASK_MESG::Set_Flush_Task(byte flushType)
  * @parameters: 
  *      0 通信检查，Thunder.Check_Communication();
  *      1 LED点阵显示刷新，Thunder.LED_Show();
+ *      ......
  * @return: 
  */
 void TASK_MESG::Remove_Flush_Task(byte flushType)
 {
-  if (flushType > 1)
+  if (flushType >= FLUSH_MAX_NUM)
   {
     return;
   }

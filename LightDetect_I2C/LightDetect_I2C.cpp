@@ -8,6 +8,14 @@ LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address)
   _device_address = (byte)slave_address;
 }
 
+byte LIGHTDETECT_I2C::Set_Led_Brightness(byte bright_level)
+{
+  byte ret;
+  ret = write(0x01, &bright_level, 1);
+
+  return ret;
+}
+
 /* 
  * 设置光电传感器的模式
  * 
@@ -25,6 +33,21 @@ byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
   return ret;
 }
 
+void LIGHTDETECT_I2C::Set_Dark_Value(float new_value)
+{
+  dark_value = new_value;
+}
+
+void LIGHTDETECT_I2C::Set_Bright_Value(float new_value)
+{
+  bright_value = new_value;
+}
+
+void LIGHTDETECT_I2C::Reset_All_Value()
+{
+  dark_value = 0;
+  bright_value = 100;
+}
 /* 
  * 获取光电传感器的值
  * 
@@ -33,19 +56,50 @@ byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
  *      0 获取数据正常
  *      非0 获取数据出错
  */
+float LIGHTDETECT_I2C::Get_Light_Value()
+{
+  float readValue;
+  unsigned short retValue;
+  byte getValue[2], bakCode;
+
+  bakCode = read(0x02, getValue, 2);
+  if(bakCode != 0){
+    return 0;
+  }
+
+  retValue = (unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8);
+  // 百分比 = 100 * ADC_value/2400, 设置2400为最大值
+  retValue = retValue > 2400 ? 2400 : retValue ;
+  readValue = ( (float)retValue ) / 24;
+
+  //计算 在区间 dark_value ~ bright_value 的位置百分比
+  if(readValue <= dark_value){
+    readValue = 0;
+  }else if(readValue >= bright_value){
+    readValue = 100;
+  }else{
+    readValue = (readValue - dark_value) / (bright_value - dark_value);
+  }
+
+  return readValue;
+}
 byte LIGHTDETECT_I2C::Get_Light_Value(float *readValue)
 {
   unsigned short retValue;
   byte getValue[2], bakCode;
 
   bakCode = read(0x02, getValue, 2);
+  if(bakCode != 0){
+    *readValue = 0;
+    return bakCode;
+  }
 
   retValue = (unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8);
   // 百分比 = 100 * ADC_value/2400, 设置2400为最大值
   retValue = retValue > 2400 ? 2400 : retValue ;
   *readValue = ( (float)retValue ) / 24;
 
-  return bakCode;
+  return 0;
 }
 
 // 类内部使用，I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功

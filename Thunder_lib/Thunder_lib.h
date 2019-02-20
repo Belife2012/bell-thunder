@@ -73,6 +73,7 @@
 #include <Thunder_Display.h>
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
+#include <Bell_Barbette.h>
 
 // 遥控器
 #include <Remoter.h>
@@ -171,6 +172,7 @@ extern HT16D35B HT16D35B;// IIC Address: 0x69
 
 // 遥控器
 extern REMOTER Ble_Remoter;
+extern Bell_Barbette Thunder_Barbette;
 
 class THUNDER
 {
@@ -231,11 +233,21 @@ class THUNDER
     int Line_L_Speed = 50;
     int Line_B_Speed = -50;
     #else
-    // 重构型
+
+    #if 1
+    // 重构型（轮子版）
     int Line_H_Speed = 60;
     int Line_M_Speed = 50;
     int Line_L_Speed = 35;
     int Line_B_Speed = -35;
+    #else
+    // 重构型（履带版）
+    int Line_H_Speed = 90;
+    int Line_M_Speed = 80;
+    int Line_L_Speed = 55;
+    int Line_B_Speed = -55;
+    #endif
+
     #endif
 
 

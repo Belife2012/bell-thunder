@@ -51,6 +51,32 @@ byte TOUCH_I2C::Reset_Mode(void)
 }
 
 /* 
+ * 检查触碰按键的相关按键事件是否有发生
+ * 
+ * @parameters: 
+ * @return: true是有发生过，false是未发生过
+ */
+bool TOUCH_I2C::Check_Touch_Event(enum_touch_event check_event)
+{
+  byte ret;
+  byte readValue = 0;
+
+  if(check_event == TOUCH_EVENT_RELEASE){
+    ret = read(TOUCH_ADDRESS_RELEASE, &readValue, 1);
+  }else if(check_event == TOUCH_EVENT_PRESS){
+    ret = read(TOUCH_ADDRESS_PRESS, &readValue, 1);
+  }else if(check_event == TOUCH_EVENT_TOUCH){
+    ret = read(TOUCH_ADDRESS_TOUCH, &readValue, 1);
+  }
+
+  if(ret != 0){
+    return false;
+  }else{
+    return readValue;
+  }
+}
+
+/* 
  * 设置触碰模块的LED灯颜色，范围 0-255
  * 
  * @parameters: 全部传入0 值时，即为关闭LED灯

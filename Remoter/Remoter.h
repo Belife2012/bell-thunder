@@ -85,6 +85,8 @@ private:
     uint32_t keys_releasing = 0x00000000; // release动作发生时, 会置位
     int control_value[KEY_ANALOG_AMOUNT];
 
+    bool enable_remote = true;
+
 public:
     REMOTER(/* args */);
     ~REMOTER();
@@ -94,6 +96,8 @@ public:
     int Get_Control_Value(enum_Remoter_Value key_index);
     bool Get_Key_Value(enum_Remoter_Key key_index);
     bool Get_Key_Action(enum_Remoter_Key key_index, enum_Key_Action key_action);
+    void Disable_Remote(void);
+    void Enable_Remote(void);
 };
 
 

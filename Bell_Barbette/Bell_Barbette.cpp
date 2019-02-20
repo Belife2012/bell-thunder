@@ -3,6 +3,7 @@
 
 int currrent_pos = 900;
 unsigned long last_shooting_time = 0;
+int last_pos = 90;
 
 Bell_Barbette::Bell_Barbette()
 {
@@ -11,7 +12,7 @@ Bell_Barbette::Bell_Barbette()
 
 void Bell_Barbette::Begin()
 {
-    /* Wire.begin();
+    /*Wire.begin();
     Wire.beginTransmission(0x70);
     Wire.write(0xff);
     Wire.endTransmission(); */
@@ -36,15 +37,15 @@ uint8_t Bell_Barbette::send_data(uint8_t *data)
     length = data[2] + 4;
     data[length - 1] = compute_crc(data,length - 1);
     
-  Task_Mesg.Take_Semaphore_IIC();
-    Wire.beginTransmission(BARBETTE_ADDR);
+//   Task_Mesg.Take_Semaphore_IIC();
+    Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(data,length);
     status = Wire.endTransmission();
-  Task_Mesg.Give_Semaphore_IIC();
+//   Task_Mesg.Give_Semaphore_IIC();
     // while(status != 0)
     // {
     //     Wire.reset();
-    //     Wire.beginTransmission(BARBETTE_ADDR);
+    //     Wire.beginTransmission((uint8_t)(uint8_t)BARBETTE_ADDR);
     //     Wire.write(data,length);
     //     status = Wire.endTransmission();
     //     retry++;
@@ -59,7 +60,8 @@ uint8_t Bell_Barbette::send_data(uint8_t *data)
 void Bell_Barbette::receive_data(uint8_t *data,uint8_t num)
 {
     uint8_t count = 0;
-    Wire.requestFrom(BARBETTE_ADDR, num);
+    uint8_t erro = 0;
+    erro = Wire.requestFrom((uint8_t)(uint8_t)BARBETTE_ADDR, num);
     while(Wire.available() > 0)
     {
         data[count] = Wire.read();
@@ -112,29 +114,6 @@ uint8_t Bell_Barbette::Fire_Onece(uint8_t mode)
     return status;
 }
 
-void Bell_Barbette::Supply_On()
-{
-    static uint8_t supply_buf[5] = {0xa5,0x02,0x01,0xff,0x00};
-    send_data(supply_buf);
-}
-
-void Bell_Barbette::Supply_Off()
-{
-    static uint8_t supply_buf[5] = {0xa5,0x02,0x01,0x00,0x00};
-    send_data(supply_buf);
-}
-
-void Bell_Barbette::Supply_With_Rate(uint8_t rate)
-{
-    static uint8_t supply_buf[5] = {0xa5,0x01,0x01,0x10,0xb7};
-    supply_buf[3] = rate;
-    for(uint8_t i = 0;i < 4;i++)
-    {
-        supply_buf[4] += supply_buf[i];
-    }
-    send_data(supply_buf);
-}
-
 uint16_t Bell_Barbette::Get_Bullet()
 {
     uint16_t bullet = 0;
@@ -143,7 +122,7 @@ uint16_t Bell_Barbette::Get_Bullet()
     uint8_t read_bullet_buf[2] = {0xea,0x02};
 
   Task_Mesg.Take_Semaphore_IIC();
-    Wire.beginTransmission(BARBETTE_ADDR);
+    Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(read_bullet_buf,2);
     Wire.endTransmission(false);
     receive_data(temp,2);
@@ -161,7 +140,7 @@ uint32_t Bell_Barbette::Get_Used_Time()
     uint8_t read_bullet_buf[2] = {0xea,0x01};
     
   Task_Mesg.Take_Semaphore_IIC();
-    Wire.beginTransmission(BARBETTE_ADDR);
+    Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(read_bullet_buf,2);
     Wire.endTransmission(false);
     receive_data(temp,4);
@@ -209,7 +188,7 @@ void Bell_Barbette::Auto_Fire(uint8_t mode)
     else if((mode == 2) || (mode == 3))
     {
         last_shooting_time = millis();
-        Fire_With_Mode(mode - 1);
+        Fire_With_Mode(mode);
         is_onece_mode = 0;
     }
     if(mode == 0)
@@ -239,4 +218,54 @@ void Bell_Barbette::Adjust_Pos(uint8_t value)
       currrent_pos = 10;
    }
    Set_Barbette_Pos(180 - (currrent_pos / 10));
+}
+
+long map(long x, long in_min, long in_max, long out_min, long out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
+void Bell_Barbette::Fire_Control(int pos,uint8_t mode)
+{
+    static uint8_t control_buf[6] = {0xa5,0x06,0x02,0x00,0x00,0x00};
+    
+    if(pos > 100)
+    {
+        pos = 100;
+    }
+    else if(pos < -100)
+    {
+        pos = -100;
+    }
+    pos = map(pos,-100,100,-70,70);
+    if(mode > 3)
+    {
+        mode = 0;
+    }
+    control_buf[3] = pos + 90;
+    control_buf[4] = mode;
+    send_data(control_buf);
+}
+
+void Bell_Barbette::Fire_Control(int pos,uint8_t mode,uint8_t time)
+{
+    static uint8_t control_buf[7] = {0xa5,0x07,0x03,0x00,0x00,0x00,0x00};
+    
+    if(pos > 100)
+    {
+        pos = 100;
+    }
+    else if(pos < -100)
+    {
+        pos = -100;
+    }
+    pos = map(pos,-100,100,-70,70);
+    if(mode > 3)
+    {
+        mode = 0;
+    }
+    control_buf[3] = pos + 90;
+    control_buf[4] = mode;
+    control_buf[5] = time;
+    send_data(control_buf);
 }

@@ -42,10 +42,8 @@ void loop() {
       break;
   }
 
-  errorCode = Light_Sensor.Get_Light_Value(&lightValue);
-  if(errorCode != 0){
-    Serial.println("### light read Error #################################");
-  }else Serial.printf("*** light Value: %.2f \n", lightValue);
+  lightValue = Light_Sensor.Get_Light_Value();
+  Serial.printf("*** light Value: %.2f \n", lightValue);
 
   lightIndex++;
   if(lightIndex > 1) lightIndex = 0;

@@ -49,7 +49,6 @@
 #include "esp_adc_cal.h"
 #include "function_macro.h"
 #include "Disk_Manager.h"
-#include "Bell_Barbette.h"
 #include "common.h"
 
 THUNDER Thunder;
@@ -101,7 +100,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 46};
+const uint8_t Version_FW[4] = {'T', 0, 8, 48};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 // 所有模块初始化
@@ -371,6 +370,7 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
  */
 void THUNDER::Update_Function_Timer()
 {
+  // TIMER: wait_key_timer
   if (wait_key_timer != 0)
   {
     wait_key_timer -= POLLING_CHECK_PERIOD;
@@ -381,9 +381,12 @@ void THUNDER::Update_Function_Timer()
     }
   }
 
-  if (led_indication_param.wait_led_timer != 0)
+  // TIMER: led_indication_param.wait_led_timer
+  if (led_indication_param.wait_led_timer > POLLING_CHECK_PERIOD)
   {
     led_indication_param.wait_led_timer -= POLLING_CHECK_PERIOD;
+  }else{
+    led_indication_param.wait_led_timer = 0;
   }
 }
 
@@ -964,13 +967,17 @@ void THUNDER::En_Motor(void)
 // 开启 Drive_Car_Control 功能
 void THUNDER::Enable_Drive_Car(void)
 {
-  En_Motor_Flag = 2;
+  if(En_Motor_Flag != 2){
+    En_Motor_Flag = 2;
+  }
 }
 
 // 开启 电机PID 功能
 void THUNDER::Enable_En_Motor(void)
 {
-  En_Motor_Flag = 1;
+  if(En_Motor_Flag != 1){
+    En_Motor_Flag = 1;
+  }
 }
 
 // 关闭编码电机计算
@@ -2572,6 +2579,8 @@ void THUNDER::Wait_Communication(void)
   uint32_t show_index = 6;
   while( (deviceConnected == false) && (Usart_Communication == 0) && (need_communication == true) )
   {
+    Task_Mesg.Remove_Flush_Task(FLUSH_MATRIX_LED);
+    Task_Mesg.Remove_Flush_Task(FLUSH_CHARACTER_ROLL);
     if (lowpower_flag == 0)
     {
       Dot_Matrix_LED.Play_LED_HT16F35B_Show(show_index); //单色点阵图案
@@ -2587,11 +2596,14 @@ void THUNDER::Wait_Communication(void)
       Usart_Communication = 1;
     }
   }
+  Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED);
+  Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL);
 }
 
 // 设置将要播放的内置动画编号
 void THUNDER::Set_LED_Show_No(uint8_t Show_No)
 {
+  Dot_Matrix_LED.Play_LED_String("");
   LED_show_No = Show_No;
 }
 
