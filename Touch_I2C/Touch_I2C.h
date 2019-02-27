@@ -9,7 +9,7 @@
 #define TOUCH_ADDRESS_CONTROL   (0xff)
 
 typedef enum{
-  TOUCH_EVENT_RELEASE = 1,
+  TOUCH_EVENT_RELEASE = 0,
   TOUCH_EVENT_PRESS,
   TOUCH_EVENT_TOUCH,
 } enum_touch_event;

@@ -20,6 +20,7 @@ TOUCH_I2C::TOUCH_I2C(int slave_address)
  * @parameters: 
  *      0 未按下状态
  *      1 按下状态
+ *      2 如果有发生过 “按下后释放”，第一次获取的状态为触碰（2）
  * @return: 
  *      0 获取数据正常
  *      非0 获取数据出错
@@ -29,6 +30,11 @@ byte TOUCH_I2C::Get_Status(byte *readValue)
   unsigned char ret;
 
   ret = read(TOUCH_ADDRESS_VALUE, readValue, 1);
+  if(*readValue == 0){
+    if(Check_Touch_Event(TOUCH_EVENT_TOUCH) == true){
+      *readValue = 2;
+    }
+  }
 
   return ret;
 }

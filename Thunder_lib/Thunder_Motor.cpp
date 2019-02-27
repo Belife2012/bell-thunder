@@ -254,6 +254,7 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
 
 void THUNDER_MOTOR::Motor_Brake(int motor)
 {
+  Thunder.Disable_En_Motor();
   if(motor == 1){
     digitalWrite(MOTOR_L_IN1, HIGH);
     digitalWrite(MOTOR_L_IN2, HIGH);
@@ -268,6 +269,7 @@ void THUNDER_MOTOR::Motor_Brake(int motor)
 // 参数1-->电机编号；1或者2
 void THUNDER_MOTOR::Motor_Free(int motor)
 {
+  Thunder.Disable_En_Motor();
   if(motor == 1)
   {
     digitalWrite(MOTOR_L_IN1, LOW);
@@ -399,6 +401,8 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
 // 参数1-->电机编号；1或者2
 void THUNDER_MOTOR::Motor_Brake(int motor)
 {
+  Thunder.Disable_En_Motor();
+
   if(motor == 1)
   {
     set_speed(PWM_L_A,MOTOR_INPUT_MAX);
@@ -415,6 +419,8 @@ void THUNDER_MOTOR::Motor_Brake(int motor)
 // 参数1-->电机编号；1或者2
 void THUNDER_MOTOR::Motor_Free(int motor)
 {
+  Thunder.Disable_En_Motor();
+
   if(motor == 1)
   {
     set_speed(PWM_L_A,0);
@@ -430,7 +436,6 @@ void THUNDER_MOTOR::Motor_Free(int motor)
 
 // 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
 void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
-
   if( M_output >= 0 ){
     Motor_Move(1, M_output, 1);
   }else{
@@ -439,7 +444,6 @@ void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
 }
 // 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
 void THUNDER_MOTOR::Set_R_Motor_Output( int M_output ){
-
   if( M_output >= 0 ){
     Motor_Move(2, M_output, 1);
   }else{
@@ -448,6 +452,7 @@ void THUNDER_MOTOR::Set_R_Motor_Output( int M_output ){
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
 void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
+  Thunder.Disable_En_Motor();
   float M_power;
   M_power = Lpower;
   M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Thunder.Get_Battery_Value() ) * ( M_power / 100 );
@@ -460,6 +465,7 @@ void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
 void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
+  Thunder.Disable_En_Motor();
   float M_power;
   M_power = Rpower;
   M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Thunder.Get_Battery_Value() ) * ( M_power / 100 );
@@ -485,7 +491,13 @@ void THUNDER_MOTOR::PID_Reset(struct PID_Struct_t *pid)
   pid->LastOutP = 0;
   pid->LastOutI = 0;
   pid->LastOutD = 0;
-  
+  // pid->Out = 0;  
+}
+void THUNDER_MOTOR::PID_Reset()
+{
+  PID_Reset(&Motor_L_Speed_PID);
+  PID_Reset(&Motor_R_Speed_PID);
+
   drive_car_pid.last_pid_time = 0;
   drive_car_pid.OutP_left = 0;
   drive_car_pid.OutI_left = 0;
@@ -497,13 +509,6 @@ void THUNDER_MOTOR::PID_Reset(struct PID_Struct_t *pid)
   drive_car_pid.OutD_right = 0;
   drive_car_pid.Out_left = 0;
   drive_car_pid.Out_right = 0;
-
-  // pid->Out = 0;  
-}
-void THUNDER_MOTOR::PID_Reset()
-{
-  PID_Reset(&Motor_L_Speed_PID);
-  PID_Reset(&Motor_R_Speed_PID);
 }
 
 // PID参数初始化
@@ -730,6 +735,8 @@ void THUNDER_MOTOR::PID_Speed()
  */
 void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
 {
+  Thunder.Disable_En_Motor();
+  
   switch(running_data.motor_select){
     case 0:{
       Set_L_Motor_Output(running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);

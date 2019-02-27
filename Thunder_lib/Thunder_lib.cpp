@@ -100,9 +100,10 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 48};
+const uint8_t Version_FW[4] = {'T', 0, 8, 50};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
+uint32_t thunder_system_parameter = 0;
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
@@ -162,6 +163,10 @@ void THUNDER::Setup_All(void)
 #endif
 
   Serial.printf("Battery Vlotage: %fV\n", ((float)Get_Battery_Data() / 1000));
+  
+  if ( thunder_system_parameter == 1 ){
+    Speaker.Play_Song(101);
+  }
 }
 
 void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
@@ -401,22 +406,23 @@ void THUNDER::Setup_Led_Indication()
   pinMode(LED_INDICATION, OUTPUT);
   digitalWrite(LED_INDICATION, LOW);
 
-#if ( USER_FUNCTION_AMOUNT == 1 )
-  Set_Program_User(PROCESS_USER_1);
-#else 
-  // 检查Disk 里面是否存有正确的 program_user
-  enum_Process_Status store_program_mode;
-  store_program_mode = Disk_Manager.Read_Program_Mode();
-  if ((uint8_t)store_program_mode >= (uint8_t)PROCESS_THUNDER_GO)
-  {
+  if ( thunder_system_parameter == 1 ){
     Set_Program_User(PROCESS_USER_1);
-    Disk_Manager.Wirte_Program_User(program_user);
   }
-  else
-  {
-    Set_Program_User(store_program_mode);
+  else{
+    // 检查Disk 里面是否存有正确的 program_user
+    enum_Process_Status store_program_mode;
+    store_program_mode = Disk_Manager.Read_Program_Mode();
+    if ((uint8_t)store_program_mode >= (uint8_t)PROCESS_THUNDER_GO)
+    {
+      Set_Program_User(PROCESS_USER_1);
+      Disk_Manager.Wirte_Program_User(program_user);
+    }
+    else
+    {
+      Set_Program_User(store_program_mode);
+    }
   }
-#endif
 }
 
 /* 
@@ -677,17 +683,18 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_THUNDER_GO:
-#if (USER_FUNCTION_AMOUNT == 1)
-    led_indication_param.led_indication_period = 3000;
-    led_indication_param.led_indication_on_duty = 100;
-    led_indication_param.led_indication_off_duty = 300;
-    led_indication_param.led_indication_amount = 2;
-#else
-    led_indication_param.led_indication_period = 3000;
-    led_indication_param.led_indication_on_duty = 700;
-    led_indication_param.led_indication_off_duty = 100;
-    led_indication_param.led_indication_amount = 1;
-#endif
+    if(thunder_system_parameter == 1){
+      led_indication_param.led_indication_period = 3000;
+      led_indication_param.led_indication_on_duty = 100;
+      led_indication_param.led_indication_off_duty = 300;
+      led_indication_param.led_indication_amount = 2;
+    }
+    else{
+      led_indication_param.led_indication_period = 3000;
+      led_indication_param.led_indication_on_duty = 100;
+      led_indication_param.led_indication_off_duty = 300;
+      led_indication_param.led_indication_amount = 5;
+    }
     break;
   case PROCESS_USER_1:
     led_indication_param.led_indication_period = 3000;
@@ -741,11 +748,11 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
  */
 void THUNDER::Update_Process_Status(enum_Key_Value button_event)
 {
-#if ( USER_FUNCTION_AMOUNT == 1 )
-  if((button_event != KEY_CLICK_ONE) && (button_event != KEY_CLICK_TWO)){
-    return;
+  if ( thunder_system_parameter == 1 ){
+    if((button_event != KEY_CLICK_ONE) && (button_event != KEY_CLICK_TWO)){
+      return;
+    }
   }
-#endif
 
   if (button_event != KEY_NONE)
   {
@@ -847,24 +854,28 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     else if (button_event == KEY_CLICK_ONE)
     {
       function_button_event = KEY_NONE;
+      Speaker.Play_Song(3);
       Set_Program_User(PROCESS_USER_1);
       Disk_Manager.Wirte_Program_User(program_user);
     }
     else if (button_event == KEY_CLICK_TWO)
     {
       function_button_event = KEY_NONE;
+      Speaker.Play_Song(4);
       Set_Program_User(PROCESS_USER_2);
       Disk_Manager.Wirte_Program_User(program_user);
     }
     else if (button_event == KEY_CLICK_THREE)
     {
       function_button_event = KEY_NONE;
+      Speaker.Play_Song(5);
       Set_Program_User(PROCESS_USER_3);
       Disk_Manager.Wirte_Program_User(program_user);
     }
     else if (button_event == KEY_CLICK_FOUR)
     {
       function_button_event = KEY_NONE;
+      Speaker.Play_Song(6);
       Set_Program_User(PROCESS_USER_4);
       Disk_Manager.Wirte_Program_User(program_user);
     }
@@ -884,8 +895,17 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   }
 }
 
-void THUNDER::Toggle_Progran_mode()
+void THUNDER::Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount)
 {
+  led_indication_param.wait_led_timer = 700;
+  led_indication_param.led_indication_once_flag = 0;
+  
+  led_indication_param.led_indication_period = period;
+  led_indication_param.led_indication_on_duty = on_duty;
+  led_indication_param.led_indication_off_duty = off_duty;
+  led_indication_param.led_indication_amount = amount;
+
+  Set_Led_Indication_param();
 }
 
 void THUNDER::Set_Program_User(enum_Process_Status new_program_user)
@@ -991,9 +1011,6 @@ void THUNDER::Disable_En_Motor(void)
     En_Motor_Flag = 0;
     Thunder_Motor.PID_Reset();
     Thunder_Motor.All_PID_Init();
-
-    Thunder_Motor.Set_L_Motor_Output(0);
-    Thunder_Motor.Set_R_Motor_Output(0);
   }
 }
 
@@ -1028,6 +1045,30 @@ void THUNDER::Servo_Turn(int servo, int angle)
   else if (servo == 2) //B口
   {
     ledcWrite(SERVO_CHANNEL_1, Servo_MIN + Servo_Range * angle / 180);
+  }
+  else
+  {
+    Serial.printf("### No needed Servo\n");
+  }
+}
+void THUNDER::Servo_Turn_Percent(int servo, int percent)
+{
+  if (percent > 100)
+  {
+    percent = 100;
+  }
+  else if (percent < -100)
+  {
+    percent = -100;
+  }
+
+  if (servo == 1) //A口
+  {
+    ledcWrite(SERVO_CHANNEL_0, Servo_MIN + Servo_Range * (percent+100) / 200);
+  }
+  else if (servo == 2) //B口
+  {
+    ledcWrite(SERVO_CHANNEL_1, Servo_MIN + Servo_Range * (percent+100) / 200);
   }
   else
   {
@@ -1088,6 +1129,7 @@ void THUNDER::Wait_For_Motor_Slow()
 #define MAYBE_STRAIGHT_DIRECTION 300    //ms
 #define LITTLE_L_R_POWER_DIFF 5
 #define SPIN_L_R_DIFF_ROTATEVALUE 700 //编码器数值的差量300为打转90度
+#define LINE_TRACING_STOP_FLAG (line_tracing_running == false || Rx_Data[0] == 0x61 || deviceConnected == false)
 
 void THUNDER::Line_Tracing(void)
 {
@@ -1109,12 +1151,12 @@ void THUNDER::Line_Tracing(void)
   {
     delay(5);
     // 接收到巡线停止指令， 则退出巡线循环
-    if (line_tracing_running == false || Rx_Data[0] == 0x61 || deviceConnected == false)
+    if (LINE_TRACING_STOP_FLAG)
     {
       break;
     }
     Get_IR_Data(IR_Data); //更新巡线传感器数据 //0-->白; 1-->黑
-    Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
+    // Serial.printf("*** Left: %d ___ Right: %d ***\n", IR_Data[0], IR_Data[1]);
     // Serial.printf("*** line_state: %d ***\n", line_state);
 
     current_time = millis();
@@ -1170,7 +1212,7 @@ void THUNDER::Line_Tracing(void)
             break;
           }
 
-          if (Rx_Data[0] == 0x61)
+          if (LINE_TRACING_STOP_FLAG)
           {
             break;
           }
@@ -1223,7 +1265,7 @@ void THUNDER::Line_Tracing(void)
 
           rotate_back_quantity = SPIN_L_R_DIFF_ROTATEVALUE; // 回转要增加旋转量
 
-          if (Rx_Data[0] == 0x61)
+          if (LINE_TRACING_STOP_FLAG)
           {
             break;
           }
@@ -1277,7 +1319,7 @@ void THUNDER::Line_Tracing(void)
 
           rotate_back_quantity = SPIN_L_R_DIFF_ROTATEVALUE; // 回转要增加旋转量
 
-          if (Rx_Data[0] == 0x61)
+          if (LINE_TRACING_STOP_FLAG)
           {
             break;
           }
@@ -1441,6 +1483,7 @@ void THUNDER::Line_Tracing(void)
     // En_Motor();
     ////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
   }
+  Stop_All();
   line_tracing_running = false;
   Speaker.Play_Song(130);
 }
@@ -1605,7 +1648,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
   {
     delay(5);
     // 接收到巡线停止指令， 则退出巡线循环
-    if (line_tracing_running == false || Rx_Data[0] == 0x61 || deviceConnected == false)
+    if (LINE_TRACING_STOP_FLAG)
     {
       break;
     }
@@ -1637,7 +1680,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
             break;
           }
 
-          if (Rx_Data[0] == 0x61)
+          if (LINE_TRACING_STOP_FLAG)
           {
             break;
           }
@@ -1658,7 +1701,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
             break;
           }
 
-          if (Rx_Data[0] == 0x61)
+          if (LINE_TRACING_STOP_FLAG)
           {
             break;
           }
@@ -1680,7 +1723,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
             break;
           }
 
-          if (Rx_Data[0] == 0x61)
+          if (LINE_TRACING_STOP_FLAG)
           {
             break;
           }
@@ -3423,21 +3466,30 @@ void THUNDER::Check_Protocol(void)
 
   case 0x61: //_______________________ Demo ___________________
     line_tracing_running = false;
-    Stop_All();
     break;
   case UART_GENERAL_SEARCH_LINE: //_______________________ Demo ___________________
     if (Rx_Data[1] == 1)
     {
       // Serial.printf("* 巡线 *\n");
       // 使用开环控制电机，然后在巡线里面 以偏离黑线的时间长度作为参量 做速度闭环控制
-      Disable_En_Motor();
+      Stop_All();
+      if(Rx_Data[2] == 0){ // 轮胎版
+        Line_H_Speed = 60;
+        Line_M_Speed = 50;
+        Line_L_Speed = 35;
+        Line_B_Speed = -35;
+      }else if(Rx_Data[2] == 1){ // 履带版
+        Line_H_Speed = 90;
+        Line_M_Speed = 80;
+        Line_L_Speed = 55;
+        Line_B_Speed = -55;
+      }
       line_tracing_running = true;
     }
     else if (Rx_Data[1] == 0)
     {
       line_tracing_running = false;
     }
-    Stop_All();
     break;
   case UART_CALL_SPECIAL_FUNCTION:
     for(int i=0; i < Rx_Data[COMMUNICATION_DATA_LENGTH_MAX]; i++)
@@ -3685,4 +3737,28 @@ uint8_t THUNDER::Select_Sensor_AllChannel()
   }
 
   return 0;
+}
+
+double THUNDER::Get_Virtual_Timer(uint32_t timer_index)
+{
+  double ret_value;
+  if(timer_index == 0){
+    timer_index = 1;
+  }else if(timer_index > 5){
+    timer_index = 5;
+  }
+
+  ret_value = millis() - timer_value[timer_index-1];
+  return ret_value/1000;
+}
+
+void THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
+{
+  if(timer_index == 0){
+    timer_index = 1;
+  }else if(timer_index > 5){
+    timer_index = 5;
+  }
+
+  timer_value[timer_index-1] = millis();
 }

@@ -65,7 +65,8 @@ class MyServerCallbacks: public BLEServerCallbacks
 void Analyze_BLE_Data(std::string &recv_data)
 {
   #ifdef DEBUG_BLE_COMMAND
-  Serial.printf("\n*>%x*\n",recv_data[0]);
+  Serial.printf("\n*>%x:%x %x %x %x*\n",recv_data[0],
+                recv_data[1],recv_data[2],recv_data[3],recv_data[4]);
   #endif
   
   uint8_t SUM = 0;

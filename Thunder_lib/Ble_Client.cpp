@@ -4,6 +4,8 @@
 #include <Thunder_lib.h>
 #include <Disk_Manager.h>
 
+// #define RECORD_SERVER_MAC
+
 #define SERVER_IS_NRF_UART      0
 #define SERVER_IS_THUNDER_GO    1
 #define SERVER_IS_REMOTER       2
@@ -41,6 +43,7 @@ static void notifyCallback(
   size_t length,
   bool isNotify) {
 #if (SERVER_STYLE == SERVER_IS_REMOTER)
+  Serial.println("Notify");
   Ble_Remoter.Analyze_Raw_Data(pData, length);
 #else
   Serial.print("Notify callback for characteristic ");
@@ -77,13 +80,17 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     Serial.println(advertisedDevice.toString().c_str());
 #endif
 
-    const uint8_t clearServerAddr[DISK_SIZE_BLE_SERVER_MAC] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 #if(SERVER_STYLE == SERVER_IS_REMOTER)
     // We have found a device, let us now see if it contains the right infomation
+    #ifdef RECORD_SERVER_MAC
+    const uint8_t clearServerAddr[DISK_SIZE_BLE_SERVER_MAC] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     if(memcmp(clearServerAddr, storedServerAddr, DISK_SIZE_BLE_SERVER_MAC) == 0){
       if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller")
-          && advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -60) ) {
+          && advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -70) ) {
       // 
+        uint8_t *advertisedPayload;
+        advertisedPayload = advertisedDevice.getPayload();
+        Serial.printf("AdvertiseData: %2x\n", advertisedPayload[advertisedPayload[0]+1+1]);
         advertisedDevice.getScan()->stop();
 
         pServerAddress = new BLEAddress(advertisedDevice.getAddress());
@@ -109,10 +116,37 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Task_Mesg.Give_Semaphore_BLE(2);
       } // Found our server
     }
+    #else
+      if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller")
+          && advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -70) ) 
+      {
+        uint8_t *advertisedPayload;
+        advertisedPayload = advertisedDevice.getPayload();
+        if(advertisedPayload[advertisedPayload[0]+1+1] == 0x17){
+          for(int i=3; i < 3+6; i++){
+            if(storedServerAddr[8-i] != advertisedPayload[advertisedPayload[0]+i]){
+              return;
+            }
+          }
+          Serial.println("Bonding Match");
+        }else{
+          Serial.println("No Bonding");
+        }
+
+        advertisedDevice.getScan()->stop();
+
+        pServerAddress = new BLEAddress(advertisedDevice.getAddress());
+        Serial.print("remoter device address: "); 
+        Serial.println(pServerAddress->toString().c_str());
+
+        Task_Mesg.Give_Semaphore_BLE(2);
+      } // Found our server
+    #endif
 #else
       if (advertisedDevice.haveServiceUUID() && advertisedDevice.getServiceUUID().equals(deviceUUID)) {
+      } // onResult
 #endif
-  } // onResult
+  }
 }; // MyAdvertisedDeviceCallbacks
 
 BLE_CLIENT::BLE_CLIENT(/* args */)
@@ -137,13 +171,18 @@ BLE_CLIENT::~BLE_CLIENT()
 
 void BLE_CLIENT::Setup_Ble_Client()
 {
+  #ifdef RECORD_SERVER_MAC
   if(Disk_Manager.Read_Ble_Server_Mac(storedServerAddr) == false){
     Serial.println("Read_Ble_Server_Mac Fail");
   }
+  #else
+  memcpy(storedServerAddr, BLEDevice::getAddress().getNative(), sizeof(storedServerAddr));
+  #endif
+
+  // BLEDevice::init("");
+  Serial.printf("BLE Client Addr: %s\n", BLEDevice::getAddress().toString().c_str());
 
   Serial.println("Starting BLE Client application...");
-  // BLEDevice::init("");
-
   if(pBLEScan == NULL){
     // Retrieve a Scanner and set the callback we want to use to be informed when we
     // have detected a new device. 

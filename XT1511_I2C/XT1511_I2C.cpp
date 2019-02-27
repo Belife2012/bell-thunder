@@ -35,8 +35,6 @@
 #include <XT1511_I2C.h>
 #include <Task_Mesg.h>
 
-// #define DEBUG_PRINT_ERROR
-
 // 配置I2C地址
 XT1511_I2C::XT1511_I2C(uint8_t slave_address) : LEDs_Data({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
@@ -55,7 +53,7 @@ void XT1511_I2C::Set_LED_Num(uint8_t number)
   rc = write(XT1511_I2C_CONTROL_REG, &number, sizeof(number));
   if (rc != 0)
   {
-    #ifdef DEBUG_PRINT_ERROR
+    #ifdef DEBUG_COLOR_LEDS
     Serial.println("# XT1511_I2C_CONTROL fail");
     #endif
   }
@@ -81,7 +79,7 @@ void XT1511_I2C::Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b)
   rc = write(address, rgb, sizeof(rgb));
   if (rc != 0)
   {
-    #ifdef DEBUG_PRINT_ERROR
+    #ifdef DEBUG_COLOR_LEDS
     Serial.println("# XT1511_I2C Set LED fail");
     #endif
   }
@@ -107,7 +105,7 @@ void XT1511_I2C::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
   rc = write(address, data, size);
   if (rc != 0)
   {
-    #ifdef DEBUG_PRINT_ERROR
+    #ifdef DEBUG_COLOR_LEDS
     Serial.println("# XT1511_I2C Set LEDs fail");
     #endif
   }
@@ -168,7 +166,7 @@ void XT1511_I2C::LED_Show(uint8_t number)
   rc = write(XT1511_I2C_COM_SHOW, &reg, sizeof(reg)); //COM全开
   if (rc != 0)
   {
-    #ifdef DEBUG_PRINT_ERROR
+    #ifdef DEBUG_COLOR_LEDS
     Serial.println("# XT1511_I2C show fail");
     #endif
   }
@@ -246,7 +244,7 @@ void XT1511_I2C::LED_Flush_Static()
     rc = write(0x07, LEDs_Data + 18, 18);
     if (rc != 0)
     {
-      #ifdef DEBUG_PRINT_ERROR
+      #ifdef DEBUG_COLOR_LEDS
       Serial.printf("### color IIC W error ###%d#### \n", rc);
       #endif
       return;
@@ -255,8 +253,11 @@ void XT1511_I2C::LED_Flush_Static()
     LED_Updata();
     ledDynamicIndex++; // 静态显示只会做一次显示的动作，把ledDynamicIndex设置为5，这个函数就不会做事情了
   }
-  else if (ledDynamicIndex < 4)
+  else if (ledDynamicIndex < 4){
     ledDynamicIndex++; // 延时一段时间去更新，防止重复频繁更新会卡死 彩灯的IIC
+  }else{
+
+  }
 }
 
 void XT1511_I2C::LED_Flush_Breath()
@@ -272,7 +273,7 @@ void XT1511_I2C::LED_Flush_Breath()
   rc = write(0x07, LEDs_DataResult + 18, 18);
   if (rc != 0)
   {
-      #ifdef DEBUG_PRINT_ERROR
+      #ifdef DEBUG_COLOR_LEDS
       Serial.printf("### color IIC W error ###%d#### \n", rc);
       #endif
     return;
@@ -297,7 +298,7 @@ void XT1511_I2C::LED_Flush_Blink()
     rc = write(0x07, LEDs_Data + 18, 18);
     if (rc != 0)
     {
-      #ifdef DEBUG_PRINT_ERROR
+      #ifdef DEBUG_COLOR_LEDS
       Serial.printf("### color IIC W error ###%d#### \n", rc);
       #endif
       return;
@@ -306,12 +307,26 @@ void XT1511_I2C::LED_Flush_Blink()
   }
   else if (ledDynamicIndex == BLINK_PERIOD)
   {
-    LED_OFF(); // turn off
+    Task_Mesg.Take_Semaphore_IIC();
+    Wire.beginTransmission(_device_address); // 开启发送
+    Wire.write(XT1511_I2C_COM_OFF);
+    Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+    #ifdef COMPATIBILITY_OLD_ESP_LIB
+    if (rc == I2C_ERROR_BUSY)
+    {
+      Wire.reset();
+    }
+    #endif
+    Task_Mesg.Give_Semaphore_IIC();
   }
   else if (ledDynamicIndex >= BLINK_PERIOD + BLINK_PERIOD)
   {
     ledDynamicIndex = 0; // reset
   }
+  else{
+
+  }
+
   ledDynamicIndex++;
 }
 
@@ -342,7 +357,7 @@ void XT1511_I2C::LED_Flush_Roll()
   rc = write(0x07, LEDs_DataResult + 18, 18);
   if (rc != 0)
   {
-    #ifdef DEBUG_PRINT_ERROR
+    #ifdef DEBUG_COLOR_LEDS
     Serial.printf("### color IIC W error ###%d#### \n", rc);
     #endif
     return;

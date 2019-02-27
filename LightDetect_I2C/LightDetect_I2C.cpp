@@ -72,13 +72,15 @@ float LIGHTDETECT_I2C::Get_Light_Value()
   retValue = retValue > 2400 ? 2400 : retValue ;
   readValue = ( (float)retValue ) / 24;
 
+  Serial.printf("dark:%f, bright:%f \n", dark_value, bright_value);
+
   //计算 在区间 dark_value ~ bright_value 的位置百分比
   if(readValue <= dark_value){
     readValue = 0;
   }else if(readValue >= bright_value){
     readValue = 100;
   }else{
-    readValue = (readValue - dark_value) / (bright_value - dark_value);
+    readValue = (readValue - dark_value)*100 / (bright_value - dark_value);
   }
 
   return readValue;

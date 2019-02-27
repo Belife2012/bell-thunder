@@ -41,11 +41,13 @@ typedef struct{
 extern uint32_t led_indication_counter;
 
 #ifdef COMPETITION_FW_001
+
 extern bool competition_action_AutoCtrl;
 void Program_AutoCtrl(void);
 uint8_t Create_New_Loop_AutoCtrl(uint8_t program_sequence, 
                   func_Program_Setup program_setup, func_Program_Loop program_loop );
 void Clear_All_Loops_AutoCtrl(void);
+
 #endif
 void Programs_System(void);
 void Program_1(void);

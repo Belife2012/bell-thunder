@@ -83,10 +83,8 @@ void Deamon_Motor(void *pvParameters)
       Thunder.En_Motor();
     }
     if(Thunder.line_tracing_running == true){
-      // 巡线阶段，PID运算周期为 10ms
       vTaskDelay(pdMS_TO_TICKS(MOTOR_CONTROL_PERIOD));
     }else{
-      // 电机 PID运算周期为 50ms
       vTaskDelay(pdMS_TO_TICKS(MOTOR_CONTROL_PERIOD));
     }
   }
@@ -165,11 +163,13 @@ void Polling_Check(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(POLLING_CHECK_PERIOD));
     led_indication_counter += POLLING_CHECK_PERIOD;
 #ifdef COMPETITION_FW_001
-    if(competition_action_AutoCtrl){
-      if(timer_AutoCtrl > 60000){
-        Clear_All_Loops_AutoCtrl();
-      }else{
-        timer_AutoCtrl += POLLING_CHECK_PERIOD;
+    if(thunder_system_parameter == 1){
+      if(competition_action_AutoCtrl){
+        if(timer_AutoCtrl > 60000){
+          Clear_All_Loops_AutoCtrl();
+        }else{
+          timer_AutoCtrl += POLLING_CHECK_PERIOD;
+        }
       }
     }
 #endif
@@ -183,9 +183,13 @@ void Programs_System(void)
   if(Thunder.program_change_to == PROGRAM_USER_1)
   {
 #ifdef COMPETITION_FW_001
-    competition_action_AutoCtrl = true;
-    Ble_Remoter.Disable_Remote();
-    Program_AutoCtrl();
+    if(thunder_system_parameter == 1){
+      competition_action_AutoCtrl = true;
+      Ble_Remoter.Disable_Remote();
+      Program_AutoCtrl();
+    }else{
+      Program_1();
+    }
 #else
     Program_1();
 #endif
@@ -540,9 +544,11 @@ void Clear_All_Loops_AutoCtrl()
   tasks_num_AutoCtrl = 0;
   competition_action_AutoCtrl = false;
 
+  Speaker.Play_Song(106);
   // 创建遥控阶段的线程
   Program_1();
   Ble_Remoter.Enable_Remote();
+  Thunder.Toggle_Led_mode(2000, 100, 300, 2);
 }
 #endif
 

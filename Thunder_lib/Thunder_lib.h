@@ -174,6 +174,8 @@ extern HT16D35B HT16D35B;// IIC Address: 0x69
 extern REMOTER Ble_Remoter;
 extern Bell_Barbette Thunder_Barbette;
 
+extern uint32_t thunder_system_parameter;
+
 class THUNDER
 {
   private:
@@ -233,20 +235,11 @@ class THUNDER
     int Line_L_Speed = 50;
     int Line_B_Speed = -50;
     #else
-
-    #if 1
     // 重构型（轮子版）
     int Line_H_Speed = 60;
     int Line_M_Speed = 50;
     int Line_L_Speed = 35;
     int Line_B_Speed = -35;
-    #else
-    // 重构型（履带版）
-    int Line_H_Speed = 90;
-    int Line_M_Speed = 80;
-    int Line_L_Speed = 55;
-    int Line_B_Speed = -55;
-    #endif
 
     #endif
 
@@ -293,6 +286,9 @@ class THUNDER
     uint8_t I2C_channel_opened;
     uint8_t Set_I2C_Chanel(uint8_t channelData);
 
+    // 模拟计时器
+    uint32_t timer_value[5] = {0,0,0,0,0};
+
   public:
     // 单色图案
     uint8_t LED_BUFF_Dot[29] =  
@@ -338,7 +334,7 @@ class THUNDER
     void Update_Process_Status(enum_Key_Value button_event);
     void Set_Program_User(enum_Process_Status new_program_user);
     void Set_Program_Run_Index(enum_Process_Status new_program);
-    void Toggle_Progran_mode();
+    void Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount);
 
     /* 程序切换 */
     enum_Program_Index program_change_to = PROGRAM_RUNNING;
@@ -355,6 +351,7 @@ class THUNDER
     // 舵机
     void Setup_Servo(void);                 // 舵机初始化配置
     void Servo_Turn(int servo, int angle);  // 舵机角度控制
+    void Servo_Turn_Percent(int servo, int percent); // 设置舵机范围 -100~100
 
     // 巡线IR
     void Setup_IR(void);                // 巡线IR传感器初始化配置
@@ -384,6 +381,10 @@ class THUNDER
     // 传感器端口选择
     uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
     uint8_t Select_Sensor_AllChannel();
+
+    // 计时器接口
+    double Get_Virtual_Timer(uint32_t timer_index);
+    void Reset_Virtual_Timer(uint32_t timer_index);
 };
 
 extern THUNDER Thunder;
