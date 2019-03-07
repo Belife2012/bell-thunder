@@ -1739,6 +1739,9 @@ void DOT_MATRIX_LED::Play_LED_String(double number){
   Play_LED_String( number_char.c_str() );
 
 }
+void DOT_MATRIX_LED::Play_LED_String(uint32_t number){
+  Play_LED_String( (double)number );
+}
 void DOT_MATRIX_LED::Play_LED_String(int number){
   Play_LED_String( (double)number );
 }

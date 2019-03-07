@@ -44,6 +44,7 @@ typedef enum{
 #define UART_GENERAL_COLOR_SENSOR        (0x53)
 #define UART_GENERAL_BATTERY_SENSOR      (0x54)
 #define UART_GENERAL_VERSION_INFO        (0x55)
+#define UART_GENERAL_COLOR_CARD          (0x56)
 
 #define UART_GENERAL_SEARCH_LINE         (0x66)
 

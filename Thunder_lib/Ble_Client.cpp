@@ -27,7 +27,7 @@
 #elif (SERVER_STYLE == SERVER_IS_REMOTER)
   static BLEUUID deviceUUID("00008850-0000-1000-8000-00805f9b34fb");
   static BLEUUID serviceUUID("00008850-0000-1000-8000-00805f9b34fb");
-  static BLEUUID wCharUUID("0000885a-0000-1000-8000-00805f9b34fb");
+  static BLEUUID wCharUUID("0000885f-0000-1000-8000-00805f9b34fb");
   static BLEUUID rCharUUID("0000885a-0000-1000-8000-00805f9b34fb");
 
 #endif
@@ -35,7 +35,9 @@
 static uint8_t storedServerAddr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 static BLEAddress *pServerAddress;
 static boolean connected = false;
-static BLERemoteCharacteristic* pRemoteCharacteristic;
+static BLERemoteCharacteristic* pRemoteCharacteristic = NULL;
+static BLERemoteCharacteristic* pRemoteCharacteristicW = NULL;
+static uint8_t modeCommand[4] = {0x01, 0xaa, 0x55, 0x01};
 
 static void notifyCallback(
   BLERemoteCharacteristic* pBLERemoteCharacteristic,
@@ -43,7 +45,6 @@ static void notifyCallback(
   size_t length,
   bool isNotify) {
 #if (SERVER_STYLE == SERVER_IS_REMOTER)
-  Serial.println("Notify");
   Ble_Remoter.Analyze_Raw_Data(pData, length);
 #else
   Serial.print("Notify callback for characteristic ");
@@ -118,7 +119,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
     }
     #else
       if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller")
-          && advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -70) ) 
+          && advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -60) ) 
       {
         uint8_t *advertisedPayload;
         advertisedPayload = advertisedDevice.getPayload();
@@ -234,13 +235,19 @@ bool BLE_CLIENT::connectToServer(BLEAddress pAddress)
 
 
   // Obtain a reference to the characteristic in the service of the remote BLE server.
-  pRemoteCharacteristic = pRemoteService->getCharacteristic(wCharUUID);
+  pRemoteCharacteristic = pRemoteService->getCharacteristic(rCharUUID);
   if (pRemoteCharacteristic == nullptr) {
     Serial.print("Failed to find our characteristic UUID: ");
-    Serial.println(wCharUUID.toString().c_str());
+    Serial.println(rCharUUID.toString().c_str());
     return false;
   }
   Serial.println(" - Found our characteristic");
+  // pRemoteCharacteristicW = pRemoteService->getCharacteristic(wCharUUID);
+  // if (pRemoteCharacteristicW == nullptr) {
+  //   Serial.print("Failed to find our characteristic UUID: ");
+  //   Serial.println(wCharUUID.toString().c_str());
+  //   return false;
+  // }
 
   // Read the value of the characteristic.
   std::string value = pRemoteCharacteristic->readValue();
@@ -248,6 +255,7 @@ bool BLE_CLIENT::connectToServer(BLEAddress pAddress)
   Serial.println(value.c_str());
 
   pRemoteCharacteristic->registerForNotify(notifyCallback);
+  
 }
 void BLE_CLIENT::Connect_Ble_Server()
 {

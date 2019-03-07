@@ -8,7 +8,7 @@
   struct_Apps_Param *task_param_AutoCtrl[MAX_APPS_TASK_COUNTER_AUTOCTRL];
 
   uint8_t tasks_num_AutoCtrl;
-  bool competition_action_AutoCtrl = false;
+  uint8_t competition_action_status = 0;
 #endif
 
 TASK_MESG Task_Mesg;
@@ -150,7 +150,7 @@ void Polling_Check(void *pvParameters)
   // 单位为ms
   led_indication_counter = 0;
 #ifdef COMPETITION_FW_001
-  static uint32_t timer_AutoCtrl = 0;
+  static uint32_t timer_competition = 0;
 #endif
 
   for(;;)
@@ -164,11 +164,17 @@ void Polling_Check(void *pvParameters)
     led_indication_counter += POLLING_CHECK_PERIOD;
 #ifdef COMPETITION_FW_001
     if(thunder_system_parameter == 1){
-      if(competition_action_AutoCtrl){
-        if(timer_AutoCtrl > 60000){
+      if(competition_action_status == 1){
+        if(timer_competition > 40000){
           Clear_All_Loops_AutoCtrl();
         }else{
-          timer_AutoCtrl += POLLING_CHECK_PERIOD;
+          timer_competition += POLLING_CHECK_PERIOD;
+        }
+      }else if(competition_action_status == 2){
+        if(timer_competition > 180000){
+          ESP.restart();
+        }else{
+          timer_competition += POLLING_CHECK_PERIOD;
         }
       }
     }
@@ -184,8 +190,8 @@ void Programs_System(void)
   {
 #ifdef COMPETITION_FW_001
     if(thunder_system_parameter == 1){
-      competition_action_AutoCtrl = true;
       Ble_Remoter.Disable_Remote();
+      Task_Mesg.Toggle_Competition_Status(2);
       Program_AutoCtrl();
     }else{
       Program_1();
@@ -473,6 +479,7 @@ uint8_t TASK_MESG::Create_New_Loop(uint8_t program_sequence,
 }
 
 #ifdef COMPETITION_FW_001
+
 uint8_t Create_New_Loop_AutoCtrl(uint8_t program_sequence, 
                   func_Program_Setup program_setup, func_Program_Loop program_loop )
 {
@@ -494,6 +501,38 @@ uint8_t Create_New_Loop_AutoCtrl(uint8_t program_sequence,
   tasks_num_AutoCtrl++;
 
   return 0;
+}
+
+void TASK_MESG::Toggle_Competition_Status(int status_index)
+{
+  if(status_index == 1){
+    byte colorData[36] = {40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0,
+                          40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0};
+    I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+    I2C_LED.LED_Updata();
+
+    Speaker.Play_Song(99);
+  }else if(status_index == 2){
+    competition_action_status = 1;
+
+    byte colorData[36] = {50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0,
+                          50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0};
+    I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+    I2C_LED.LED_Updata();
+
+    Speaker.Play_Song(104);
+  }else if(status_index == 3){
+    competition_action_status = 2;
+
+    Thunder.Toggle_Led_mode(1000, 100, 100, 2);
+
+    byte colorData[36] = {0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0,
+                          0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0};
+    I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+    I2C_LED.LED_Updata();
+
+    Speaker.Play_Song(101);
+  }
 }
 #endif
 
@@ -542,13 +581,11 @@ void Clear_All_Loops_AutoCtrl()
   Task_Mesg.Give_Semaphore_IIC();
 
   tasks_num_AutoCtrl = 0;
-  competition_action_AutoCtrl = false;
 
-  Speaker.Play_Song(106);
   // 创建遥控阶段的线程
   Program_1();
   Ble_Remoter.Enable_Remote();
-  Thunder.Toggle_Led_mode(2000, 100, 300, 2);
+  Task_Mesg.Toggle_Competition_Status(3);
 }
 #endif
 

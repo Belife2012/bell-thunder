@@ -73,6 +73,7 @@ class DOT_MATRIX_LED
     void Play_LED_String(double number);
     void Play_LED_String(float number);
     void Play_LED_String(int number);
+    void Play_LED_String(uint32_t number);
     void Play_String_NextFrame(void);
     void Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
                                     byte display_flag);

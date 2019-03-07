@@ -19,13 +19,13 @@ typedef enum{
     // KEY_DOWN_LEFT,
     // KEY_UP_LEFT,
 
-    KEY_SELECT,
-    KEY_BACK,
+    KEY_SELECT, // I
+    KEY_BACK, // III
     // KYE_HOME, // 这个键的数据比较特殊
-    KEY_A,
-    KEY_B,
-    KEY_X,
-    KEY_Y,
+    KEY_A, // A
+    KEY_B, // B
+    KEY_X, // C
+    KEY_Y, // D
     KEY_L1,
     KEY_L2,
     KEY_R1,

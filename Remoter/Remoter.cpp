@@ -13,13 +13,15 @@ void REMOTER::Analyze_Raw_Data(const uint8_t* raw_data, const uint8_t length)
 {
     int i=0;
     
-    // for(; i<4 && i<length; i++){
-    //   Serial.printf("%4d ", (int8_t)raw_data[i]);
-    // }
-    // for(; i<length; i++){
-    //   Serial.printf("%02x ", raw_data[i]);
-    // }
-    // Serial.println();
+#ifdef DEBUG_REMOTER_DATA
+    for(; i<4 && i<length; i++){
+      Serial.printf("%4d ", (int8_t)raw_data[i]);
+    }
+    for(; i<length; i++){
+      Serial.printf("%02x ", raw_data[i]);
+    }
+    Serial.println();
+#endif
 
     if(enable_remote)
     {

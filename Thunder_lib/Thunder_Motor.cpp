@@ -737,6 +737,17 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
 {
   Thunder.Disable_En_Motor();
   
+  if( running_data.left_motor_speed > 100.0 ){
+    running_data.left_motor_speed = 100.0;
+  }else if( running_data.left_motor_speed < -100.0 ){
+    running_data.left_motor_speed = -100.0;
+  }
+  if( running_data.right_motor_speed > 100.0 ){
+    running_data.right_motor_speed = 100.0;
+  }else if( running_data.right_motor_speed < -100.0 ){
+    running_data.right_motor_speed = -100.0;
+  }
+  
   switch(running_data.motor_select){
     case 0:{
       Set_L_Motor_Output(running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);

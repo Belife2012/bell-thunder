@@ -100,7 +100,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 50};
+const uint8_t Version_FW[4] = {'T', 0, 8, 51};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 uint32_t thunder_system_parameter = 0;
@@ -165,7 +165,7 @@ void THUNDER::Setup_All(void)
   Serial.printf("Battery Vlotage: %fV\n", ((float)Get_Battery_Data() / 1000));
   
   if ( thunder_system_parameter == 1 ){
-    Speaker.Play_Song(101);
+    Task_Mesg.Toggle_Competition_Status(1);
   }
 }
 
@@ -206,7 +206,7 @@ void THUNDER::Reset_All_Components()
 // 全部终止(电机)
 void THUNDER::Stop_All(void)
 {
-  Serial.printf("Stop Motor... \n");
+  // Serial.printf("Stop Motor... \n");
 
   Disable_En_Motor(); // 关闭编码电机计算
   Thunder_Motor.Set_L_Motor_Output(0);
@@ -1051,6 +1051,18 @@ void THUNDER::Servo_Turn(int servo, int angle)
     Serial.printf("### No needed Servo\n");
   }
 }
+void THUNDER::Servo_Percent_Setting(int max_value, int min_value, int zero_value, int direction)
+{
+  if(direction < 0){
+    servo_percent_zero = -1 * zero_value;
+    servo_percent_max = -1 * max_value;
+    servo_percent_min = -1 * min_value;
+  }else{
+    servo_percent_zero = zero_value;
+    servo_percent_max = max_value;
+    servo_percent_min = min_value;
+  }
+}
 void THUNDER::Servo_Turn_Percent(int servo, int percent)
 {
   if (percent > 100)
@@ -1060,6 +1072,13 @@ void THUNDER::Servo_Turn_Percent(int servo, int percent)
   else if (percent < -100)
   {
     percent = -100;
+  }
+
+  // 映射舵机转动范围
+  if(percent > 0){
+    percent = servo_percent_zero + (servo_percent_max - servo_percent_zero) * percent / 100;
+  }else{
+    percent = servo_percent_zero + (servo_percent_zero - servo_percent_min) * percent / 100;
   }
 
   if (servo == 1) //A口
@@ -3105,6 +3124,7 @@ void THUNDER::Get_Serial_Command()
       case UART_GENERAL_IR_SENSOR:
       case UART_GENERAL_US_SENSOR:
       case UART_GENERAL_COLOR_SENSOR:
+      case UART_GENERAL_COLOR_CARD:
       case UART_GENERAL_BATTERY_SENSOR:
       case UART_GENERAL_VERSION_INFO:
       case UART_GENERAL_SEARCH_LINE:
@@ -3128,11 +3148,11 @@ void THUNDER::Get_Serial_Command()
           Rx_Data[4] = Serial.read();
           Rx_Data[5] = Serial.read();
         }else{
-          Serial.println("flush start");
+          // Serial.println("flush start");
           while(Serial.available() > 0){
             Rx_Data[6] = Serial.read();
           }
-          Serial.println("flush end");
+          // Serial.println("flush end");
           Reset_Rx_Data();
           break;
         }
@@ -3152,11 +3172,11 @@ void THUNDER::Get_Serial_Command()
       }
       default: // 其他包头，清除Serial 缓存
       {
-        Serial.println("flush start");
+        // Serial.println("flush start");
         while(Serial.available() > 0){
           Rx_Data[6] = Serial.read();
         }
-        Serial.println("flush end");
+        // Serial.println("flush end");
 
         break;
       }
@@ -3258,9 +3278,13 @@ void THUNDER::Check_Protocol(void)
     Tx_Data[3] = RGBC[2] >> 4; //B >> 8
     // Tx_Data[4] = RGBC[3] >> 4;  //C >> 8
     Tx_Data[4] = (uint8_t)HSV[0]; //H
+    break;
 
-    // Serial.printf("SSSSSSSSSS R : %d ___ G : %d ___ B : %d ___ C : %d SSSSSSSSSS\n",RGBC[0],RGBC[1],RGBC[2],RGBC[3]);  //(RED)(GREEN)(BLUE)(CLEAR)
-    // Serial.printf("SSSSSSSSSS H  %f ___ S : %f ___ V : %f ___ 颜色 : %d SSSSSSSSSS\n",HSV[0],HSV[1],HSV[2],Colour_Num);  //HSV
+  case UART_GENERAL_COLOR_CARD: // 获取颜色传感器数据 RGBC分4个8位传
+    Colour_Sensor.Get_RGBC_Data(RGBC);
+    
+    Tx_Data[0] = UART_GENERAL_COLOR_CARD;
+    Tx_Data[1] = Colour_Sensor.Colour_Recognition(RGBC);
     break;
 
   case UART_GENERAL_BATTERY_SENSOR: //获取电池电压数据
@@ -3474,10 +3498,10 @@ void THUNDER::Check_Protocol(void)
       // 使用开环控制电机，然后在巡线里面 以偏离黑线的时间长度作为参量 做速度闭环控制
       Stop_All();
       if(Rx_Data[2] == 0){ // 轮胎版
-        Line_H_Speed = 60;
-        Line_M_Speed = 50;
-        Line_L_Speed = 35;
-        Line_B_Speed = -35;
+        Line_H_Speed = 70;
+        Line_M_Speed = 60;
+        Line_L_Speed = 40;
+        Line_B_Speed = -40;
       }else if(Rx_Data[2] == 1){ // 履带版
         Line_H_Speed = 90;
         Line_M_Speed = 80;
@@ -3739,9 +3763,9 @@ uint8_t THUNDER::Select_Sensor_AllChannel()
   return 0;
 }
 
-double THUNDER::Get_Virtual_Timer(uint32_t timer_index)
+uint32_t THUNDER::Get_Virtual_Timer(uint32_t timer_index)
 {
-  double ret_value;
+  uint32_t ret_value;
   if(timer_index == 0){
     timer_index = 1;
   }else if(timer_index > 5){
@@ -3749,7 +3773,7 @@ double THUNDER::Get_Virtual_Timer(uint32_t timer_index)
   }
 
   ret_value = millis() - timer_value[timer_index-1];
-  return ret_value/1000;
+  return ret_value;
 }
 
 void THUNDER::Reset_Virtual_Timer(uint32_t timer_index)

@@ -10,6 +10,7 @@
 // #define DISABLE_LAUNCH_DISPLAY // 禁止开机界面 
 // #define DEBUG_IR_SENSOR
 // #define DEBUG_COLOR_LEDS
+// #define DEBUG_REMOTER_DATA
 
 // #define DEBUG_BLE_COMMAND // 调试蓝牙收发的指令信息
 

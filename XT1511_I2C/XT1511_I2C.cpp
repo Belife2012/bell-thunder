@@ -101,6 +101,8 @@ void XT1511_I2C::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
   if (startIndex + size > sizeof(LEDs_Data))
     return;
 
+  Set_LED_Dynamic(0);
+
   // rc = write(address, data, sizeof(data));
   rc = write(address, data, size);
   if (rc != 0)
@@ -121,7 +123,7 @@ void XT1511_I2C::LED_OFF(void)
 {
   byte rc;
 
-  Set_LED_Dynamic(0);
+  Set_LED_Dynamic(0xff);
   memset(LEDs_Data, 0, RGB_LED_DATA_SIZE);
 
   Task_Mesg.Take_Semaphore_IIC();
@@ -226,6 +228,8 @@ void XT1511_I2C::LED_Flush(void)
   case 3:
     LED_Flush_Breath();
     break;
+  case 0xff: // 熄灭
+    break;
   default:
     Serial.println("### No LED_Dynamic ###");
     break;
@@ -237,23 +241,30 @@ void XT1511_I2C::LED_Flush_Static()
   byte rc;
 
   // 静态显示：只有第一次会去写彩灯灯板的显示数据寄存器
-  if (ledDynamicIndex == 4)
+  if (ledDynamicIndex >= 10)
   {
     // 不能一次连续12个，分为两次写入
     rc = write(0x01, LEDs_Data, 18);
+    if (rc != 0)
+    {
+      #ifdef DEBUG_COLOR_LEDS
+      Serial.printf("#color Static W1 error ###%d#### \n", rc);
+      #endif
+      return;
+    }
     rc = write(0x07, LEDs_Data + 18, 18);
     if (rc != 0)
     {
       #ifdef DEBUG_COLOR_LEDS
-      Serial.printf("### color IIC W error ###%d#### \n", rc);
+      Serial.printf("#color Static W2 error ###%d#### \n", rc);
       #endif
       return;
     }
 
     LED_Updata();
-    ledDynamicIndex++; // 静态显示只会做一次显示的动作，把ledDynamicIndex设置为5，这个函数就不会做事情了
+    ledDynamicIndex = 0; // 静态显示只会做一次显示的动作，把ledDynamicIndex设置为5，这个函数就不会做事情了
   }
-  else if (ledDynamicIndex < 4){
+  else if (ledDynamicIndex < 10){
     ledDynamicIndex++; // 延时一段时间去更新，防止重复频繁更新会卡死 彩灯的IIC
   }else{
 
@@ -270,12 +281,19 @@ void XT1511_I2C::LED_Flush_Breath()
   }
   // 不能一次连续12个，分为两次写入
   rc = write(0x01, LEDs_DataResult, 18);
+  if (rc != 0)
+  {
+    #ifdef DEBUG_COLOR_LEDS
+    Serial.printf("#color Breath W1 error ###%d#### \n", rc);
+    #endif
+    return;
+  }
   rc = write(0x07, LEDs_DataResult + 18, 18);
   if (rc != 0)
   {
-      #ifdef DEBUG_COLOR_LEDS
-      Serial.printf("### color IIC W error ###%d#### \n", rc);
-      #endif
+    #ifdef DEBUG_COLOR_LEDS
+    Serial.printf("#color Breath W2 error ###%d#### \n", rc);
+    #endif
     return;
   }
 
@@ -295,11 +313,18 @@ void XT1511_I2C::LED_Flush_Blink()
   if (ledDynamicIndex == 1)
   {
     rc = write(0x01, LEDs_Data, 18);
+    if (rc != 0)
+    {
+      #ifdef DEBUG_COLOR_LEDS
+      Serial.printf("#color Blink W1 error ###%d#### \n", rc);
+      #endif
+      return;
+    }
     rc = write(0x07, LEDs_Data + 18, 18);
     if (rc != 0)
     {
       #ifdef DEBUG_COLOR_LEDS
-      Serial.printf("### color IIC W error ###%d#### \n", rc);
+      Serial.printf("#color Blink W2 error ###%d#### \n", rc);
       #endif
       return;
     }
@@ -354,11 +379,18 @@ void XT1511_I2C::LED_Flush_Roll()
   }
   // 不能一次连续12个，分为两次写入
   rc = write(0x01, LEDs_DataResult, 18);
+  if (rc != 0)
+  {
+    #ifdef DEBUG_COLOR_LEDS
+    Serial.printf("#color Roll W1 error ###%d#### \n", rc);
+    #endif
+    return;
+  }
   rc = write(0x07, LEDs_DataResult + 18, 18);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
-    Serial.printf("### color IIC W error ###%d#### \n", rc);
+    Serial.printf("#color Roll W2 error ###%d#### \n", rc);
     #endif
     return;
   }

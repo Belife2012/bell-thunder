@@ -42,7 +42,7 @@ extern uint32_t led_indication_counter;
 
 #ifdef COMPETITION_FW_001
 
-extern bool competition_action_AutoCtrl;
+extern uint8_t competition_action_status;
 void Program_AutoCtrl(void);
 uint8_t Create_New_Loop_AutoCtrl(uint8_t program_sequence, 
                   func_Program_Setup program_setup, func_Program_Loop program_loop );
@@ -85,6 +85,8 @@ public:
   void Clear_Current_Task_Supreme();
   void Enter_Task_Critical();
   void Exit_Task_Critical();
+  
+  void Toggle_Competition_Status(int status_index);
 
   // 串口“示波器”的数据队列
   QueueHandle_t Queue_encoder_left;
