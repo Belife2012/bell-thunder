@@ -17,27 +17,11 @@ void loop()
 #ifdef COMPETITION_FW_001
 
 void Program_AutoCtrl()
-{
-  // 创建赛前一分钟的程序
-  Create_New_Loop_AutoCtrl(PROGRAM_USER_1, setup_AutoCtrl_1, loop_AutoCtrl_1);
-}
-void setup_AutoCtrl_1()
-{
-}
-void loop_AutoCtrl_1()
-{
-  /* 滚动显示字符串 */
-  char alphabet_B[] = "AutoCtrl";
-  Dot_Matrix_LED.Play_LED_String(alphabet_B);
-  delay(10000);
-}
+{}
 
 #endif
 void Program_1()
-{
-  Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
-  Thunder.Set_Need_Communication(true);
-}
+{}
 void Program_2()
 {}
 void Program_3()

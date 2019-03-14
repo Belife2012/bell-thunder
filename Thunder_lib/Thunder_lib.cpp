@@ -100,14 +100,14 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'T', 0, 8, 51};
+const uint8_t Version_FW[4] = {'V', 1, 0, 0};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 uint32_t thunder_system_parameter = 0;
 // 所有模块初始化
 void THUNDER::Setup_All(void)
 {
-  delay(500);
+  delay(300);
 #ifdef SERIAL_PRINT_HIGHSPEED
   Serial.begin(500000);
 #else
@@ -155,7 +155,7 @@ void THUNDER::Setup_All(void)
   Task_Mesg.Set_Flush_Task(FLUSH_COMMUNICATIONS);  // 开启UART指令、BLE指令 通信控制功能
   Task_Mesg.Create_Deamon_Threads();               // 创建并开始 守护线程
 
-  Serial.printf("\n*** Initial Completes ***\n\n");
+  Serial.printf("\n*** Initial Completes, spend time:%d ***\n\n", millis());
 
 #ifndef DISABLE_LAUNCH_DISPLAY
   // 开机动画/声效
@@ -691,8 +691,8 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     }
     else{
       led_indication_param.led_indication_period = 3000;
-      led_indication_param.led_indication_on_duty = 100;
-      led_indication_param.led_indication_off_duty = 300;
+      led_indication_param.led_indication_on_duty = 450;
+      led_indication_param.led_indication_off_duty = 50;
       led_indication_param.led_indication_amount = 5;
     }
     break;
@@ -721,6 +721,7 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_amount = 4;
     break;
   case PROCESS_INDICATE_SWITCH:
+    Task_Mesg.Clear_All_Loops();
     led_indication_param.wait_led_timer = 0;
     led_indication_param.led_indication_period = 100;
     led_indication_param.led_indication_on_duty = 50;
@@ -728,11 +729,10 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_WAIT_SWITCH:
-    Task_Mesg.Clear_All_Loops();
     led_indication_param.wait_led_timer = 0;
-    led_indication_param.led_indication_period = 700;
-    led_indication_param.led_indication_on_duty = 600;
-    led_indication_param.led_indication_off_duty = 100;
+    led_indication_param.led_indication_period = 100;
+    led_indication_param.led_indication_on_duty = 50;
+    led_indication_param.led_indication_off_duty = 50;
     led_indication_param.led_indication_amount = 1;
     break;
   }
@@ -854,30 +854,38 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     else if (button_event == KEY_CLICK_ONE)
     {
       function_button_event = KEY_NONE;
-      Speaker.Play_Song(3);
+      // Speaker.Play_Song(3);
       Set_Program_User(PROCESS_USER_1);
       Disk_Manager.Wirte_Program_User(program_user);
+      delay(300);
+      ESP.restart();
     }
     else if (button_event == KEY_CLICK_TWO)
     {
       function_button_event = KEY_NONE;
-      Speaker.Play_Song(4);
+      // Speaker.Play_Song(4);
       Set_Program_User(PROCESS_USER_2);
       Disk_Manager.Wirte_Program_User(program_user);
+      delay(300);
+      ESP.restart();
     }
     else if (button_event == KEY_CLICK_THREE)
     {
       function_button_event = KEY_NONE;
-      Speaker.Play_Song(5);
+      // Speaker.Play_Song(5);
       Set_Program_User(PROCESS_USER_3);
       Disk_Manager.Wirte_Program_User(program_user);
+      delay(300);
+      ESP.restart();
     }
     else if (button_event == KEY_CLICK_FOUR)
     {
       function_button_event = KEY_NONE;
-      Speaker.Play_Song(6);
+      // Speaker.Play_Song(6);
       Set_Program_User(PROCESS_USER_4);
       Disk_Manager.Wirte_Program_User(program_user);
+      delay(300);
+      ESP.restart();
     }
 
     break;
@@ -915,9 +923,10 @@ void THUNDER::Set_Program_User(enum_Process_Status new_program_user)
   led_indication_param.led_indication_amount = (uint8_t)new_program_user + 1;
   led_indication_param.wait_led_timer = 700;
   led_indication_param.led_indication_once_flag = 1;
-  led_indication_param.led_indication_period = 2000;
-  led_indication_param.led_indication_on_duty = 150;
-  led_indication_param.led_indication_off_duty = 250;
+  led_indication_param.led_indication_on_duty = 100;
+  led_indication_param.led_indication_off_duty = 300;
+  led_indication_param.led_indication_period = (led_indication_param.led_indication_on_duty
+                 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount;
   Set_Led_Indication_param();
 
   // 可以不用等闪烁提示 完毕 就立刻进入“等待启动状态”
@@ -1051,16 +1060,17 @@ void THUNDER::Servo_Turn(int servo, int angle)
     Serial.printf("### No needed Servo\n");
   }
 }
-void THUNDER::Servo_Percent_Setting(int max_value, int min_value, int zero_value, int direction)
+void THUNDER::Servo_Percent_Setting(int servo_index, 
+            int max_value, int min_value, int zero_value, int direction)
 {
   if(direction < 0){
-    servo_percent_zero = -1 * zero_value;
-    servo_percent_max = -1 * max_value;
-    servo_percent_min = -1 * min_value;
+    servo_percent_zero[servo_index - 1] = -1 * zero_value;
+    servo_percent_max[servo_index - 1] = -1 * max_value;
+    servo_percent_min[servo_index - 1] = -1 * min_value;
   }else{
-    servo_percent_zero = zero_value;
-    servo_percent_max = max_value;
-    servo_percent_min = min_value;
+    servo_percent_zero[servo_index - 1] = zero_value;
+    servo_percent_max[servo_index - 1] = max_value;
+    servo_percent_min[servo_index - 1] = min_value;
   }
 }
 void THUNDER::Servo_Turn_Percent(int servo, int percent)
@@ -1076,9 +1086,9 @@ void THUNDER::Servo_Turn_Percent(int servo, int percent)
 
   // 映射舵机转动范围
   if(percent > 0){
-    percent = servo_percent_zero + (servo_percent_max - servo_percent_zero) * percent / 100;
+    percent = servo_percent_zero[servo - 1] + (servo_percent_max[servo - 1] - servo_percent_zero[servo - 1]) * percent / 100;
   }else{
-    percent = servo_percent_zero + (servo_percent_zero - servo_percent_min) * percent / 100;
+    percent = servo_percent_zero[servo - 1] + (servo_percent_zero[servo - 1] - servo_percent_min[servo - 1]) * percent / 100;
   }
 
   if (servo == 1) //A口
@@ -3749,9 +3759,9 @@ uint8_t THUNDER::Select_Sensor_AllChannel()
   // reset
   pinMode(15, OUTPUT);
   digitalWrite(15, LOW);
-  delay(10);
+  delay(1);
   digitalWrite(15, HIGH);
-  delay(10);
+  delay(5);
 
   ret = Set_I2C_Chanel(0x3f); //全选通
 

@@ -171,7 +171,7 @@ void Polling_Check(void *pvParameters)
           timer_competition += POLLING_CHECK_PERIOD;
         }
       }else if(competition_action_status == 2){
-        if(timer_competition > 180000){
+        if(timer_competition > 160000){
           ESP.restart();
         }else{
           timer_competition += POLLING_CHECK_PERIOD;
@@ -581,6 +581,7 @@ void Clear_All_Loops_AutoCtrl()
   Task_Mesg.Give_Semaphore_IIC();
 
   tasks_num_AutoCtrl = 0;
+  Thunder.Stop_All();
 
   // 创建遥控阶段的线程
   Program_1();

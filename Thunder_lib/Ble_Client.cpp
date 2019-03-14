@@ -118,8 +118,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       } // Found our server
     }
     #else
-      if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller")
-          && advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -60) ) 
+      if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller") )
       {
         uint8_t *advertisedPayload;
         advertisedPayload = advertisedDevice.getPayload();
@@ -132,6 +131,12 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
           Serial.println("Bonding Match");
         }else{
           Serial.println("No Bonding");
+          if( advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -60) ){
+            Serial.println("Distance Appropriate");
+          }else{
+            Serial.println("Distance Too far");
+            return;
+          }
         }
 
         advertisedDevice.getScan()->stop();
