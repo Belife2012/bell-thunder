@@ -111,6 +111,11 @@
 #define MAX_DRIVE_SPEED       10.0
 #define MAX_DRIVE_DIRECTION   100.0
 
+// Position Control
+#define POSITION_Kp   (20.0)
+#define POSITION_Ki   (0.0)
+#define POSITION_Kd   (25.0)
+
 // PID时间中断
 extern volatile SemaphoreHandle_t Timer_PID_Flag;
 
@@ -173,6 +178,19 @@ struct DriveCarPid_Struct{
   float Out_right = 0;
 };
 
+struct MotorPosition_Struct{
+  bool enable_ctrl = false;
+
+  int target;
+  int variant;
+  int delta;
+  int pre_delta;
+  int pre2_delta;
+
+  float PID_output;
+  float Pre_output;
+};
+
 struct MotorRunning_Struct{
   //0代表left 和 right的控制都起效；1代表left控制起效，right无效; 2代表right控制起效，left无效
   byte motor_select;
@@ -223,6 +241,11 @@ class THUNDER_MOTOR
     void Setup_Motor_PID(void);                                             // 配置左右两个电机编码器
     void PID_Speed(void);                                                   // 按PID输出控制左右两个电机
 
+    void Motor_Position_Control(MotorPosition_Struct *position_ctrl);
+    void Set_Motor_Position(int motor, int position_target);
+    void Position_Control();
+    void Clear_Position_Control();
+
     void Drive_Car_Control();
     void Set_Car_Speed_Direction(float speed, float direction);
 
@@ -255,6 +278,9 @@ class THUNDER_MOTOR
     struct PID_Struct_t Motor_L_Speed_PID;
     struct PID_Struct_t Motor_R_Speed_PID;
 
+    struct MotorPosition_Struct Position_Ctrl_L;
+    struct MotorPosition_Struct Position_Ctrl_R;
+
     // drive car 
     struct DriveCarPid_Struct drive_car_pid;
     float drive_speed = 0;
@@ -262,6 +288,9 @@ class THUNDER_MOTOR
 
     // timer中断
     hw_timer_t * PID_Timer = NULL;
+
+    // Mutex
+    volatile SemaphoreHandle_t motor_drive_mux; 
 
     void set_speed(uint8_t motor_channel,uint32_t speed);
     float motor_PID(struct PID_Struct_t *pid);      // PID计算

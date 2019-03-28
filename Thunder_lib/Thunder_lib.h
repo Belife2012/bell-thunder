@@ -188,7 +188,7 @@ class THUNDER
     int servo_percent_zero[2] = {0, 0};
 
     // 编码电机
-    uint8_t En_Motor_Flag = 0;
+    volatile uint8_t En_Motor_Flag = 0;
     int16_t L_Speed = 0;
     int16_t R_Speed = 0;
 
@@ -221,6 +221,7 @@ class THUNDER
     // 程序切换
     enum_Process_Status process_status = PROCESS_STOP;
     enum_Process_Status program_user;
+    uint8_t system_program_mode = 0; // 开机后确定执行的系统程序：用户程序、APP程序。。。
 
     // 巡线IR
     // [0]是左边数据，[1]是右边数据
@@ -346,6 +347,7 @@ class THUNDER
     void En_Motor(void);          // 编码电机  闭环计算
     void Enable_En_Motor(void);   // 打开编码电机计算
     void Enable_Drive_Car(void);
+    void Enable_Motor_Position(void);
     void Disable_En_Motor(void);  // 关闭编码电机计算
 
     // 只能开环控制电机时使用

@@ -310,6 +310,8 @@ void THUNDER_MOTOR::Setup_Motor()
   pinMode(PWM_L_B, OUTPUT);
   pinMode(PWM_R_A, OUTPUT);
   pinMode(PWM_R_B, OUTPUT);
+
+  motor_drive_mux = xSemaphoreCreateMutex();
 }
 
 // 配置电机速度
@@ -353,6 +355,7 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
   {
     speed = 0;
   }
+
   if(motor == 1)
   {
     if(speed > LIMIT_SPEED)
@@ -401,6 +404,7 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
 // 参数1-->电机编号；1或者2
 void THUNDER_MOTOR::Motor_Brake(int motor)
 {
+  #if 0
   Thunder.Disable_En_Motor();
 
   if(motor == 1)
@@ -413,6 +417,20 @@ void THUNDER_MOTOR::Motor_Brake(int motor)
     set_speed(PWM_R_A,MOTOR_INPUT_MAX);
     set_speed(PWM_R_B,MOTOR_INPUT_MAX);
   }
+  #else
+  int rotate_value;
+  if(motor == 1)
+  {
+    rotate_value = Get_L_RotateValue();
+    Set_Motor_Position(1, rotate_value);
+  }
+  else if(motor == 2)
+  {
+    rotate_value = Get_R_RotateValue();
+    Set_Motor_Position(2, rotate_value);
+  }
+
+  #endif
 }
 
 // 开环电机滑行函数
@@ -713,6 +731,58 @@ void THUNDER_MOTOR::PID_Speed()
   }
 }
 
+void THUNDER_MOTOR::Motor_Position_Control(MotorPosition_Struct *position_ctrl)
+{
+  // 采用增量式PID
+  float pid_result;
+  
+  position_ctrl->delta = position_ctrl->target - position_ctrl->variant;
+  pid_result = POSITION_Kp * (position_ctrl->delta - position_ctrl->pre_delta);
+  pid_result += POSITION_Ki * position_ctrl->delta;
+  pid_result += POSITION_Kd * (position_ctrl->delta - 2*position_ctrl->pre_delta + position_ctrl->pre2_delta);
+
+  position_ctrl->PID_output += pid_result;
+  position_ctrl->Pre_output = pid_result;
+
+  position_ctrl->pre2_delta = position_ctrl->pre_delta;
+  position_ctrl->pre_delta = position_ctrl->delta;
+}
+
+
+void THUNDER_MOTOR::Set_Motor_Position(int motor, int position_target)
+{
+  if(motor == 1){
+    Position_Ctrl_L.target = position_target;
+
+    Thunder.Enable_Motor_Position();
+    Position_Ctrl_L.enable_ctrl = true;
+  }else if(motor == 2){
+    Position_Ctrl_R.target = position_target;
+
+    Thunder.Enable_Motor_Position();
+    Position_Ctrl_R.enable_ctrl = true;
+  }
+}
+void THUNDER_MOTOR::Clear_Position_Control()
+{
+  Position_Ctrl_L.enable_ctrl = false;
+  Position_Ctrl_R.enable_ctrl = false;
+}
+
+void THUNDER_MOTOR::Position_Control()
+{
+  if(Position_Ctrl_L.enable_ctrl == true){
+    Position_Ctrl_L.variant = Get_L_RotateValue();
+    Motor_Position_Control(&Position_Ctrl_L);
+    Set_L_Motor_Output(Position_Ctrl_L.PID_output);
+  }
+  if(Position_Ctrl_R.enable_ctrl == true){
+    Position_Ctrl_R.variant = Get_R_RotateValue();
+    Motor_Position_Control(&Position_Ctrl_R);
+    Set_R_Motor_Output(Position_Ctrl_R.PID_output);
+  }
+}
+
 /* 
  * 控制电机运行，可以设置控制模式：0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
  * 
@@ -918,6 +988,8 @@ void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
   }
 
   Set_Car_Speed_Direction(0, 0);
+  // Motor_Free(1);
+  // Motor_Free(2);
 }
 
 void THUNDER_MOTOR::Calculate_Left_Control()
@@ -1043,8 +1115,6 @@ void THUNDER_MOTOR::Drive_Car_Control()
  */
 void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
 {
-  Thunder.Enable_Drive_Car();
-
   // All_PID_Init();
 
   if( speed > 100.0 ){
@@ -1078,6 +1148,8 @@ void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
   drive_car_pid.new_right_target = drive_car_pid.right_speed_target;
 
   // Serial.printf("Left target:%f, Right target:%f \n", drive_car_pid.left_speed_target, drive_car_pid.right_speed_target);
+  
+  Thunder.Enable_Drive_Car();
 }
 
 /* 
@@ -1095,20 +1167,18 @@ void THUNDER_MOTOR::Set_L_Target(float target)
 {
   float target_encoder_num;
 
-  Thunder.Enable_En_Motor();
-
   target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
   if(Motor_L_Speed_PID.Ref != target_encoder_num)
   {
     // PID_Reset(&Motor_L_Speed_PID);
     Motor_L_Speed_PID.Ref = target_encoder_num;
   }
+
+  Thunder.Enable_En_Motor();
 }
 void THUNDER_MOTOR::Set_R_Target(float target)
 {
   float target_encoder_num;
-
-  Thunder.Enable_En_Motor();
 
   target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
   if(Motor_R_Speed_PID.Ref != target_encoder_num)
@@ -1116,6 +1186,8 @@ void THUNDER_MOTOR::Set_R_Target(float target)
     // PID_Reset(&Motor_R_Speed_PID);
     Motor_R_Speed_PID.Ref = target_encoder_num;
   }
+
+  Thunder.Enable_En_Motor();
 }
 
 /*

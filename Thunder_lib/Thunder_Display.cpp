@@ -28,7 +28,7 @@
 
 #include <Thunder_Display.h>
 
-HT16D35B HT16D35B(0x69);
+HT16D35B HT16D35B(HT16D35B_DEVICE_ADDRESS_69);
 
 #if 1
 const LedDotLocation led_location_16D35[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM] = {

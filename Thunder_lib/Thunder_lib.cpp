@@ -100,7 +100,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'V', 1, 0, 0};
+const uint8_t Version_FW[4] = {'V', 1, 0, 1};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 uint32_t thunder_system_parameter = 0;
@@ -683,42 +683,48 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_amount = 1;
     break;
   case PROCESS_THUNDER_GO:
-    if(thunder_system_parameter == 1){
-      led_indication_param.led_indication_period = 3000;
-      led_indication_param.led_indication_on_duty = 100;
+    // if(thunder_system_parameter == 1){
+    //   led_indication_param.led_indication_period = 3000;
+    //   led_indication_param.led_indication_on_duty = 100;
+    //   led_indication_param.led_indication_off_duty = 400;
+    //   led_indication_param.led_indication_amount = 2;
+    // }
+    // else
+    {
+      led_indication_param.led_indication_on_duty = 1000;
       led_indication_param.led_indication_off_duty = 300;
-      led_indication_param.led_indication_amount = 2;
-    }
-    else{
-      led_indication_param.led_indication_period = 3000;
-      led_indication_param.led_indication_on_duty = 450;
-      led_indication_param.led_indication_off_duty = 50;
-      led_indication_param.led_indication_amount = 5;
+      led_indication_param.led_indication_amount = 1;
+    led_indication_param.led_indication_period = (led_indication_param.led_indication_on_duty
+                 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount+2000;
     }
     break;
   case PROCESS_USER_1:
-    led_indication_param.led_indication_period = 3000;
-    led_indication_param.led_indication_on_duty = 100;
+    led_indication_param.led_indication_on_duty = 70;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 1;
+    led_indication_param.led_indication_period = (led_indication_param.led_indication_on_duty
+                 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount+2000;
     break;
   case PROCESS_USER_2:
-    led_indication_param.led_indication_period = 3000;
-    led_indication_param.led_indication_on_duty = 100;
+    led_indication_param.led_indication_on_duty = 70;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 2;
+    led_indication_param.led_indication_period = (led_indication_param.led_indication_on_duty
+                 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount+2000;
     break;
   case PROCESS_USER_3:
-    led_indication_param.led_indication_period = 3000;
-    led_indication_param.led_indication_on_duty = 100;
+    led_indication_param.led_indication_on_duty = 70;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 3;
+    led_indication_param.led_indication_period = (led_indication_param.led_indication_on_duty
+                 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount+2000;
     break;
   case PROCESS_USER_4:
-    led_indication_param.led_indication_period = 3000;
-    led_indication_param.led_indication_on_duty = 100;
+    led_indication_param.led_indication_on_duty = 70;
     led_indication_param.led_indication_off_duty = 300;
     led_indication_param.led_indication_amount = 4;
+    led_indication_param.led_indication_period = (led_indication_param.led_indication_on_duty
+                 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount+2000;
     break;
   case PROCESS_INDICATE_SWITCH:
     Task_Mesg.Clear_All_Loops();
@@ -768,27 +774,30 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     {
       function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_INDICATE_SWITCH);
+      system_program_mode = 1;
     }
     else if (button_event == KEY_CLICK_ONE)
     {
       function_button_event = KEY_NONE;
       Set_Program_Run_Index(program_user);
+      system_program_mode = 1;
     }
-    else if (button_event == KEY_CLICK_TWO)
+    else if (button_event == KEY_CLICK_TWO && system_program_mode == 0) // 只有未确定系统程序时才能选APP程序
     {
       function_button_event = KEY_NONE;
       Set_Program_Run_Index(PROCESS_THUNDER_GO);
+      system_program_mode = 2;
     }
 
     break;
   }
-  case PROCESS_THUNDER_GO:
-  { //
-    if (button_event == KEY_LONG_NO_RELEASE)
-    {
-      function_button_event = KEY_NONE;
-      Set_Process_Status(PROCESS_INDICATE_SWITCH);
-    }
+  case PROCESS_THUNDER_GO: // APP程序不能接受程序切换
+  { 
+    // if (button_event == KEY_LONG_NO_RELEASE)
+    // {
+    //   function_button_event = KEY_NONE;
+    //   Set_Process_Status(PROCESS_INDICATE_SWITCH);
+    // }
 
     break;
   }
@@ -836,8 +845,6 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   {
     if (button_event == KEY_LONG_RELEASE)
     {
-      // 设置一个倒计时，没有按键动作，时间则回到 PROCESS_STOP 系统状态
-      // wait_key_timer = 3000;
       function_button_event = KEY_NONE;
       Set_Process_Status(PROCESS_WAIT_SWITCH);
     }
@@ -857,8 +864,6 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
       // Speaker.Play_Song(3);
       Set_Program_User(PROCESS_USER_1);
       Disk_Manager.Wirte_Program_User(program_user);
-      delay(300);
-      ESP.restart();
     }
     else if (button_event == KEY_CLICK_TWO)
     {
@@ -866,8 +871,6 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
       // Speaker.Play_Song(4);
       Set_Program_User(PROCESS_USER_2);
       Disk_Manager.Wirte_Program_User(program_user);
-      delay(300);
-      ESP.restart();
     }
     else if (button_event == KEY_CLICK_THREE)
     {
@@ -875,8 +878,6 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
       // Speaker.Play_Song(5);
       Set_Program_User(PROCESS_USER_3);
       Disk_Manager.Wirte_Program_User(program_user);
-      delay(300);
-      ESP.restart();
     }
     else if (button_event == KEY_CLICK_FOUR)
     {
@@ -884,8 +885,6 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
       // Speaker.Play_Song(6);
       Set_Program_User(PROCESS_USER_4);
       Disk_Manager.Wirte_Program_User(program_user);
-      delay(300);
-      ESP.restart();
     }
 
     break;
@@ -991,6 +990,10 @@ void THUNDER::En_Motor(void)
       Thunder_Motor.PID_Speed();
     }
   }
+  else if(En_Motor_Flag == 3)
+  {
+    Thunder_Motor.Position_Control();
+  }
 }
 
 // 开启 Drive_Car_Control 功能
@@ -1009,17 +1012,27 @@ void THUNDER::Enable_En_Motor(void)
   }
 }
 
+// 开启 电机位置 控制
+void THUNDER::Enable_Motor_Position(void)
+{
+  if(En_Motor_Flag != 3){
+    Thunder_Motor.Clear_Position_Control();
+    En_Motor_Flag = 3;
+  }
+}
+
 // 关闭编码电机计算
 void THUNDER::Disable_En_Motor(void)
 {
   if( En_Motor_Flag != 0 ){
     // 清除PID控制的变量
-    Thunder_Motor.Set_L_Target(0);
-    Thunder_Motor.Set_R_Target(0);
+    // Thunder_Motor.Set_L_Target(0);
+    // Thunder_Motor.Set_R_Target(0);
 
     En_Motor_Flag = 0;
     Thunder_Motor.PID_Reset();
     Thunder_Motor.All_PID_Init();
+    delay(1); //等待电机PID控制稳定
   }
 }
 
@@ -1509,7 +1522,6 @@ void THUNDER::Line_Tracing(void)
       // Speaker.Play_Song(139);
       Line_last_sound_time = millis();
     }
-    // En_Motor();
     ////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
   }
   Stop_All();
@@ -1901,7 +1913,6 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
       // Speaker.Play_Song(139);
       Line_last_sound_time = millis();
     }
-    // En_Motor();
     ////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
   }
   line_tracing_running = false;
@@ -2606,7 +2617,6 @@ void THUNDER::Line_Tracing(void)
       Line_last_sound_time = millis();
     } */
 
-    // En_Motor();
   }
   Speaker.Play_Song(130);
 }
