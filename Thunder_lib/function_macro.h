@@ -6,7 +6,7 @@
  */
 // #define DEBUG_UART_COMMAND
 // #define DEBUG_LINE_TRACING
-// #define SERIAL_PRINT_HIGHSPEED // 使用高速串口打印，波特率为 500000
+#define SERIAL_PRINT_HIGHSPEED // 使用高速串口打印，波特率为 500000
 // #define DISABLE_LAUNCH_DISPLAY // 禁止开机界面 
 // #define DEBUG_IR_SENSOR
 // #define DEBUG_COLOR_LEDS

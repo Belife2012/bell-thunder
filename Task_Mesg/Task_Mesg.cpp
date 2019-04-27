@@ -609,15 +609,15 @@ void TASK_MESG::Create_Deamon_Threads()
   Serial.println("\nCreating deamons...");
   xTaskCreatePinnedToCore(Driver_Flush, "DriverFlush", 8192, NULL, 2, NULL, 1);
   Serial.println("1");
-  xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 3, NULL, 1);
+  xTaskCreatePinnedToCore(Deamon_Motor, "deamonMotor", 4096, NULL, 5, NULL, 1);
   Serial.println("2");
-  xTaskCreatePinnedToCore(Proc_Ble_Command, "procBleCommand", 4096, NULL, 4, NULL, 1);
+  xTaskCreatePinnedToCore(Proc_Ble_Command, "BleCommand", 4096, NULL, 3, NULL, 1);
   Serial.println("3");
-  xTaskCreatePinnedToCore(Proc_Uart_Command, "procUartCommand", 4096, NULL, 4, NULL, 1);
+  xTaskCreatePinnedToCore(Proc_Uart_Command, "UartCommand", 4096, NULL, 3, NULL, 1);
   Serial.println("4");
-  xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operatorModeDeamon", 4096, NULL, 1, NULL, 1);
+  xTaskCreatePinnedToCore(Operator_Mode_Deamon, "operDeamon", 4096, NULL, 1, NULL, 1);
   Serial.println("5");
-  xTaskCreatePinnedToCore(Polling_Check, "pollingCheck", 4096, NULL, 2, NULL, 1);
+  xTaskCreatePinnedToCore(Polling_Check, "pollCheck", 4096, NULL, 2, NULL, 1);
   Serial.println("6");
 
   deamon_task_running = 1;

@@ -74,6 +74,7 @@
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
 #include <Bell_Barbette.h>
+#include <wk2xxx.h>
 
 // 遥控器
 #include <Remoter.h>
@@ -293,6 +294,9 @@ class THUNDER
     // 模拟计时器
     uint32_t timer_value[5] = {0,0,0,0,0};
 
+    // 多机通信
+    std::vector<struct_Int_Message> recv_int_message;
+
   public:
     // 单色图案
     uint8_t LED_BUFF_Dot[29] =  
@@ -392,6 +396,13 @@ class THUNDER
     // 计时器接口
     uint32_t Get_Virtual_Timer(uint32_t timer_index);
     void Reset_Virtual_Timer(uint32_t timer_index);
+
+    // 多机通信
+    void Open_Multi_Message();
+    void Close_Multi_Message();
+    int SendNameVarInt(unsigned char addr, char *name, int var_value);
+    int RecvNameVarInt(char *name);
+    void InitNameVarInt(char *name, int init_value);
 };
 
 extern THUNDER Thunder;
