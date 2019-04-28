@@ -587,9 +587,7 @@ int MultiMessage::SendPackage(unsigned char s_addr, unsigned char s_func,
 	memcpy(&send_package.payload, s_payload, s_payload_len);
 	send_package.checksum = CalculateChecksum8(&send_package, send_package.length -1);
 	
-	do{}while(pdPASS != xSemaphoreTake(mutex_tx_queue, pdMS_TO_TICKS(20)));
 	xQueueSend(tx_queue_handle, &send_package, pdMS_TO_TICKS(20));
-	xSemaphoreGive(mutex_tx_queue);
 
 	return 0;
 }
@@ -604,7 +602,7 @@ int MultiMessage::AnalyseRxPackage(unsigned char rx_port)
 		// 如果接收地址不等于 0 ，主机就会将数据帧转发出去
 		if(recv_package.addr != 0)
 		{
-			SendPackage(rx_port, recv_package.func, 
+			SendPackage(recv_package.addr, recv_package.func, 
 					recv_package.payload, recv_package.length - PACKAGE_MIN_LEN);
 
 			return 0;
@@ -647,7 +645,7 @@ int MultiMessage::SendNameVarInt(unsigned char addr, char *name, int var_value)
 	unsigned char payload_len;
 
 	if(device_role == ROLE_MASTER){
-		if(addr = 0){
+		if(addr == 0){
 			// master发给自己的数据，直接解析到数据容器
 			std::vector<struct_Int_Message>::iterator i;
 			for(i=recv_int_message->begin(); i!=recv_int_message->end(); i++){
@@ -663,8 +661,6 @@ int MultiMessage::SendNameVarInt(unsigned char addr, char *name, int var_value)
 
 			return 0;
 		}
-		// master主动发送，需要等待发送队列比较少，防止连续填充
-		while(uxQueueMessagesWaiting(tx_queue_handle) > 1);
 	}
 
 	name_length = strlen(name);
@@ -678,7 +674,19 @@ int MultiMessage::SendNameVarInt(unsigned char addr, char *name, int var_value)
 	memcpy(payload, name, name_length);
 	memcpy(payload+name_length, (unsigned char *)&var_value, sizeof(int));
 
-	SendPackage(addr, PACKAGE_FUNC_NAME_INT, payload, payload_len);
+	if(device_role == ROLE_MASTER){
+		// master主动发送，需要转移队列在RX里面再移到TX队列
+		struct_Mesg_Package send_package;
+		send_package.length = payload_len + PACKAGE_MIN_LEN;
+		send_package.addr = addr;
+		send_package.func = PACKAGE_FUNC_NAME_INT;
+		memcpy(&send_package.payload, payload, payload_len);
+		send_package.checksum = CalculateChecksum8(&send_package, send_package.length -1);
+		
+		xQueueSend(master_tx_queue, &send_package, pdMS_TO_TICKS(20));
+	}else{
+		SendPackage(addr, PACKAGE_FUNC_NAME_INT, payload, payload_len);
+	}
 
 	free(payload);
 	return 0;
@@ -739,6 +747,13 @@ void MultiMessage::MasterRxTask(void *pvParameters)
 			}
 			#endif
 		}
+		// 获取Master 的主动发送的队列，转发出去
+		if(uxQueueMessagesWaiting(Multi_Message->master_tx_queue) != 0){
+			struct_Mesg_Package tx_package;
+			xQueueReceive(Multi_Message->master_tx_queue, &tx_package, pdMS_TO_TICKS(5));
+			xQueueSend(Multi_Message->tx_queue_handle, &tx_package, pdMS_TO_TICKS(20));
+		}
+
 		// 间隔2ms 查询一次接收FIFO中断
 		vTaskDelay(pdMS_TO_TICKS(2));
 	}
@@ -807,18 +822,18 @@ void MultiMessage::OpenCommunicate(std::vector<struct_Int_Message> *message_stor
 	recv_int_message = message_store;
 
 	mutex_mesg_uart = xSemaphoreCreateMutex();
-	mutex_tx_queue = xSemaphoreCreateMutex();
 	task_clear_start = xSemaphoreCreateBinary();
 	task_clear_end =  xSemaphoreCreateBinary();
 	
 	CheckMultiHost();
 
 	if(ROLE_MASTER == device_role){
-		xTaskCreatePinnedToCore(MultiMessage::MasterRxTask, "MasterRxTask", 2048, NULL, 1, &rx_task_handle, 0);
 		tx_queue_handle = xQueueCreate(10, sizeof(struct_Mesg_Package));
+		master_tx_queue = xQueueCreate(2, sizeof(struct_Mesg_Package));
+		xTaskCreatePinnedToCore(MultiMessage::MasterRxTask, "MasterRxTask", 4096, NULL, 1, &rx_task_handle, 0);
 	}else{
-		xTaskCreatePinnedToCore(MultiMessage::SlaverRxTask, "SlaverRxTask", 2048, NULL, 1, &rx_task_handle, 0);
 		tx_queue_handle = xQueueCreate(5, sizeof(struct_Mesg_Package));
+		xTaskCreatePinnedToCore(MultiMessage::SlaverRxTask, "SlaverRxTask", 2048, NULL, 1, &rx_task_handle, 0);
 	}
 	xTaskCreatePinnedToCore(MultiMessage::TxTask, "TxTask", 2048, NULL, 1, &tx_task_handle, 0);
 	xTaskCreatePinnedToCore(MultiMessage::ManagerTask, "Manager", 1024, NULL, 2, NULL, 0);
@@ -840,14 +855,17 @@ void MultiMessage::CloseCommunicate(void)
 
 	vQueueDelete(tx_queue_handle);
 	vSemaphoreDelete(mutex_mesg_uart);
-	vSemaphoreDelete(mutex_tx_queue);
 	vSemaphoreDelete(task_clear_start);
 	vSemaphoreDelete(task_clear_end);
 	tx_queue_handle = NULL;
 	task_clear_start = NULL;
 	task_clear_end = NULL;
 	mutex_mesg_uart = NULL;
-	mutex_tx_queue = NULL;
+
+	if(master_tx_queue != NULL){
+		vQueueDelete(master_tx_queue);
+		master_tx_queue = NULL;
+	}
 
 	device_role = ROLE_TURNOFF;
 }

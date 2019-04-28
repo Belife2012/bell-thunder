@@ -185,7 +185,7 @@ private:
     SemaphoreHandle_t mutex_mesg_uart;
     SemaphoreHandle_t task_clear_start;
     SemaphoreHandle_t task_clear_end;
-    SemaphoreHandle_t mutex_tx_queue;
+    QueueHandle_t master_tx_queue = NULL;
     QueueHandle_t tx_queue_handle;
 
     struct_Mesg_Package recv_package;
