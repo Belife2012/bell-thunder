@@ -122,6 +122,9 @@ void THUNDER::Setup_All(void)
 
   Serial.printf("\nInitialize All modules of -Thunder Go- \n\n");
 
+  Open_Multi_Message();delay(10);
+  Close_Multi_Message();
+
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
   Select_Sensor_AllChannel();
 

@@ -3,6 +3,11 @@
 
 MultiMessage *Multi_Message = NULL;
 
+#define DEBUG_MASTER_RX
+
+#define TAKE_MESG_UART_MUTEX	do{} while(pdPASS != xSemaphoreTake(mutex_mesg_uart, portMAX_DELAY))
+#define GIVE_MESG_UART_MUTEX	do{xSemaphoreGive(mutex_mesg_uart);} while(0)
+
 MultiMessage::MultiMessage()
 {
 }
@@ -63,6 +68,10 @@ void MultiMessage::Uart_ClearRxBuf(void)
 	}
 	Serial1.flush();
 }
+void MultiMessage::Uart_WaitClear(void)
+{
+	Serial.flush();
+}
 
 unsigned char MultiMessage::GetInterruptFlag()
 {
@@ -82,8 +91,10 @@ unsigned char MultiMessage::GetInterruptFlag()
 //*************************************************************************/
 void MultiMessage::Wk2114WriteReg(unsigned char port,unsigned char reg,unsigned char dat)
 {	 
+	TAKE_MESG_UART_MUTEX;
 	 uart_sendByte(((port-1)<<4)+reg);	//写指令，对于指令的构成见数据手册
 	 uart_sendByte(dat);//写数据
+	GIVE_MESG_UART_MUTEX;
 }
 
 
@@ -97,9 +108,13 @@ void MultiMessage::Wk2114WriteReg(unsigned char port,unsigned char reg,unsigned 
 unsigned char MultiMessage::Wk2114ReadReg(unsigned char port,unsigned char reg)
 {	 
     unsigned char rec_data;
+
+	TAKE_MESG_UART_MUTEX;
     uart_sendByte(0x40+((port-1)<<4)+reg); //写指令，对于指令的构成见数据手册
-	  uart_recByte(&rec_data);	 //接收返回的寄存器值									
-	  return rec_data;
+	uart_recByte(&rec_data);	 //接收返回的寄存器值	
+	GIVE_MESG_UART_MUTEX;			
+
+	return rec_data;
 }
 
 
@@ -117,6 +132,7 @@ int MultiMessage::Wk2114writeFIFO(unsigned char port,unsigned char *send_da,unsi
 		return -1;
 	}
 
+	TAKE_MESG_UART_MUTEX;
 	if(device_role == ROLE_MASTER){
 		uart_sendByte(0x80+((port-1)<<4)+(num-1)); //写指令,对于指令构成见数据手册
 	}
@@ -125,6 +141,7 @@ int MultiMessage::Wk2114writeFIFO(unsigned char port,unsigned char *send_da,unsi
 	{
 		uart_sendByte( *(send_da+i) );//写数据
 	}
+	GIVE_MESG_UART_MUTEX;
 
 	 return i;
 }
@@ -135,10 +152,12 @@ int MultiMessage::Wk2114writeFIFO(unsigned char *send_da,unsigned char num)
 		return -1;
 	}
 
+	TAKE_MESG_UART_MUTEX;
 	for(i=0;i<num;i++)
 	{
 		uart_sendByte( *(send_da+i) );//写数据
 	}
+	GIVE_MESG_UART_MUTEX;
 
 	 return i;
 }
@@ -156,6 +175,7 @@ int MultiMessage::Wk2114readFIFO(unsigned char port,unsigned char *rev_da,unsign
 		return -1;
 	}
 	
+	TAKE_MESG_UART_MUTEX;
 	if(device_role == ROLE_MASTER){
 		uart_sendByte(0xc0+((port-1)<<4)+(num-1));
 	}
@@ -166,6 +186,7 @@ int MultiMessage::Wk2114readFIFO(unsigned char port,unsigned char *rev_da,unsign
 			break;
 		}
 	}
+	GIVE_MESG_UART_MUTEX;
 
 	return n;
 }
@@ -402,8 +423,10 @@ int MultiMessage::CheckMultiHost()
 	unsigned char regValue;
 	int backCode;
 	
+	TAKE_MESG_UART_MUTEX;
 	uart_sendByte(0x40+WK2XXX_GENA); //写指令，对于指令的构成见数据手册
 	backCode = uart_recByte(&regValue);	 //接收返回的寄存器值	
+	GIVE_MESG_UART_MUTEX;
 
 	// 判断读出来的值是否与 写入的一致
 	if(backCode != -1 && regValue == 0xF0)
@@ -432,35 +455,12 @@ int MultiMessage::CheckPackage(unsigned char port)
 	unsigned char recv_byte;
 	unsigned char recv_index = 0;
 	
-	#if 0
-	// 包括帧头，数据帧最短6 byte
-	// if(GetPortRxFIFOCnt(port) < 6)
-	// {
-	// 	return -1;
-	// }
-	// // 帧头检测第一个字节
-	// Wk2114readFIFO(port, &recv_byte, 1);
-	// if(recv_byte != PACKAGE_HEAD_1){
-	// 	return -2;
-	// }
-	// // 帧头检测第二个字节
-	// Wk2114readFIFO(port, &recv_byte, 1);
-	// if(recv_byte != PACKAGE_HEAD_2){
-	// 	return -3;
-	// }
-	// // 读取数据帧的长度
-	// unsigned char data_length;
-	// Wk2114readFIFO(port, &data_length, 1);
-	// if(data_length < PACKAGE_MIN_LEN || data_length > PACKAGE_PAYLOAD_MAX_LEN + PACKAGE_MIN_LEN){
-	// 	return -4;
-	// }
-	#else
 	Wk2114readFIFO(port, (unsigned char *)&recv_head_info + recv_head_info.valid_cnt, 3 - recv_head_info.valid_cnt);
 	for(int i=0; i<3; i++){
 		if(recv_head_info.head_info[0] != PACKAGE_HEAD_1){
 			if( i == 2 ){
 				recv_head_info.valid_cnt = 0;
-				return -2;
+				return -1;
 			}
 			recv_head_info.head_info[0] = recv_head_info.head_info[1];
 			recv_head_info.head_info[1] = recv_head_info.head_info[2];
@@ -470,7 +470,7 @@ int MultiMessage::CheckPackage(unsigned char port)
 				break;
 			}else{
 				recv_head_info.valid_cnt = 3-i;
-				return -1;
+				return -2;
 			}
 		}
 	}
@@ -483,8 +483,6 @@ int MultiMessage::CheckPackage(unsigned char port)
 		return -4;
 	}
 	unsigned char data_length = recv_head_info.head_info[2];
-
-	#endif
 
 	recv_package.length = data_length;
 	data_length -= 1; //剩余的数据的长度
@@ -589,7 +587,10 @@ int MultiMessage::SendPackage(unsigned char s_addr, unsigned char s_func,
 	memcpy(&send_package.payload, s_payload, s_payload_len);
 	send_package.checksum = CalculateChecksum8(&send_package, send_package.length -1);
 	
-	xQueueSend(tx_queue_handle, &send_package, pdMS_TO_TICKS(5));
+	do{}while(pdPASS != xSemaphoreTake(mutex_tx_queue, pdMS_TO_TICKS(20)));
+	xQueueSend(tx_queue_handle, &send_package, pdMS_TO_TICKS(20));
+	xSemaphoreGive(mutex_tx_queue);
+
 	return 0;
 }
 
@@ -600,12 +601,16 @@ int MultiMessage::AnalyseRxPackage(unsigned char rx_port)
 	}
 
 	if(device_role == ROLE_MASTER){
-		if(recv_package.addr != 0){
-			SendPackage(recv_package.addr, recv_package.func, 
+		// 如果接收地址不等于 0 ，主机就会将数据帧转发出去
+		if(recv_package.addr != 0)
+		{
+			SendPackage(rx_port, recv_package.func, 
 					recv_package.payload, recv_package.length - PACKAGE_MIN_LEN);
+
+			return 0;
 		}
 	}
-
+	// 解析数据，将命名整形数据传到数据容器
 	if(recv_package.func == PACKAGE_FUNC_NAME_INT){
 		char recv_name[PACKAGE_PAYLOAD_MAX_LEN];
 		unsigned char name_length;
@@ -633,12 +638,34 @@ int MultiMessage::AnalyseRxPackage(unsigned char rx_port)
 			recv_int_message->push_back(new_message);
 		}
 	}
+	return 0;
 }
 
 int MultiMessage::SendNameVarInt(unsigned char addr, char *name, int var_value)
 {
 	unsigned char name_length;
 	unsigned char payload_len;
+
+	if(device_role == ROLE_MASTER){
+		if(addr = 0){
+			// master发给自己的数据，直接解析到数据容器
+			std::vector<struct_Int_Message>::iterator i;
+			for(i=recv_int_message->begin(); i!=recv_int_message->end(); i++){
+				if( i->message == std::string(name) ){
+					i->value = var_value;
+					break;
+				}
+			}
+			if(i == recv_int_message->end()){
+				struct_Int_Message new_message = {std::string(name), var_value};
+				recv_int_message->push_back(new_message);
+			}
+
+			return 0;
+		}
+		// master主动发送，需要等待发送队列比较少，防止连续填充
+		while(uxQueueMessagesWaiting(tx_queue_handle) > 1);
+	}
 
 	name_length = strlen(name);
 	if(name_length > PACKAGE_NAME_MAX_LEN){
@@ -664,38 +691,53 @@ void MultiMessage::MasterRxTask(void *pvParameters)
 	for(;;)
 	{
 		inter_flag = Multi_Message->GetInterruptFlag();
+		#ifdef DEBUG_MASTER_RX
+		Serial.printf("\ninter_flag: %d\n", inter_flag & 0x0F);
+		#endif
 
 		if(inter_flag & WK2XXX_UT1INT){
 			back_code = Multi_Message->CheckPackage(1);
 			if( 0 == back_code ){
 				Multi_Message->AnalyseRxPackage(1);
-			}else{
+			}
+			#ifdef DEBUG_MASTER_RX
+			else{
 				Serial.printf("1BackCode: %d\n", back_code);
 			}
+			#endif
 		}
 		if(inter_flag & WK2XXX_UT2INT){
 			back_code = Multi_Message->CheckPackage(2);
 			if( 0 == back_code ){
 				Multi_Message->AnalyseRxPackage(2);
-			}else{
+			}
+			#ifdef DEBUG_MASTER_RX
+			else{
 				Serial.printf("2BackCode: %d\n", back_code);
 			}
+			#endif
 		}
 		if(inter_flag & WK2XXX_UT3INT){
 			back_code = Multi_Message->CheckPackage(3);
 			if( 0 == back_code ){
 				Multi_Message->AnalyseRxPackage(3);
-			}else{
+			}
+			#ifdef DEBUG_MASTER_RX
+			else{
 				Serial.printf("3BackCode: %d\n", back_code);
 			}
+			#endif
 		}
 		if(inter_flag & WK2XXX_UT4INT){
 			back_code = Multi_Message->CheckPackage(4);
 			if( 0 == back_code ){
 				Multi_Message->AnalyseRxPackage(4);
-			}else{
+			}
+			#ifdef DEBUG_MASTER_RX
+			else{
 				Serial.printf("4BackCode: %d\n", back_code);
 			}
+			#endif
 		}
 		// 间隔2ms 查询一次接收FIFO中断
 		vTaskDelay(pdMS_TO_TICKS(2));
@@ -708,7 +750,7 @@ void MultiMessage::SlaverRxTask(void *pvParameters)
 		if(0 == Multi_Message->CheckPackage()){
 			Multi_Message->AnalyseRxPackage(0);
 		}
-		vTaskDelay(pdMS_TO_TICKS(10));
+		vTaskDelay(pdMS_TO_TICKS(5));
 	}
 }
 void MultiMessage::TxTask(void *pxParameters)
@@ -733,6 +775,27 @@ void MultiMessage::TxTask(void *pxParameters)
 			package_len -= 16;
 		}
 		Multi_Message->Wk2114writeFIFO(tx_data.addr, (unsigned char *)(&tx_data) + send_index, package_len);
+
+		if(Multi_Message->device_role == ROLE_MASTER){
+			vTaskDelay(pdMS_TO_TICKS(2));
+		}else{
+			vTaskDelay(pdMS_TO_TICKS(15));
+		}
+	}
+}
+
+void MultiMessage::ManagerTask(void *pxParameters)
+{
+	for(;;){
+		do{} while(pdPASS != xSemaphoreTake(Multi_Message->task_clear_start, portMAX_DELAY));
+
+		Multi_Message->Uart_Close();
+
+		vTaskDelete(Multi_Message->rx_task_handle);
+		vTaskDelete(Multi_Message->tx_task_handle);
+
+		xSemaphoreGive(Multi_Message->task_clear_end);
+		vTaskDelete(NULL);
 	}
 }
 
@@ -743,15 +806,24 @@ void MultiMessage::OpenCommunicate(std::vector<struct_Int_Message> *message_stor
 	}
 	recv_int_message = message_store;
 
+	mutex_mesg_uart = xSemaphoreCreateMutex();
+	mutex_tx_queue = xSemaphoreCreateMutex();
+	task_clear_start = xSemaphoreCreateBinary();
+	task_clear_end =  xSemaphoreCreateBinary();
+	
 	CheckMultiHost();
+
 	if(ROLE_MASTER == device_role){
-		xTaskCreatePinnedToCore(MultiMessage::MasterRxTask, "MasterRxTask", 2048, NULL, 2, &rx_task_handle, 1);
-		tx_queue_handle = xQueueCreate(5, sizeof(struct_Mesg_Package));
+		xTaskCreatePinnedToCore(MultiMessage::MasterRxTask, "MasterRxTask", 2048, NULL, 1, &rx_task_handle, 0);
+		tx_queue_handle = xQueueCreate(10, sizeof(struct_Mesg_Package));
 	}else{
-		xTaskCreatePinnedToCore(MultiMessage::SlaverRxTask, "SlaverRxTask", 2048, NULL, 2, &rx_task_handle, 1);
-		tx_queue_handle = xQueueCreate(2, sizeof(struct_Mesg_Package));
+		xTaskCreatePinnedToCore(MultiMessage::SlaverRxTask, "SlaverRxTask", 2048, NULL, 1, &rx_task_handle, 0);
+		tx_queue_handle = xQueueCreate(5, sizeof(struct_Mesg_Package));
 	}
-	xTaskCreatePinnedToCore(MultiMessage::TxTask, "TxTask", 2048, NULL, 2, &tx_task_handle, 1);
+	xTaskCreatePinnedToCore(MultiMessage::TxTask, "TxTask", 2048, NULL, 1, &tx_task_handle, 0);
+	xTaskCreatePinnedToCore(MultiMessage::ManagerTask, "Manager", 1024, NULL, 2, NULL, 0);
+
+	Serial.printf("device_role: %d \n", device_role);
 }
 
 void MultiMessage::CloseCommunicate(void)
@@ -759,11 +831,23 @@ void MultiMessage::CloseCommunicate(void)
 	if(device_role == ROLE_TURNOFF){
 		return;
 	}
-	vTaskDelete(rx_task_handle);
-	vTaskDelete(tx_task_handle);
-	vQueueDelete(tx_queue_handle);
-	Uart_Close();
+
+	xSemaphoreGive(task_clear_start);
+	// 等待任务关闭
+	do{} while(pdPASS != xSemaphoreTake(task_clear_end, portMAX_DELAY));
 	rx_task_handle = NULL;
+	tx_task_handle = NULL;
+
+	vQueueDelete(tx_queue_handle);
+	vSemaphoreDelete(mutex_mesg_uart);
+	vSemaphoreDelete(mutex_tx_queue);
+	vSemaphoreDelete(task_clear_start);
+	vSemaphoreDelete(task_clear_end);
+	tx_queue_handle = NULL;
+	task_clear_start = NULL;
+	task_clear_end = NULL;
+	mutex_mesg_uart = NULL;
+	mutex_tx_queue = NULL;
 
 	device_role = ROLE_TURNOFF;
 }

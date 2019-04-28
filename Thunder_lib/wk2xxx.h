@@ -182,6 +182,10 @@ private:
     int device_role = ROLE_TURNOFF;
     TaskHandle_t rx_task_handle;
     TaskHandle_t tx_task_handle;
+    SemaphoreHandle_t mutex_mesg_uart;
+    SemaphoreHandle_t task_clear_start;
+    SemaphoreHandle_t task_clear_end;
+    SemaphoreHandle_t mutex_tx_queue;
     QueueHandle_t tx_queue_handle;
 
     struct_Mesg_Package recv_package;
@@ -191,6 +195,7 @@ private:
     void Uart_Init(void);
     void Uart_Close(void);
     void Uart_ClearRxBuf(void);
+    void Uart_WaitClear(void);
     void uart_sendByte(unsigned char dat);
     int uart_recByte(unsigned char* readValue);
     void Wk2114WriteReg(unsigned char port,unsigned char reg,unsigned char dat);
@@ -250,6 +255,7 @@ public:
     static void MasterRxTask(void *pvParameters);
     static void SlaverRxTask(void *pvParameters);
     static void TxTask(void *pvParameters);
+    static void ManagerTask(void *pvParameters);
 
     inline int GetRole(void){ return device_role; }
 
