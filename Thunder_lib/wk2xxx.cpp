@@ -3,7 +3,7 @@
 
 MultiMessage *Multi_Message = NULL;
 
-#define DEBUG_MASTER_RX
+// #define DEBUG_MASTER_RX
 
 #define TAKE_MESG_UART_MUTEX	do{} while(pdPASS != xSemaphoreTake(mutex_mesg_uart, portMAX_DELAY))
 #define GIVE_MESG_UART_MUTEX	do{xSemaphoreGive(mutex_mesg_uart);} while(0)
@@ -747,15 +747,20 @@ void MultiMessage::MasterRxTask(void *pvParameters)
 			}
 			#endif
 		}
-		// 获取Master 的主动发送的队列，转发出去
-		if(uxQueueMessagesWaiting(Multi_Message->master_tx_queue) != 0){
-			struct_Mesg_Package tx_package;
-			xQueueReceive(Multi_Message->master_tx_queue, &tx_package, pdMS_TO_TICKS(5));
-			xQueueSend(Multi_Message->tx_queue_handle, &tx_package, pdMS_TO_TICKS(20));
+		// 获取Master 的主动发送的队列，转发出去，限制发送间隔最小 5ms
+		static unsigned int last_send_time = 0;
+		if(millis() > last_send_time + 5){
+			if(uxQueueMessagesWaiting(Multi_Message->master_tx_queue) != 0){
+				struct_Mesg_Package tx_package;
+				xQueueReceive(Multi_Message->master_tx_queue, &tx_package, pdMS_TO_TICKS(5));
+				xQueueSend(Multi_Message->tx_queue_handle, &tx_package, pdMS_TO_TICKS(20));
+
+				last_send_time = millis();
+			}
 		}
 
 		// 间隔2ms 查询一次接收FIFO中断
-		vTaskDelay(pdMS_TO_TICKS(2));
+		vTaskDelay(pdMS_TO_TICKS(1));
 	}
 }
 void MultiMessage::SlaverRxTask(void *pvParameters)
@@ -765,7 +770,7 @@ void MultiMessage::SlaverRxTask(void *pvParameters)
 		if(0 == Multi_Message->CheckPackage()){
 			Multi_Message->AnalyseRxPackage(0);
 		}
-		vTaskDelay(pdMS_TO_TICKS(5));
+		vTaskDelay(pdMS_TO_TICKS(1));
 	}
 }
 void MultiMessage::TxTask(void *pxParameters)
@@ -792,9 +797,9 @@ void MultiMessage::TxTask(void *pxParameters)
 		Multi_Message->Wk2114writeFIFO(tx_data.addr, (unsigned char *)(&tx_data) + send_index, package_len);
 
 		if(Multi_Message->device_role == ROLE_MASTER){
-			vTaskDelay(pdMS_TO_TICKS(2));
+			vTaskDelay(pdMS_TO_TICKS(1));
 		}else{
-			vTaskDelay(pdMS_TO_TICKS(15));
+			vTaskDelay(pdMS_TO_TICKS(10));
 		}
 	}
 }

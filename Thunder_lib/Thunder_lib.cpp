@@ -100,7 +100,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'V', 1, 0, 1};
+const uint8_t Version_FW[4] = {'V', 1, 1, 0};
 // const uint8_t Version_FW[4] = {0, 21, 0, 0};
 
 uint32_t thunder_system_parameter = 0;
@@ -3800,6 +3800,11 @@ uint32_t THUNDER::Get_Virtual_Timer(uint32_t timer_index)
   return ret_value;
 }
 
+/**
+ * @brief 将虚拟计时器清零，清零后的计时器数值变为0，然后立刻从 0 开始计时，+1/ms
+ * 
+ * @param timer_index 计时器的序号，无符号类型，有效值为0~5，超出最大值的以 5 替代
+ */
 void THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
 {
   if(timer_index == 0){
@@ -3811,6 +3816,12 @@ void THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
   timer_value[timer_index-1] = millis();
 }
 
+/**
+ * @brief 由于通信收发需要消耗RAM和CPU线程运行时间，
+ * 因此只有在需要用到通信时再打开多机通信，不需要后就关闭多机通信，
+ * 调用 Open_Multi_Message() 打开多机通信，调用 Close_Multi_Message() 关闭多机通信，
+ * 
+ */
 void THUNDER::Open_Multi_Message()
 {
 	if(Multi_Message != NULL){
@@ -3820,6 +3831,13 @@ void THUNDER::Open_Multi_Message()
 	Multi_Message = new MultiMessage();
 	Multi_Message->OpenCommunicate(&recv_int_message);
 }
+
+/**
+ * @brief 由于通信收发需要消耗RAM和CPU线程运行时间，
+ * 因此只有在需要用到通信时再打开多机通信，不需要后就关闭多机通信，
+ * 调用 Close_Multi_Message() 关闭多机通信，
+ * 
+ */
 void THUNDER::Close_Multi_Message()
 {
 	if(Multi_Message == NULL){
@@ -3830,24 +3848,15 @@ void THUNDER::Close_Multi_Message()
 	delete Multi_Message;
 	Multi_Message = NULL;
 }
-int THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
-{
-	if(Multi_Message == NULL){
-		return -1;
-	}
-	return Multi_Message->SendNameVarInt(addr, name, var_value);
-}
-int THUNDER::RecvNameVarInt(char *name)
-{
-	std::vector<struct_Int_Message>::iterator i;
-	for(i=recv_int_message.begin(); i!=recv_int_message.end(); i++){
-		if( i->message == std::string(name) ){
-			return i->value;
-		}
-	}
 
-	return 0;
-}
+/**
+ * @brief 为了方便使用多机通信，可以将数据传输进行 命名，
+ * 支持设置最多 32个 命名变量，名字长度最大 16个字符，
+ * 可以调用 InitNameVarInt() 设置 int 变量初始值，否则变量的初始值为 0
+ * 
+ * @param name 传入被传输的变量名称字符串，
+ * @param init_value 传入 int 变量数值
+ */
 void THUNDER::InitNameVarInt(char *name, int init_value)
 {
 	std::vector<struct_Int_Message>::iterator i;
@@ -3860,4 +3869,43 @@ void THUNDER::InitNameVarInt(char *name, int init_value)
 		struct_Int_Message new_message = {std::string(name), init_value};
 		recv_int_message.push_back(new_message);
 	}
+}
+
+/**
+ * @brief 为了方便使用多机通信，可以将数据传输进行 命名，
+ * 支持设置最多 32个 命名变量，名字长度最大 16个字符，
+ * 可以调用 SendNameVarInt() 向某个地址传输一个命名 int变量
+ * 
+ * @param addr 传入目的地址
+ * @param name 传入被传输的变量名称字符串，
+ * @param var_value 传入 int 变量数值
+ * @return int 返回错误码，正常发送返回0
+ */
+int THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
+{
+	if(Multi_Message == NULL){
+		return -1;
+	}
+	return Multi_Message->SendNameVarInt(addr, name, var_value);
+}
+
+/**
+ * @brief 为了方便使用多机通信，可以将数据传输进行 命名，
+ * 支持设置最多 32个 命名变量，名字长度最大 16个字符，
+ * 可以调用 RecvNameVarInt() 更新命名 int变量，
+ * 如果没有该命名数值的更新，则返回旧的数值
+ * 
+ * @param name 传入被传输的变量名称字符串，
+ * @return int 返回最新数值
+ */
+int THUNDER::RecvNameVarInt(char *name)
+{
+	std::vector<struct_Int_Message>::iterator i;
+	for(i=recv_int_message.begin(); i!=recv_int_message.end(); i++){
+		if( i->message == std::string(name) ){
+			return i->value;
+		}
+	}
+
+	return 0;
 }
