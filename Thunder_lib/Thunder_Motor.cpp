@@ -128,8 +128,8 @@ void Get_Encoder_Value();
 volatile SemaphoreHandle_t Timer_PID_Flag;
 
 // 
-volatile int32_t rotate_RawValue_Left;
-volatile int32_t rotate_RawValue_Right;
+volatile int32_t rotate_RawValue_Left = 0;
+volatile int32_t rotate_RawValue_Right = 0;
 
 volatile uint32_t PID_Timer_Enable = 0;
 
@@ -1264,7 +1264,7 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
 {
   int32_t rotate_value;
 
-  rotate_value = rotate_RawValue_Left;
+  rotate_value = rotate_RawValue_Left - rotate_Record_Origin_Left;
   rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;
   
   return rotate_value;
@@ -1273,7 +1273,7 @@ int32_t THUNDER_MOTOR::Get_R_RotateValue()
 {
   int32_t rotate_value;
 
-  rotate_value = rotate_RawValue_Right;
+  rotate_value = rotate_RawValue_Right - rotate_Record_Origin_Right;
   rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;
   
   return rotate_value;
@@ -1286,7 +1286,7 @@ int32_t THUNDER_MOTOR::Get_R_RotateValue()
  */
 void THUNDER_MOTOR::Clear_L_RotateValue()
 {
-  rotate_RawValue_Left = 0;
+  rotate_Record_Origin_Left = rotate_RawValue_Left;
 }
 /*
  * 清零右轮旋转量记录，一定要有配置PID定时器 Setup_PID_Timer()，此调用才有效
@@ -1296,5 +1296,5 @@ void THUNDER_MOTOR::Clear_L_RotateValue()
  */
 void THUNDER_MOTOR::Clear_R_RotateValue()
 {
-  rotate_RawValue_Right = 0;
+  rotate_Record_Origin_Right = rotate_RawValue_Right;
 }

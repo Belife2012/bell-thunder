@@ -59,3 +59,35 @@ bool DISK_MANAGER::Read_Ble_Server_Mac(uint8_t* mac_addr)
 
   return true;
 }
+
+bool DISK_MANAGER::Write_Attitude_Calibrate(const float * calibrate_data)
+{
+  size_t length;
+
+  length = EEPROM.writeBytes( ATTITUDE_ADDR_CALIBRATE_DATA, calibrate_data, ATTITUDE_SIZE_CALIBRATE_DATA );
+  if(length != ATTITUDE_SIZE_CALIBRATE_DATA){
+    return false;
+  }
+  length = EEPROM.writeByte( ATTITUDE_ADDR_CALIBRATE_FALG, ATTITUDE_FLAG_HAVE_CALIBRATE );
+  if(length != ATTITUDE_SIZE_CALIBRATE_FALG){
+    return false;
+  }
+
+  return EEPROM.commit();
+}
+bool DISK_MANAGER::Read_Attitude_Calibrate(float * const calibrate_data)
+{
+  size_t length;
+  uint8_t calibrate_flag;
+  calibrate_flag = EEPROM.readByte( ATTITUDE_ADDR_CALIBRATE_FALG );
+
+  if(calibrate_flag != ATTITUDE_FLAG_HAVE_CALIBRATE){
+    return false;
+  }
+  length = EEPROM.readBytes( ATTITUDE_ADDR_CALIBRATE_DATA, calibrate_data, ATTITUDE_SIZE_CALIBRATE_DATA );
+  if(length != ATTITUDE_SIZE_CALIBRATE_DATA){
+    return false;
+  }else{
+    return true;
+  }
+}

@@ -74,7 +74,15 @@
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
 #include <Bell_Barbette.h>
+
+// 串口多机通信
 #include <wk2xxx.h>
+
+// 九轴姿态传感器
+#include "Sensor_Attitude.h"
+
+// 火焰传感器
+#include "sensor_flame.h"
 
 // 遥控器
 #include <Remoter.h>
@@ -134,6 +142,9 @@
 // 触碰模块
 #define TOUCH_ADDR_DEVICE   0x10   //触碰模块I2C器件地址
 
+// 彩色灯条LED
+#define CLOOUR_LED_DEVICE   0x11   //彩色灯条IIC器件地址
+
 // 光电模块
 #define LIGHT_ADDR_DEVICE   0x52   //光电模块I2C器件地址
 
@@ -154,6 +165,9 @@ extern WT588 Speaker;
 
 // 超声波
 extern US_I2C US;
+
+// 火焰传感器
+extern SENSOR_FLAME Flame_Sensor;
 
 // 颜色识别
 extern BH1745NUC Colour_Sensor;

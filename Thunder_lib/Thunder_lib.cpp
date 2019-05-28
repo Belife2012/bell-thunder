@@ -64,25 +64,29 @@ esp_adc_cal_value_t cal_value_type;
 // 音频
 WT588 Speaker = WT588(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
 
-// 超声波
+// IIC选通芯片TCA9548的地址是（IIC address：0x70）
+// 超声波（IIC address：0x01）
 US_I2C US(ADD_I2C_US);
 
-// 颜色识别
+// 火焰传感器（IIC address：0x02）
+SENSOR_FLAME Flame_Sensor(FLAME_IIC_ADDR);
+
+// 颜色识别（IIC address：0x38）
 BH1745NUC Colour_Sensor(ADD_I2C_COLOUR); //I2C从机地址
 
-// 彩色LED
-XT1511_I2C I2C_LED(0x11);
+// 彩色LED（IIC address：0x11）
+XT1511_I2C I2C_LED(CLOOUR_LED_DEVICE);
 
-// 单色色LED
+// 单色色LED（IIC address：0x69）
 DOT_MATRIX_LED Dot_Matrix_LED;
 
-// 触碰传感器
+// 触碰传感器（IIC address：0x10）
 TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
 
-// 光电传感器
+// 光电传感器（IIC address：0x52）
 LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
 
-// 炮台模组
+// 炮台模组 （IIC address：0x24）
 Bell_Barbette Thunder_Barbette;
 
 // 蓝牙
@@ -100,8 +104,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'V', 1, 1, 0};
-// const uint8_t Version_FW[4] = {0, 21, 0, 0};
+const uint8_t Version_FW[4] = {'V', 1, 2, 0};
 
 uint32_t thunder_system_parameter = 0;
 // 所有模块初始化
@@ -147,6 +150,10 @@ void THUNDER::Setup_All(void)
   Stop_All();               // 
 
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
+	
+	// 九轴传感器初始化
+	Attitude_Sensor.Init_Sensor();
+	Attitude_Sensor.Open_Sensor();
   
   Thunder_BLE.Setup_BLE();
 

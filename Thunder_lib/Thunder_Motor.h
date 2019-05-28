@@ -281,6 +281,9 @@ class THUNDER_MOTOR
     struct MotorPosition_Struct Position_Ctrl_L;
     struct MotorPosition_Struct Position_Ctrl_R;
 
+    int32_t rotate_Record_Origin_Left = 0;
+    int32_t rotate_Record_Origin_Right = 0;
+
     // drive car 
     struct DriveCarPid_Struct drive_car_pid;
     float drive_speed = 0;
