@@ -835,13 +835,13 @@ void MultiMessage::OpenCommunicate(std::vector<struct_Int_Message> *message_stor
 	if(ROLE_MASTER == device_role){
 		tx_queue_handle = xQueueCreate(10, sizeof(struct_Mesg_Package));
 		master_tx_queue = xQueueCreate(2, sizeof(struct_Mesg_Package));
-		xTaskCreatePinnedToCore(MultiMessage::MasterRxTask, "MasterRxTask", 4096, NULL, 1, &rx_task_handle, 0);
+		xTaskCreatePinnedToCore(MultiMessage::MasterRxTask, "MasterRxTask", 4096, NULL, 1, &rx_task_handle, 1);
 	}else{
 		tx_queue_handle = xQueueCreate(5, sizeof(struct_Mesg_Package));
-		xTaskCreatePinnedToCore(MultiMessage::SlaverRxTask, "SlaverRxTask", 2048, NULL, 1, &rx_task_handle, 0);
+		xTaskCreatePinnedToCore(MultiMessage::SlaverRxTask, "SlaverRxTask", 2048, NULL, 1, &rx_task_handle, 1);
 	}
-	xTaskCreatePinnedToCore(MultiMessage::TxTask, "TxTask", 2048, NULL, 1, &tx_task_handle, 0);
-	xTaskCreatePinnedToCore(MultiMessage::ManagerTask, "Manager", 1024, NULL, 2, NULL, 0);
+	xTaskCreatePinnedToCore(MultiMessage::TxTask, "TxTask", 2048, NULL, 1, &tx_task_handle, 1);
+	xTaskCreatePinnedToCore(MultiMessage::ManagerTask, "Manager", 1024, NULL, 2, NULL, 1);
 
 	Serial.printf("device_role: %d \n", device_role);
 }
