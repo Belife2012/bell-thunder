@@ -65,27 +65,23 @@ esp_adc_cal_value_t cal_value_type;
 WT588 Speaker = WT588(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
 
 // IIC选通芯片TCA9548的地址是（IIC address：0x70）
+// 姿态传感器（IIC address: 0x68 0x0C）
 // 超声波（IIC address：0x01）
 US_I2C US(ADD_I2C_US);
-
 // 火焰传感器（IIC address：0x02）
 SENSOR_FLAME Flame_Sensor(FLAME_IIC_ADDR);
-
+// 风扇电动机(IIC address：0x03)
+MOTOR_FAN Fan_Motor(FAN_IIC_ADDR);
 // 颜色识别（IIC address：0x38）
 BH1745NUC Colour_Sensor(ADD_I2C_COLOUR); //I2C从机地址
-
 // 彩色LED（IIC address：0x11）
 XT1511_I2C I2C_LED(CLOOUR_LED_DEVICE);
-
 // 单色色LED（IIC address：0x69）
 DOT_MATRIX_LED Dot_Matrix_LED;
-
 // 触碰传感器（IIC address：0x10）
 TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
-
 // 光电传感器（IIC address：0x52）
 LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
-
 // 炮台模组 （IIC address：0x24）
 Bell_Barbette Thunder_Barbette;
 

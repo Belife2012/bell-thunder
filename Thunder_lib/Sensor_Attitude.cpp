@@ -54,6 +54,7 @@ void ATTITUDE::ShowAttitude()
  * @brief 获取姿态传感器的各个方向的旋转角度，
  * 角度值未清零时，角度值会进行累加
  * 注意：测量某一轴的旋转角度时，尽量保持其他两轴不动，否则测量误差很大
+ *      测量结果会产生叠加误差，所以一般不会用于测量长时间的旋转角度
  * 
  * @param axis 
  * @return float 
@@ -78,7 +79,7 @@ double ATTITUDE::GetAttitudeAngle(enum_Attitude_Axis axis)
 /**
  * @brief 清零旋转角度的记录，从0 开始记录旋转角度；
  * 
- * @param axis 可以分别清零x, y, z 轴，也可以全部一起清零
+ * @param axis 可以分别清零x, y, z 轴，ALL_AXIS可以全部一起清零
  */
 void ATTITUDE::ClearAttitudeAngle(enum_Attitude_Axis axis)
 {
@@ -126,6 +127,18 @@ float ATTITUDE::GetAttitudeAngleV(enum_Attitude_Axis axis)
     }
 }
 
+/**
+ * @brief 获取姿态传感器的各个方向(X Y Z)的加速度（m/s2）
+ * 这里所说的加速度是包含了重力加速度，其处于静止状态时会有一个固定的重力加速度
+ * （也就是9.8 m/s2，所以有时候也叫重力传感器），如果器件不处于严格的水平状态，
+ * 各轴向的重力加速度分量会因轴向不同而发生改变。如果器件外加一个运动加速度或者
+ * 旋转（器件会感应到旋转产生的向心力），器件感应到的就不仅仅是重力加速度，还有
+ * 运动加速度和旋转向心力，所以要用于某个方面的检测时，要控制好其他变量，或者
+ * 做好数据融合算法。
+ * 
+ * @param axis 
+ * @return float 
+ */
 float ATTITUDE::GetAttitudeAccel(enum_Attitude_Axis axis)
 {
     if(axis < 3){
@@ -234,8 +247,8 @@ void ATTITUDE::SetShakeThreshold(float new_value)
 /**
  * @brief 获取震动状态，在震动灵敏度感应范围内如果检测到震动，返回true，否则返回false
  * 
- * @return true 
- * @return false 
+ * @return true 检测到震动
+ * @return false 没有检测到震动
  */
 bool ATTITUDE::CheckShakeStatus() 
 {
