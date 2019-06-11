@@ -26,7 +26,7 @@ unsigned char SENSOR_FLAME::Get_Flame_Intensity()
 
 bool SENSOR_FLAME::Check_Flame()
 {
-    if( 50 < Get_Flame_Intensity() ){
+    if( 10 < Get_Flame_Intensity() ){
         return true;
     }else {
         return false;
