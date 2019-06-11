@@ -54,19 +54,14 @@
 
 // 音频
 #include "WT588.h"
-
 // 超声波
 #include <US_I2C.h>
-
 // 颜色识别
 #include <BH1745NUC.h>
-
 // 触碰传感器
 #include <Touch_I2C.h>
-
 // 光电传感器
 #include <LightDetect_I2C.h>
-
 // 雷霆
 #include <Thunder_BLE.h>
 #include <Ble_Client.h>
@@ -74,16 +69,14 @@
 #include <Thunder_Motor.h>
 #include <Task_Mesg.h>
 #include <Bell_Barbette.h>
-
 // 串口多机通信
 #include <wk2xxx.h>
-
 // 九轴姿态传感器
 #include "Sensor_Attitude.h"
-
 // 火焰传感器
 #include "sensor_flame.h"
-
+// 风扇电动机
+#include "motor_fan.h"
 // 遥控器
 #include <Remoter.h>
 
@@ -159,32 +152,25 @@
 extern THUNDER_BLE Thunder_BLE;
 extern BLE_CLIENT Ble_Client;
 extern THUNDER_MOTOR Thunder_Motor;
-
 // 音频
 extern WT588 Speaker;
-
 // 超声波
 extern US_I2C US;
-
 // 火焰传感器
 extern SENSOR_FLAME Flame_Sensor;
-
+// 风扇电动机
+extern MOTOR_FAN Fan_Motor;
 // 颜色识别
 extern BH1745NUC Colour_Sensor;
-
 // 彩色LED
 extern XT1511_I2C I2C_LED;
-
 // 触碰传感器
 extern TOUCH_I2C Touch_Sensor;
-
 // 光电传感器
 extern LIGHTDETECT_I2C Light_Sensor;
-
 // 单色LED
 extern DOT_MATRIX_LED Dot_Matrix_LED;
 extern HT16D35B HT16D35B;// IIC Address: 0x69
-
 // 遥控器
 extern REMOTER Ble_Remoter;
 extern Bell_Barbette Thunder_Barbette;
