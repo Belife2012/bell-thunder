@@ -48,7 +48,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
 
   cnt = 0;
   if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
-    while (Wire.available())
+    while (Wire.available() && cnt < size)
     {
       data[cnt] = Wire.read();
       cnt++;

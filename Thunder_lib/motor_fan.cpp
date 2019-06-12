@@ -9,7 +9,13 @@ void MOTOR_FAN::Set_Fan_Speed(unsigned char speed)
 
 unsigned char MOTOR_FAN::Get_Fan_Speed(void)
 {
-    return fan_speed;
+    unsigned char speed;
+
+    if(0 != read(FAN_REG_SPEED, &speed, 1)){
+        speed = 0;
+    }
+
+    return speed;
 }
 
 
