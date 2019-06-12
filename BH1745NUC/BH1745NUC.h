@@ -1,32 +1,4 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 颜色传感器模块库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  1.  BH1745NUC(int slave_address);                                   // 配置I2C地址
- *  2.  byte Setup(void);                                               // 初始化设置
- *  3.  byte Get_RGBC_Data(unsigned short *data);                       // 获取RGBC
- *  4.  void RGBtoHSV(unsigned short *RGBC, float *HSV);                // 计算HSV
- *  5.  uint8_t Colour_Recognition(unsigned short *RGBC, float *HSV);   // 识别颜色 (预留)
- * 
- ************************************************/
+#include "Sensor_IIC.h"
 
 #ifndef _BH1745NUC_H_
 #define _BH1745NUC_H_
@@ -191,7 +163,7 @@ typedef enum{
   NO_CARD
 }enum_Color_Card;
 
-class BH1745NUC
+class BH1745NUC : public SENSOR_IIC
 {
   public:
     float env_backlight_c;
@@ -203,15 +175,13 @@ class BH1745NUC
     void RGBtoHSV(unsigned short *RGBC, float *HSV);  // 计算HSV
 
     uint8_t Colour_Recognition(unsigned short *RGBC); // 识别颜色 (预留)
+    uint8_t Thunder_Get_Color_Sensor_Data(uint8_t sensorChannel);
 
-    byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
   private:
-    byte _device_address;
     byte device_detected;// 0为未插入设备，!0为已插入设备
 
     void Env_Backlight_Filter(unsigned short new_data);
     byte get_rawval(unsigned char *data);                                               // 类内部使用，读取传感器数据
-    byte read(unsigned char memory_address, unsigned char *data, unsigned char size);             // 类内部使用，I2C通讯，发送并读取
 };
 
 #endif // _BH1745NUC_H_

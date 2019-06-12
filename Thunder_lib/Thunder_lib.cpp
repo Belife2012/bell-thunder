@@ -125,7 +125,7 @@ void THUNDER::Setup_All(void)
   Close_Multi_Message();
 
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
-  Select_Sensor_AllChannel();
+  SENSOR_IIC::Select_Sensor_AllChannel();
 
   Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
 
@@ -3657,137 +3657,6 @@ void THUNDER::Get_Queue_Encoder(void){
 //   xQueueSend(Task_Mesg.Queue_encoder_right, &F_encoder_right, 0);
 // }
 #endif
-}
-
-/* 
- * I2C端口选通，变量channelData 相应位(每一bit代表一个通道) 为1 是 选通，可以多通道选通
- * 
- * @parameter: 
- * @return: 返回的是IIC 操作状态码，0 为成功， 非0 为其他状态
- */
-uint8_t THUNDER::Set_I2C_Chanel(uint8_t channelData)
-{
-  uint8_t ret;
-  uint8_t regValue;
-
-  // 保证初始值与channelData 不一致
-  regValue = (channelData == 0) ? 0xff : 0;
-  // 重复连接 IIC 扩展芯片
-  for (uint8_t i = 0; i < 2; i++)
-  {
-	// TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
-
-	Task_Mesg.Take_Semaphore_IIC();
-	Wire.beginTransmission(0x70);
-	Wire.write(channelData);
-	ret = Wire.endTransmission(true);
-#ifdef COMPATIBILITY_OLD_ESP_LIB
-	if (ret == I2C_ERROR_BUSY)
-	{
-	  Wire.reset();
-	}
-#endif
-	Task_Mesg.Give_Semaphore_IIC();
-	if (ret != 0)
-	{
-	  I2C_channel_opened = 0x00;
-	  Serial.printf("### TCA9548 Write I2C Channel Error: %d \n", ret);
-	  // delay(100);
-	}
-#if 0 // 每次的传感器操作都需要调用，为了速度，不能进行读写比较
-	else
-	{
-	  // read TCA9548
-	  Task_Mesg.Take_Semaphore_IIC();
-	  if (0 != Wire.requestFrom((byte)0x70, (byte)1, (byte) true))
-	  {
-		while (Wire.available())
-		{
-		  regValue = Wire.read();
-		}
-	  }
-	  Task_Mesg.Give_Semaphore_IIC();
-
-	  if (regValue == channelData)
-	  {
-		I2C_channel_opened = channelData;
-		break;
-	  }
-	  else
-	  {
-		Serial.println("### TCA9548 Read not equal Write");
-		// delay(200);
-	  }
-	}
-#endif
-  }
-
-  return ret;
-}
-
-/*
- * 选择传感器通道1/2/3，选择后只有当前通道可使用，可用多个相同模块
- * 
- * @parameter：需要使用的传感器接口号
- * @return: 设置成功返回0，发生错误返回非0 的错误码
- *          错误码1：没有相应的传感器端口号
- *          错误码2：硬件不支持选择传感器端口号
- */
-uint8_t THUNDER::Select_Sensor_Channel(uint8_t sensorChannel)
-{
-  uint8_t ret;
-
-  switch (sensorChannel)
-  {
-  case 1:
-	ret = Set_I2C_Chanel(0x39);
-	break;
-  case 2:
-	ret = Set_I2C_Chanel(0x3a);
-	break;
-  case 3:
-	ret = Set_I2C_Chanel(0x3c);
-	break;
-  default:
-	Serial.printf("### No Sensor Channel! ###");
-	return 1;
-	break;
-  }
-
-  if (ret != 0)
-  {
-	return 2;
-  }
-
-  return 0;
-}
-
-/* 
- * 选通所有传感器通道，初始化时一定要调用后才能使用屏幕等等IIC接口的模块。
- *   调用后，不能使用多个相同模块。
- * 
- * @parameter:
- * @return: 0 表示操作成功， 1 为初始化 IIC 失败
- */
-uint8_t THUNDER::Select_Sensor_AllChannel()
-{
-  uint8_t ret;
-
-  // reset
-  pinMode(15, OUTPUT);
-  digitalWrite(15, LOW);
-  delay(1);
-  digitalWrite(15, HIGH);
-  delay(5);
-
-  ret = Set_I2C_Chanel(0x3f); //全选通
-
-  if (ret != 0)
-  {
-	return 1;
-  }
-
-  return 0;
 }
 
 uint32_t THUNDER::Get_Virtual_Timer(uint32_t timer_index)

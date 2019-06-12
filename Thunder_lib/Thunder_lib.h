@@ -51,6 +51,7 @@
 #include "Esp.h"
 #include <Wire.h>
 #include "data_type.h"
+#include "generalFunc.h"
 
 // 音频
 #include "WT588.h"
@@ -286,10 +287,6 @@ class THUNDER
     unsigned short RGBC[4] = {0};
     float HSV[3] = {0};
     uint8_t Colour_Num = 0;
-    
-    // I2C端口选通
-    uint8_t I2C_channel_opened;
-    uint8_t Set_I2C_Chanel(uint8_t channelData);
 
     // 模拟计时器
     uint32_t timer_value[5] = {0,0,0,0,0};
@@ -388,10 +385,6 @@ class THUNDER
     void Reset_Rx_Data(void);       // 清空接收数据
     void Set_Need_Communication(bool);
     void Set_Ble_Type(enum_Ble_Type new_type);
-
-    // 传感器端口选择
-    uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
-    uint8_t Select_Sensor_AllChannel();
 
     // 计时器接口
     uint32_t Get_Virtual_Timer(uint32_t timer_index);

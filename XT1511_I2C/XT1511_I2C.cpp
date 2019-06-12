@@ -36,13 +36,13 @@
 #include <Task_Mesg.h>
 
 // 配置I2C地址
-XT1511_I2C::XT1511_I2C(uint8_t slave_address) : LEDs_Data({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                                                           0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
-                                                LED_Dynamic(0),
-                                                ledDynamicIndex(0)
-{
-  _device_address = slave_address;
-}
+XT1511_I2C::XT1511_I2C(uint8_t slave_address) : 
+  SENSOR_IIC(slave_address),
+  LEDs_Data({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+  LED_Dynamic(0),
+  ledDynamicIndex(0)
+{}
 
 // 写入一共可以控制多少个灯(预留)
 // 参数 --> 需要控制灯的个数
@@ -126,17 +126,7 @@ void XT1511_I2C::LED_OFF(void)
   Set_LED_Dynamic(0xff);
   memset(LEDs_Data, 0, RGB_LED_DATA_SIZE);
 
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(XT1511_I2C_COM_OFF);
-  Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
+  write(XT1511_I2C_COM_OFF, NULL, 0);
 }
 
 // 0xA1  按照现有数据刷新
@@ -144,17 +134,7 @@ void XT1511_I2C::LED_Updata(void)
 {
   byte rc;
 
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(XT1511_I2C_COM_UODATA);
-  Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
+  write(XT1511_I2C_COM_UODATA, NULL, 0);
 }
 
 // 0xA2  刷新预存数据 (指令预留)
@@ -172,25 +152,6 @@ void XT1511_I2C::LED_Show(uint8_t number)
     Serial.println("# XT1511_I2C show fail");
     #endif
   }
-}
-
-// 类内部使用，I2C通讯，发送
-byte XT1511_I2C::write(unsigned char memory_address, unsigned char *data, unsigned char size)
-{
-  byte rc;
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(memory_address);
-  Wire.write(data, size);
-  rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
-  return (rc);
 }
 
 /* 
@@ -332,17 +293,7 @@ void XT1511_I2C::LED_Flush_Blink()
   }
   else if (ledDynamicIndex == BLINK_PERIOD)
   {
-    Task_Mesg.Take_Semaphore_IIC();
-    Wire.beginTransmission(_device_address); // 开启发送
-    Wire.write(XT1511_I2C_COM_OFF);
-    Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-    #ifdef COMPATIBILITY_OLD_ESP_LIB
-    if (rc == I2C_ERROR_BUSY)
-    {
-      Wire.reset();
-    }
-    #endif
-    Task_Mesg.Give_Semaphore_IIC();
+    write(XT1511_I2C_COM_OFF, NULL, 0);
   }
   else if (ledDynamicIndex >= BLINK_PERIOD + BLINK_PERIOD)
   {

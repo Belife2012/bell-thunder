@@ -68,14 +68,14 @@ void setup_AutoCtrl_1()
 
   Serial.printf("timer1: %.3f\n",Thunder.Get_Virtual_Timer(1));
   Thunder.Reset_Virtual_Timer(1);
-  Serial.printf("light1: %.3f\n",Light_Sensor.Get_Light_Value());
+  Serial.printf("light1: %.3f\n",Light_Sensor.Get_Light_Value(0));
 
   delay(3000);
-  Light_Sensor.Set_Dark_Value(50);
+  Light_Sensor.Set_Dark_Value(0,50);
   
   Serial.printf("timer1: %.3f\n",Thunder.Get_Virtual_Timer(1));
   Serial.printf("timer4: %.3f\n\n",Thunder.Get_Virtual_Timer(4));
-  Serial.printf("light2: %.3f\n",Light_Sensor.Get_Light_Value());
+  Serial.printf("light2: %.3f\n",Light_Sensor.Get_Light_Value(0));
 }
 void loop_AutoCtrl_1()
 {

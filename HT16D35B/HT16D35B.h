@@ -25,6 +25,7 @@
  *  3.  byte LED_Show(unsigned char *data, int size);   // 显示图案，参数*data为灯数据，参数size为数据长度
  * 
  ************************************************/
+#include "Sensor_IIC.h"
 
 #ifndef _HT16D35B_H_
 #define _HT16D35B_H_
@@ -42,7 +43,7 @@
 
 #define HT16D35B_DISPLAY_RAM                  (0x80)    // 灰度模式为00h~fbh
 
-class HT16D35B
+class HT16D35B : public SENSOR_IIC
 {
   public:
     HT16D35B(int slave_address);                    // 配置I2C地址
@@ -51,11 +52,7 @@ class HT16D35B
     byte LED_Show(const unsigned char *data, int size);   // 显示图案，参数*data为灯数据，参数size为数据长度
     
   private:
-    byte _device_address;
     byte device_detected;// 0为未插入设备，!0为已插入设备
-
-    byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
-    byte read(unsigned char memory_address, unsigned char *data, unsigned char size);             // 类内部使用，I2C通讯，发送并读取 (预留)
 };
 
 #endif // _HT16D35B_H_

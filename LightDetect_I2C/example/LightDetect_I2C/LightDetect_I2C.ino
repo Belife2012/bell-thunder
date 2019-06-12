@@ -42,7 +42,7 @@ void loop() {
       break;
   }
 
-  lightValue = Light_Sensor.Get_Light_Value();
+  lightValue = Light_Sensor.Get_Light_Value(0);
   Serial.printf("*** light Value: %.2f \n", lightValue);
 
   lightIndex++;

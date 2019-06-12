@@ -9,10 +9,9 @@
  * @parameters: 触碰模块的 IIC 地址
  * @return: 
  */
-TOUCH_I2C::TOUCH_I2C(int slave_address)
-{
-  _device_address = slave_address;
-}
+TOUCH_I2C::TOUCH_I2C(int slave_address) : 
+  SENSOR_IIC(slave_address)
+{}
 
 /* 
  * 获取触碰状态，0为未按下状态，1为按下状态，其他的过程值 可以通过连续获取状态做判断触碰过程
@@ -106,56 +105,28 @@ byte TOUCH_I2C::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueValue)
   return ret;
 }
 
-// 类内部使用，I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功
-byte TOUCH_I2C::write(unsigned char memory_address, unsigned char *data, unsigned char size)
+int TOUCH_I2C::Thunder_Get_Touch_Data(uint8_t sensorChannel)
 {
-  byte rc;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
-  Wire.write(data, size);
-  rc = Wire.endTransmission();
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
-  return (rc);
+    SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+    byte statusValue1;
+    Get_Status( & statusValue1);
+    return statusValue1;
 }
 
-// 类内部使用，I2C通讯，发送并读取；返回值 非0 表示失败，其中0xFF表示没有读取数量有误
-byte TOUCH_I2C::read(unsigned char memory_address, unsigned char *data, unsigned char size)
+void TOUCH_I2C::Thunder_Set_Touch_Value(uint8_t sensorChannel, byte RedValue, byte GreenValue, byte BlueValue)
 {
-  byte rc;
-  unsigned char cnt = 0;
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  Set_LED_RGBvalue(RedValue, GreenValue, BlueValue);
+}
 
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(memory_address);
-  rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  if (!(rc == 0 || rc == 7))
-  {
-    #ifdef COMPATIBILITY_OLD_ESP_LIB
-    if(rc == I2C_ERROR_BUSY){
-      Wire.reset();
-    }
-    #endif
-    Task_Mesg.Give_Semaphore_IIC();
-    return rc;
+bool TOUCH_I2C::Thunder_Get_Touch_Status(uint8_t sensorChannel, int status) 
+{
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  if(status == 0) {
+    return Check_Touch_Event(TOUCH_EVENT_RELEASE);
+  } else if(status == 1) {
+    return Check_Touch_Event(TOUCH_EVENT_PRESS);
+  } else if(status == 2) {
+    return Check_Touch_Event(TOUCH_EVENT_TOUCH);
   }
-
-  cnt = 0;
-  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
-    while (Wire.available())
-    {
-      data[cnt] = Wire.read();
-      cnt++;
-    }
-  }
-  Task_Mesg.Give_Semaphore_IIC();
-
-  return (cnt != 0) ? 0 : 0xff;
 }

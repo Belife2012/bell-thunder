@@ -1,33 +1,3 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 颜色传感器模块库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  1.  BH1745NUC(int slave_address);                                   // 配置I2C地址
- *  2.  byte Setup(void);                                               // 初始化设置
- *  3.  byte Get_RGBC_Data(unsigned short *data);                       // 获取RGBC
- *  4.  void RGBtoHSV(unsigned short *RGBC, float *HSV);                // 计算HSV
- *  5.  uint8_t Colour_Recognition(unsigned short *RGBC, float *HSV);   // 识别颜色
- * 
- ************************************************/
-
 #include <Arduino.h>
 #include <Wire.h>
 #include <BH1745NUC.h>
@@ -35,9 +5,9 @@
 
 // 配置I2C地址
 BH1745NUC::BH1745NUC(int slave_address):
+  SENSOR_IIC(slave_address),
   env_backlight_c(NO_COLOR_CARD_C)
 {
-  _device_address = slave_address;
   device_detected = 0;
 }
 
@@ -311,57 +281,41 @@ byte BH1745NUC::get_rawval(unsigned char *data)
   return (rc);
 }
 
-// 类内部使用，I2C通讯，发送
-byte BH1745NUC::write(unsigned char memory_address, unsigned char *data, unsigned char size)
-{
-  byte rc;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
-  Wire.write(data, size);
-  rc = Wire.endTransmission();
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
+uint8_t BH1745NUC::Thunder_Get_Color_Sensor_Data(uint8_t sensorChannel)
+{    
+  uint8_t Colour_Num = 0;
+  unsigned short RGBC[4] = {
+      0
+  };
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  Get_RGBC_Data(RGBC);
+  switch (Colour_Recognition(RGBC)) {
+      case BLACK_CARD:
+          return Colour_Num = 7; //黑色
+          break;
+      case WHITE_CARD:
+          return Colour_Num = 6; //白色
+          break;
+      case RED_CARD:
+          return Colour_Num = 1; //红色
+          break;
+      case BROWN_CARD:
+          return Colour_Num = 5; //棕色
+          break;
+      case YELLOW_CARD:
+          return Colour_Num = 2; //黄色
+          break;
+      case GREEN_CARD:
+          return Colour_Num = 3; //绿色
+          break;
+      case BLUE_CARD:
+          return Colour_Num = 4; //蓝色
+          break;
+      case NO_CARD:
+          return Colour_Num = 0; //无颜色
+          break;
+      default:
+          return Colour_Num = 0; //bad return
+          break;
   }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
-  return (rc);
-}
-
-// 类内部使用，I2C通讯，发送并读取
-byte BH1745NUC::read(unsigned char memory_address, unsigned char *data, unsigned char size)
-{
-  byte rc;
-  unsigned char cnt;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
-  rc = Wire.endTransmission(false);
-  if (!(rc == 0 || rc == 7))
-  {
-    #ifdef COMPATIBILITY_OLD_ESP_LIB
-    if (rc == I2C_ERROR_BUSY)
-    {
-      Wire.reset();
-    }
-    #endif
-    Task_Mesg.Give_Semaphore_IIC();
-    return (rc);
-  }
-
-  cnt = 0;
-  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
-    while (Wire.available())
-    {
-      data[cnt] = Wire.read();
-      cnt++;
-    }
-  }
-  Task_Mesg.Give_Semaphore_IIC();
-
-  return (cnt != 0) ? 0 : 0xff;
 }

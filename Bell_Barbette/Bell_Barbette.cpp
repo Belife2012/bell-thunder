@@ -1,5 +1,6 @@
 #include "Bell_Barbette.h"
 #include "Task_Mesg.h"
+#include "Sensor_IIC.h"
 
 int currrent_pos = 900;
 unsigned long last_shooting_time = 0;
@@ -37,11 +38,11 @@ uint8_t Bell_Barbette::send_data(uint8_t *data)
     length = data[2] + 4;
     data[length - 1] = compute_crc(data,length - 1);
     
-//   Task_Mesg.Take_Semaphore_IIC();
+  Task_Mesg.Take_Semaphore_IIC();
     Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(data,length);
     status = Wire.endTransmission();
-//   Task_Mesg.Give_Semaphore_IIC();
+  Task_Mesg.Give_Semaphore_IIC();
     // while(status != 0)
     // {
     //     Wire.reset();
@@ -268,4 +269,12 @@ void Bell_Barbette::Fire_Control(int pos,uint8_t mode,uint8_t time)
     control_buf[4] = mode;
     control_buf[5] = time;
     send_data(control_buf);
+}
+
+uint16_t Bell_Barbette::Thunder_Battery_Get(uint8_t sensorChannel)
+{
+    SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+    uint16_t value;
+    value = Get_Bullet();
+    return value;
 }

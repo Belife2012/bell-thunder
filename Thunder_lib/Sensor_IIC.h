@@ -11,12 +11,12 @@ class SENSOR_IIC
 {
 public:
   SENSOR_IIC(int slave_address);
-
-  char Get_Flame_Angle();
-  char Get_Flame_Intensity();
+  static uint8_t Set_I2C_Chanel(uint8_t channelData);
+  static uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
+  static uint8_t Select_Sensor_AllChannel();
 
 protected:
-  unsigned char write(unsigned char memory_address, unsigned char *data, unsigned char size);
+  unsigned char write(unsigned char memory_address,const unsigned char *data, unsigned char size);
   unsigned char read(unsigned char memory_address, unsigned char *data, unsigned char size);
 
 private:

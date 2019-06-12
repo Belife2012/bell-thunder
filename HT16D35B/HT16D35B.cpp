@@ -35,9 +35,9 @@
 // #define PRINT_DEBUG_ERROR
 
 // 配置I2C地址
-HT16D35B::HT16D35B(int slave_address)
+HT16D35B::HT16D35B(int slave_address) : 
+  SENSOR_IIC(slave_address)
 {
-  _device_address = slave_address;
   device_detected = 0;
 }
 
@@ -130,18 +130,7 @@ byte HT16D35B::LED_Show(const unsigned char *data, int size)
     Setup();
   }
 
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(HT16D35B_DISPLAY_RAM);
-  Wire.write(data, size);
-  rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
+  rc = write(HT16D35B_DISPLAY_RAM, data, size);
 
   if (rc != 0)
   {
@@ -151,57 +140,4 @@ byte HT16D35B::LED_Show(const unsigned char *data, int size)
   }
   
   return (rc);
-}
-
-// 类内部使用，I2C通讯，发送
-byte HT16D35B::write(unsigned char memory_address, unsigned char *data, unsigned char size)
-{
-  byte rc;
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(memory_address);
-  Wire.write(data, size);
-  rc = Wire.endTransmission(); //  结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
-  return (rc);
-}
-
-byte HT16D35B::read(unsigned char memory_address, unsigned char *data, unsigned char size)
-{
-  byte rc;
-  unsigned char cnt;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
-  rc = Wire.endTransmission(false);
-  if (!(rc == 0 || rc == 7))
-  {
-    #ifdef COMPATIBILITY_OLD_ESP_LIB
-    if (rc == I2C_ERROR_BUSY)
-    {
-      Wire.reset();
-    }
-    #endif
-    Task_Mesg.Give_Semaphore_IIC();
-    return (rc);
-  }
-
-  cnt = 0;
-  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
-    while (Wire.available())
-    {
-      data[cnt] = Wire.read();
-      cnt++;
-    }
-  }
-  Task_Mesg.Give_Semaphore_IIC();
-
-  return (cnt != 0) ? 0 : 0xff;
 }

@@ -25,11 +25,12 @@
  *  3.  float Get_US_cm(void);                    // 获取超声波数据，0.1[cm] 
  * 
  ************************************************/
+#include "Sensor_IIC.h"
 
 #ifndef _US_I2C_H_
 #define _US_I2C_H_
 
-class US_I2C
+class US_I2C : public SENSOR_IIC
 {
 public:
   US_I2C(int slave_address); // 配置I2C地址
@@ -37,12 +38,12 @@ public:
   byte Get_US_Data(unsigned short *data); // 获取超声波数据
   float Get_US_cm(void);                  // 获取超声波数据，0.1[cm]
 
+  int Thunder_Get_US_Data(uint8_t sensorChannel);
+  int Thunder_Detect_Obstacle();
+
 private:
-  byte _device_address;
 
   byte get_rawval(unsigned char *data);                                              // 类内部使用，I2C通讯，读取超声波数据
-  byte write(unsigned char memory_address, unsigned char *data, unsigned char size); // 类内部使用，I2C通讯，发送
-  byte read(unsigned char memory_address, unsigned char *data, unsigned char size);            // 类内部使用，I2C通讯，发送并读取
 };
 
 #endif

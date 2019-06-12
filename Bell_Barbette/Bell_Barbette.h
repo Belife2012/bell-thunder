@@ -24,6 +24,8 @@ public:
     void Fire_Control(int pos,uint8_t mode);
     void Fire_Control(int pos,uint8_t mode,uint8_t time);
 
+    uint16_t Thunder_Battery_Get(uint8_t sensorChannel);
+
 private:
     uint8_t compute_crc(uint8_t *buf,uint8_t num);
     uint8_t send_data(uint8_t *data);

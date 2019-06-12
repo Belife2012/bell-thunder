@@ -36,10 +36,8 @@
 // #define DELAY_BEFORE_READ_US
 
 // 配置I2C地址
-US_I2C::US_I2C(int slave_address)
-{
-  _device_address = slave_address;
-}
+US_I2C::US_I2C(int slave_address) : SENSOR_IIC(slave_address)
+{}
 
 // 获取超声波数据
 // data[0]=高8位数据，data[1]=低8位数据
@@ -118,71 +116,26 @@ byte US_I2C::get_rawval(unsigned char *data)
   return (rc);
 }
 
-// 类内部使用，I2C通讯，发送
-byte US_I2C::write(unsigned char memory_address, unsigned char *data, unsigned char size)
+int US_I2C::Thunder_Get_US_Data(uint8_t sensorChannel)
 {
-  byte rc;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
-  Wire.write(data, size);
-  rc = Wire.endTransmission();
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
-  return (rc);
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  float US_Data_cm = 0;
+  US_Data_cm = Get_US_cm();
+  return (int) US_Data_cm;
 }
 
-// 类内部使用，I2C通讯，发送并读取
-byte US_I2C::read(unsigned char memory_address, unsigned char *data, unsigned char size)
+int US_I2C::Thunder_Detect_Obstacle()
 {
-  byte rc;
-  unsigned char cnt = 0;
-
-  uint32_t lastMillis;
-  uint32_t currentMillis;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-#ifdef DELAY_BEFORE_READ_US
-  lastMillis = millis();
-  while (1)
-  {
-    currentMillis = millis();
-    if (currentMillis > lastMillis + 3)
-    {
-      break;
-    }
+  float US_Data_cm = 0;
+  US_Data_cm = Get_US_cm();
+  if(US_Data_cm == 0.0) {
+      return 0;
+  } else if(US_Data_cm == 300.0) {
+      return 0;
+  } else if(US_Data_cm < 20) {
+      // 小于20cm认定为遇到障碍物
+      return 1;
+  } else {
+      return 0;
   }
-#endif
-  Wire.write(memory_address);
-  rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  if (!(rc == 0 || rc == 7))
-  {
-    #ifdef COMPATIBILITY_OLD_ESP_LIB
-    if (rc == I2C_ERROR_BUSY)
-    {
-      Wire.reset();
-    }
-    #endif
-    Task_Mesg.Give_Semaphore_IIC();
-    return (rc);
-  }
-
-  cnt = 0;
-  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
-    while (Wire.available())
-    {
-      data[cnt] = Wire.read();
-      cnt++;
-    }
-  }
-  Task_Mesg.Give_Semaphore_IIC();
-
-  return (cnt != 0) ? 0 : 0xff;
 }

@@ -29,6 +29,7 @@
  *  7.  void LED_Show(uint8_t number);        // 0xA2  刷新预存数据 (指令预留)
  * 
  ************************************************/
+#include "Sensor_IIC.h"
 
 #ifndef _XT1511_I2C_H_
 #define _XT1511_I2C_H_
@@ -52,7 +53,7 @@ typedef enum{
   COLOR_MODE_BREATH
 }enum_ColorLED_Mode_Type;
 
-class XT1511_I2C
+class XT1511_I2C : public SENSOR_IIC
 {
   public:
     XT1511_I2C(uint8_t slave_address);  // 配置I2C地址
@@ -70,14 +71,12 @@ class XT1511_I2C
     void LED_Flush(void);
 
   private:
-      byte _device_address = 0x11;
       byte LEDs_Data[RGB_LED_DATA_SIZE];
       byte LEDs_DataResult[RGB_LED_DATA_SIZE];
 
       byte LED_Dynamic;
       unsigned int ledDynamicIndex;
 
-      byte write(unsigned char memory_address, unsigned char *data, unsigned char size);  // 类内部使用，I2C通讯，发送
       void LED_Flush_Static(void);
       void LED_Flush_Breath(void);
       void LED_Flush_Blink(void);

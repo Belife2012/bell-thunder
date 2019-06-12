@@ -3,10 +3,9 @@
 #include <LightDetect_I2C.h>
 #include <Task_Mesg.h>
 
-LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address)
-{
-  _device_address = (byte)slave_address;
-}
+LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address):
+  SENSOR_IIC(slave_address)
+{}
 
 byte LIGHTDETECT_I2C::Set_Led_Brightness(byte bright_level)
 {
@@ -33,20 +32,20 @@ byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
   return ret;
 }
 
-void LIGHTDETECT_I2C::Set_Dark_Value(float new_value)
+void LIGHTDETECT_I2C::Set_Dark_Value(unsigned char channel, float new_value)
 {
-  dark_value = new_value;
+  dark_value[channel] = new_value;
 }
 
-void LIGHTDETECT_I2C::Set_Bright_Value(float new_value)
+void LIGHTDETECT_I2C::Set_Bright_Value(unsigned char channel, float new_value)
 {
-  bright_value = new_value;
+  bright_value[channel] = new_value;
 }
 
-void LIGHTDETECT_I2C::Reset_All_Value()
+void LIGHTDETECT_I2C::Reset_All_Value(unsigned char channel )
 {
-  dark_value = 0;
-  bright_value = 100;
+  dark_value[channel] = 0;
+  bright_value[channel] = 100;
 }
 /* 
  * 获取光电传感器的值
@@ -56,7 +55,7 @@ void LIGHTDETECT_I2C::Reset_All_Value()
  *      0 获取数据正常
  *      非0 获取数据出错
  */
-float LIGHTDETECT_I2C::Get_Light_Value()
+float LIGHTDETECT_I2C::Get_Light_Value(unsigned char channel )
 {
   float readValue;
   unsigned short retValue;
@@ -72,20 +71,20 @@ float LIGHTDETECT_I2C::Get_Light_Value()
   retValue = retValue > 2400 ? 2400 : retValue ;
   readValue = ( (float)retValue ) / 24;
 
-  // Serial.printf("dark:%f, bright:%f \n", dark_value, bright_value);
+  // Serial.printf("dark:%f, bright:%f \n", dark_value[channel], bright_value[channel]);
 
-  //计算 在区间 dark_value ~ bright_value 的位置百分比
-  if(readValue <= dark_value){
+  //计算 在区间 dark_value[channel] ~ bright_value[channel] 的位置百分比
+  if(readValue <= dark_value[channel]){
     readValue = 0;
-  }else if(readValue >= bright_value){
+  }else if(readValue >= bright_value[channel]){
     readValue = 100;
   }else{
-    readValue = (readValue - dark_value)*100 / (bright_value - dark_value);
+    readValue = (readValue - dark_value[channel])*100 / (bright_value[channel] - dark_value[channel]);
   }
 
   return readValue;
 }
-byte LIGHTDETECT_I2C::Get_Light_Value(float *readValue)
+byte LIGHTDETECT_I2C::Get_Light_Value_original(float *readValue)
 {
   unsigned short retValue;
   byte getValue[2], bakCode;
@@ -104,56 +103,31 @@ byte LIGHTDETECT_I2C::Get_Light_Value(float *readValue)
   return 0;
 }
 
-// 类内部使用，I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功
-byte LIGHTDETECT_I2C::write(unsigned char memory_address, unsigned char *data, unsigned char size)
+int LIGHTDETECT_I2C::Thunder_Get_Light_Data(uint8_t sensorChannel)
 {
-  byte rc;
-
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
-  Wire.write(data, size);
-  rc = Wire.endTransmission();
-  #ifdef COMPATIBILITY_OLD_ESP_LIB
-  if (rc == I2C_ERROR_BUSY)
-  {
-    Wire.reset();
-  }
-  #endif
-  Task_Mesg.Give_Semaphore_IIC();
-  return (rc);
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  float lightValue;
+  lightValue = Get_Light_Value(sensorChannel-1);
+  return lightValue;
 }
 
-// 类内部使用，I2C通讯，发送并读取；返回值 非0 表示失败，其中0xFF表示没有读取数量有误
-byte LIGHTDETECT_I2C::read(unsigned char memory_address, unsigned char *data, unsigned char size)
+void LIGHTDETECT_I2C::Thunder_Set_Light_Mode(uint8_t sensorChannel, byte mode)
 {
-  byte rc;
-  unsigned char cnt = 0;
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  Set_Operate_Mode(mode);
+}
 
-  Task_Mesg.Take_Semaphore_IIC();
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(memory_address);
-  rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
-  if (!(rc == 0 || rc == 7))
-  {
-    #ifdef COMPATIBILITY_OLD_ESP_LIB
-    if (rc == I2C_ERROR_BUSY){
-      Wire.reset();
-    }
-    #endif
-    Task_Mesg.Give_Semaphore_IIC();
-    return rc;
+void LIGHTDETECT_I2C::Thunder_Set_Light_Extremum(uint8_t sensorChannel, int mode, float value)
+{
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  if(mode == 0) {
+    Set_Bright_Value(sensorChannel-1, value);
+  } else if(mode == 1) {
+    Set_Dark_Value(sensorChannel-1, value);
   }
-
-  cnt = 0;
-  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
-    while (Wire.available())
-    {
-      data[cnt] = Wire.read();
-      cnt++;
-    }
-  }
-  Task_Mesg.Give_Semaphore_IIC();
-
-  return (cnt != 0) ? 0 : 0xff;
+}
+void LIGHTDETECT_I2C::Thunder_Set_Light_Reset(uint8_t sensorChannel)
+{
+  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+  Reset_All_Value(sensorChannel-1);
 }
