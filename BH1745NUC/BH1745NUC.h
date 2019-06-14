@@ -170,8 +170,8 @@ class BH1745NUC : public SENSOR_IIC
     
     BH1745NUC(int slave_address);                     // 配置I2C地址
     
-    byte Setup(void);                                 // 初始化设置
-    byte Get_RGBC_Data(unsigned short *data);         // 获取RGBC
+    byte Setup(unsigned char channel=0);                                 // 初始化设置
+    byte Get_RGBC_Data(unsigned short *data, unsigned char channel=0);         // 获取RGBC
     void RGBtoHSV(unsigned short *RGBC, float *HSV);  // 计算HSV
 
     uint8_t Colour_Recognition(unsigned short *RGBC); // 识别颜色 (预留)
@@ -181,7 +181,7 @@ class BH1745NUC : public SENSOR_IIC
     byte device_detected;// 0为未插入设备，!0为已插入设备
 
     void Env_Backlight_Filter(unsigned short new_data);
-    byte get_rawval(unsigned char *data);                                               // 类内部使用，读取传感器数据
+    byte get_rawval(unsigned char *data, unsigned char channel=0);
 };
 
 #endif // _BH1745NUC_H_

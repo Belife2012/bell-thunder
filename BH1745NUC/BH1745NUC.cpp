@@ -12,7 +12,7 @@ BH1745NUC::BH1745NUC(int slave_address):
 }
 
 // 初始化设置
-byte BH1745NUC::Setup(void)
+byte BH1745NUC::Setup(unsigned char channel)
 {
   Serial.printf("\nstart Init Color Sensor...\n");
 
@@ -20,7 +20,7 @@ byte BH1745NUC::Setup(void)
   unsigned char reg;
 
   // 确认 Part ID
-  rc = read(BH1745NUC_SYSTEM_CONTROL, &reg, sizeof(reg));
+  rc = read(BH1745NUC_SYSTEM_CONTROL, &reg, sizeof(reg), channel);
   if (rc != 0)
   {
     Serial.printf("# No Color Sensor\n");
@@ -37,7 +37,7 @@ byte BH1745NUC::Setup(void)
   }
 
   // 确认 MANUFACTURER ID
-  rc = read(BH1745NUC_MANUFACTURER_ID, &reg, sizeof(reg));
+  rc = read(BH1745NUC_MANUFACTURER_ID, &reg, sizeof(reg), channel);
   if (rc != 0)
   {
     Serial.printf("# No Color Sensor\n");
@@ -54,7 +54,7 @@ byte BH1745NUC::Setup(void)
 
   // 初始化配置
   reg = BH1745NUC_MODE_CONTROL1_VAL;
-  rc = write(BH1745NUC_MODE_CONTROL1, &reg, sizeof(reg));
+  rc = write(BH1745NUC_MODE_CONTROL1, &reg, sizeof(reg), channel);
   if (rc != 0)
   {
     Serial.println(F("# MODE_CONTROL1 fail #"));
@@ -62,7 +62,7 @@ byte BH1745NUC::Setup(void)
   }
 
   reg = BH1745NUC_MODE_CONTROL2_VAL;
-  rc = write(BH1745NUC_MODE_CONTROL2, &reg, sizeof(reg));
+  rc = write(BH1745NUC_MODE_CONTROL2, &reg, sizeof(reg), channel);
   if (rc != 0)
   {
     Serial.println(F("# MODE_CONTROL2 fail #"));
@@ -70,7 +70,7 @@ byte BH1745NUC::Setup(void)
   }
 
   reg = BH1745NUC_MODE_CONTROL3_VAL;
-  rc = write(BH1745NUC_MODE_CONTROL3, &reg, sizeof(reg));
+  rc = write(BH1745NUC_MODE_CONTROL3, &reg, sizeof(reg), channel);
   if (rc != 0)
   {
     Serial.println(F("# MODE_CONTROL3 fail #"));
@@ -89,12 +89,12 @@ void BH1745NUC::Env_Backlight_Filter(unsigned short new_data)
 }
 
 // 获取RGBC，并将结果存入*data
-byte BH1745NUC::Get_RGBC_Data(unsigned short *data)
+byte BH1745NUC::Get_RGBC_Data(unsigned short *data, unsigned char channel)
 {
   byte rc;
   unsigned char val[8];
 
-  rc = get_rawval(val);
+  rc = get_rawval(val, channel);
   if (rc != 0)
   {
     return (rc);
@@ -264,11 +264,11 @@ uint8_t BH1745NUC::Colour_Recognition(unsigned short *RGBC)
 }
 
 // 类内部使用，读取传感器数据
-byte BH1745NUC::get_rawval(unsigned char *data)
+byte BH1745NUC::get_rawval(unsigned char *data, unsigned char channel)
 {
   byte rc;
 
-  rc = read(BH1745NUC_RED_DATA_LSB, data, 8);
+  rc = read(BH1745NUC_RED_DATA_LSB, data, 8, channel);
 
   // 如果读取数值失败，则标志设备未检测到，否则查看是否需要重新初始化设备
   if(rc != 0){
@@ -287,8 +287,7 @@ uint8_t BH1745NUC::Thunder_Get_Color_Sensor_Data(uint8_t sensorChannel)
   unsigned short RGBC[4] = {
       0
   };
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
-  Get_RGBC_Data(RGBC);
+  Get_RGBC_Data(RGBC, sensorChannel);
   switch (Colour_Recognition(RGBC)) {
       case BLACK_CARD:
           return Colour_Num = 7; //黑色

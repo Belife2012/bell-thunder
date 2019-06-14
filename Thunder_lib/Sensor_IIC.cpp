@@ -1,16 +1,27 @@
 #include "Sensor_IIC.h"
 
+#define SELECT_IIC_CHANNEL(channel) do{ Wire.beginTransmission(0x70); \
+                                      Wire.write( 0x38 | (0x01 << (channel-1)) ); \
+                                      Wire.endTransmission(true); }while(0)
+
+
+uint8_t SENSOR_IIC::i2c_channel = 0;
+
 SENSOR_IIC::SENSOR_IIC(int slave_address)
 {
   _device_address = (byte)slave_address;
 }
 
 // 类内部使用，I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功
-byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, unsigned char size)
+byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, unsigned char size, unsigned char channel)
 {
   byte rc;
 
   Task_Mesg.Take_Semaphore_IIC();
+  if(channel > 0 && channel <= 3 && i2c_channel != channel){
+    SELECT_IIC_CHANNEL(channel);
+    i2c_channel = channel;
+  }
   Wire.beginTransmission(_device_address);
   Wire.write(memory_address);
   if(data != NULL && size != 0){
@@ -28,12 +39,16 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
 }
 
 // 类内部使用，I2C通讯，发送并读取；返回值 非0 表示失败，其中0xFF表示没有读取数量有误
-byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigned char size)
+byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigned char size, unsigned char channel)
 {
   byte rc;
   unsigned char cnt = 0;
 
   Task_Mesg.Take_Semaphore_IIC();
+  if(channel > 0 && channel <= 3 && i2c_channel != channel){
+    SELECT_IIC_CHANNEL(channel);
+    i2c_channel = channel;
+  }
   Wire.beginTransmission(_device_address); // 开启发送
   Wire.write(memory_address);
   rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
@@ -139,6 +154,9 @@ uint8_t SENSOR_IIC::Select_Sensor_Channel(uint8_t sensorChannel)
 
   switch (sensorChannel)
   {
+  case 0:
+    ret = Set_I2C_Chanel(0x3f);
+    break;
   case 1:
     ret = Set_I2C_Chanel(0x39);
     break;
@@ -154,6 +172,7 @@ uint8_t SENSOR_IIC::Select_Sensor_Channel(uint8_t sensorChannel)
     break;
   }
 
+  i2c_channel = sensorChannel;
   if (ret != 0)
   {
 	  return 2;
@@ -181,6 +200,7 @@ uint8_t SENSOR_IIC::Select_Sensor_AllChannel()
   delay(5);
 
   ret = Set_I2C_Chanel(0x3f); //全选通
+  i2c_channel = 0;
 
   if (ret != 0)
   {

@@ -290,11 +290,11 @@ void THUNDER_MOTOR::Motor_Free(int motor)
 void THUNDER_MOTOR::Setup_Motor()
 {
   pinMode(PWM_L_A, INPUT_PULLUP);
-  if( digitalRead(PWM_L_A) == HIGH ){
-    Serial.println("Motor IC is PT5126");
-  }else{
-    Serial.println("Motor IC is not PT5126");
-  }
+  // if( digitalRead(PWM_L_A) == HIGH ){
+  //   Serial.println("Motor IC is PT5126");
+  // }else{
+  //   Serial.println("Motor IC is not PT5126");
+  // }
 
   ledcSetup(MOTOR_CHANNEL_2,MOTOR_BASE_FREQ,MOTOR_TIMER_13_BIT);
   ledcSetup(MOTOR_CHANNEL_3,MOTOR_BASE_FREQ,MOTOR_TIMER_13_BIT);

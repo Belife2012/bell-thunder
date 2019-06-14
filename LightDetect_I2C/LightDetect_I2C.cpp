@@ -7,10 +7,10 @@ LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address):
   SENSOR_IIC(slave_address)
 {}
 
-byte LIGHTDETECT_I2C::Set_Led_Brightness(byte bright_level)
+byte LIGHTDETECT_I2C::Set_Led_Brightness(byte bright_level,unsigned char channel)
 {
   byte ret;
-  ret = write(0x01, &bright_level, 1);
+  ret = write(0x01, &bright_level, 1, channel);
 
   return ret;
 }
@@ -24,20 +24,20 @@ byte LIGHTDETECT_I2C::Set_Led_Brightness(byte bright_level)
  *      0 写数据正常
  *      非0 写数据出错
  */
-byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode)
+byte LIGHTDETECT_I2C::Set_Operate_Mode(byte optMode,unsigned char channel)
 {
   byte ret;
-  ret = write(0x01, &optMode, 1);
+  ret = write(0x01, &optMode, 1, channel);
 
   return ret;
 }
 
-void LIGHTDETECT_I2C::Set_Dark_Value(unsigned char channel, float new_value)
+void LIGHTDETECT_I2C::Set_Dark_Value(float new_value,unsigned char channel)
 {
   dark_value[channel] = new_value;
 }
 
-void LIGHTDETECT_I2C::Set_Bright_Value(unsigned char channel, float new_value)
+void LIGHTDETECT_I2C::Set_Bright_Value(float new_value,unsigned char channel)
 {
   bright_value[channel] = new_value;
 }
@@ -61,7 +61,7 @@ float LIGHTDETECT_I2C::Get_Light_Value(unsigned char channel )
   unsigned short retValue;
   byte getValue[2], bakCode;
 
-  bakCode = read(0x02, getValue, 2);
+  bakCode = read(0x02, getValue, 2, channel);
   if(bakCode != 0){
     return 0;
   }
@@ -84,12 +84,12 @@ float LIGHTDETECT_I2C::Get_Light_Value(unsigned char channel )
 
   return readValue;
 }
-byte LIGHTDETECT_I2C::Get_Light_Value_original(float *readValue)
+byte LIGHTDETECT_I2C::Get_Light_Value_original(float *readValue, unsigned char channel)
 {
   unsigned short retValue;
   byte getValue[2], bakCode;
 
-  bakCode = read(0x02, getValue, 2);
+  bakCode = read(0x02, getValue, 2, channel);
   if(bakCode != 0){
     *readValue = 0;
     return bakCode;
@@ -105,29 +105,25 @@ byte LIGHTDETECT_I2C::Get_Light_Value_original(float *readValue)
 
 int LIGHTDETECT_I2C::Thunder_Get_Light_Data(uint8_t sensorChannel)
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
   float lightValue;
-  lightValue = Get_Light_Value(sensorChannel-1);
+  lightValue = Get_Light_Value(sensorChannel);
   return lightValue;
 }
 
 void LIGHTDETECT_I2C::Thunder_Set_Light_Mode(uint8_t sensorChannel, byte mode)
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
-  Set_Operate_Mode(mode);
+  Set_Operate_Mode(mode, sensorChannel);
 }
 
 void LIGHTDETECT_I2C::Thunder_Set_Light_Extremum(uint8_t sensorChannel, int mode, float value)
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
   if(mode == 0) {
-    Set_Bright_Value(sensorChannel-1, value);
+    Set_Bright_Value(sensorChannel, value);
   } else if(mode == 1) {
-    Set_Dark_Value(sensorChannel-1, value);
+    Set_Dark_Value(sensorChannel, value);
   }
 }
 void LIGHTDETECT_I2C::Thunder_Set_Light_Reset(uint8_t sensorChannel)
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
-  Reset_All_Value(sensorChannel-1);
+  Reset_All_Value(sensorChannel);
 }

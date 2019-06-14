@@ -1,50 +1,3 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 雷霆库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  1.  void Setup_All(void);                           // 所有模块初始化
- *  2.  void Stop_All(void);                            // 全部终止(电机)
- *  3.  void Setup_Battery(void);                       // 电池电压检测初始化配置
- *  4.  float Get_Battery_Data(void);                   // 获取电池电压
- *  5.  void En_Motor(void);                            // 编码电机  闭环计算
- *  6.  void Enable_En_Motor(void);                     // 打开编码电机计算
- *  7.  void Disable_En_Motor(void);                    // 关闭编码电机计算
- *  8.  void Setup_Servo(void);                         // 舵机初始化配置
- *  9.  void Servo_Turn(int servo, int angle);          // 舵机角度控制
- *  10. void Setup_IR(void);                            // 巡线IR传感器初始化配置
- *  11. void Get_IR_Data(uint8_t data[]);               // 获取巡线IR数据
- *  12. void Line_Tracing(void);                        // 巡线模式
- *  13. void Start_Show(void);                          // 开机动画/声效
- *  14. void Wait_BLE(void);                            // 等待蓝牙连接动画 (有串口数据也跳出)
- *  15. void Set_LED_Show_No(uint8_t Show_No);          // 设置将要播放的内置动画编号
- *  16. void LED_Show(void);                            // 循环执行的内置动画控制程序
- *  17. void Check_Communication(void);                 // 通信确认，蓝牙/串口
- *  18. void Check_Protocol(void);                      // 协议解析
- *  19. void Reset_Rx_Data(void);                       // 清空接收数据
- *  20. void Get_Queue_Encoder(void);                   // 通过队列获取编码器数据
- *  21. uint8_t Set_I2C_Chanel(uint8_t channelData);    // 增加了TCA9548芯片，选通I2C端口，变量channelData相应位为1 是 选通
- * 
- * 
- ************************************************/
-
 #include <Thunder_lib.h>
 #include "esp_adc_cal.h"
 #include "function_macro.h"
@@ -148,8 +101,8 @@ void THUNDER::Setup_All(void)
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
 	
 	// 九轴传感器初始化
-	Attitude_Sensor.Init_Sensor();
-	Attitude_Sensor.Open_Sensor();
+	// Attitude_Sensor.Init_Sensor();
+	// Attitude_Sensor.Open_Sensor();
   
   Thunder_BLE.Setup_BLE();
 
@@ -179,7 +132,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 {
   if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
 	ble_type = BLE_TYPE_SERVER;
-	Task_Mesg.ble_connect_type = 1;
+	Task_Mesg.ble_connect_type = BLE_SERVER_CONNECTED;
 	Ble_Client.Disconnect_Ble_Server();
 	Ble_Client.Stop_Scan();
 
@@ -187,7 +140,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
 	ble_type = BLE_TYPE_CLIENT;
-	Task_Mesg.ble_connect_type = 0; // 允许启动 client scan
+	Task_Mesg.ble_connect_type = BLE_CLIENT_DISCONNECT; // 允许启动 client scan
 	Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
 
 	Ble_Client.Setup_Ble_Client();        // 配置 BLE Client

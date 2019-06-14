@@ -62,9 +62,10 @@ class MyBLEClientCallbacks: public BLEClientCallbacks {
 	void onDisconnect(BLEClient *pClient){
     Serial.println("## Ble Client Disconnected");
     Ble_Client.Disconnect_Ble_Server();
-    if(Task_Mesg.ble_connect_type == 2){
-      Task_Mesg.ble_connect_type = 0;
+    if(Task_Mesg.ble_connect_type == BLE_CLIENT_CONNECTED){
+      Task_Mesg.ble_connect_type = BLE_CLIENT_DISCONNECT;
     }
+    Ble_Client.Scan_Ble_Server();
   }
 };
 
@@ -103,7 +104,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
           Serial.println("Wirte_Ble_Server_Mac Fail");
         }
 
-        Task_Mesg.Give_Semaphore_BLE(2);
+        Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }else{
       pServerAddress = new BLEAddress(storedServerAddr);
@@ -114,7 +115,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Serial.print("Old device address: "); 
         Serial.println(pServerAddress->toString().c_str());
 
-        Task_Mesg.Give_Semaphore_BLE(2);
+        Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }
     #else
@@ -122,6 +123,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       {
         uint8_t *advertisedPayload;
         advertisedPayload = advertisedDevice.getPayload();
+        // 遥控器存有连接上的雷霆BLE address，在广播期间广播出来，
+        // 所以雷霆可以通过广播信息判断是否与本设备address相同,否则需要去判断距离是否合适新建连接
         if(advertisedPayload[advertisedPayload[0]+1+1] == 0x17){
           for(int i=3; i < 3+6; i++){
             if(storedServerAddr[8-i] != advertisedPayload[advertisedPayload[0]+i]){
@@ -145,7 +148,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Serial.print("remoter device address: "); 
         Serial.println(pServerAddress->toString().c_str());
 
-        Task_Mesg.Give_Semaphore_BLE(2);
+        Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     #endif
 #else
@@ -195,6 +198,8 @@ void BLE_CLIENT::Setup_Ble_Client()
     pBLEScan = BLEDevice::getScan();
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setActiveScan(true);
+
+    pBLEScan->start(30);
   }
 } // End of setup.
 
@@ -255,11 +260,11 @@ bool BLE_CLIENT::connectToServer(BLEAddress pAddress)
   // }
 
   // Read the value of the characteristic.
-  std::string value = pRemoteCharacteristic->readValue();
-  Serial.print("The characteristic value was: ");
-  Serial.println(value.c_str());
+  // std::string value = pRemoteCharacteristic->readValue();
+  // Serial.print("The characteristic value was: ");
+  // Serial.println(value.c_str());
 
-  pRemoteCharacteristic->registerForNotify(notifyCallback);
+  // pRemoteCharacteristic->registerForNotify(notifyCallback);
   
 }
 void BLE_CLIENT::Connect_Ble_Server()
