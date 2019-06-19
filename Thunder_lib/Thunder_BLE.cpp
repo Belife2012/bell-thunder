@@ -243,7 +243,7 @@ void THUNDER_BLE::Setup_BLE()
         break;
       }
 
-      // 如果出现控制字符，则意味着EEPROM里面的信息不准确，BLE命名为“BELL”
+      // 如果出现控制字符，则意味着EEPROM里面的信息不准确，BLE命名为 "Thunder_"+ID
       if(isControl(BLE_Name_Data[i])){
         buf[0] = 'T';buf[1] = 'h';buf[2] = 'u';buf[3] = 'n';buf[4] = 'd';buf[5] = 'e';
         buf[6] = 'r';buf[7] = '_';

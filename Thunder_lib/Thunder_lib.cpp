@@ -37,6 +37,8 @@ TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
 LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
 // 炮台模组 （IIC address：0x24）
 Bell_Barbette Thunder_Barbette;
+// 空气温湿度 （IIC address：0x05）
+SENSOR_HT HumTemp_Sensor(HT_IIC_ADDR);
 
 // 蓝牙
 uint8_t Rx_Data[21] = {0};

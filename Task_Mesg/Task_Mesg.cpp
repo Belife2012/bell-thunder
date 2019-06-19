@@ -134,9 +134,10 @@ void Operator_Mode_Deamon(void *pvParameters)
       Thunder.Line_Tracing();
       // Thunder.Line_Tracing_Speed_Ctrl();
     }
-    // if(Task_Mesg.ble_connect_type == BLE_CLIENT_DISCONNECT){
-    //   Ble_Client.Scan_Ble_Server(); // 不断搜索BLE Server
-    // }
+    // 作为辅线程搜索BLE Server
+    if(Task_Mesg.ble_connect_type == BLE_CLIENT_DISCONNECT){
+      Ble_Client.Scan_Ble_Server(); // 搜索BLE Server
+    }
     vTaskDelay(pdMS_TO_TICKS(50));
   }
 }
@@ -180,6 +181,11 @@ void Polling_Check(void *pvParameters)
         }
       }
     }
+#endif
+
+#ifdef PRINT_SYS_MANAGER_INFO
+    Serial.print("Free Heap: ");
+    Serial.println(ESP.getFreeHeap());
 #endif
 
   }

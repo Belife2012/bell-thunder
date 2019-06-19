@@ -18,7 +18,7 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
   byte rc;
 
   Task_Mesg.Take_Semaphore_IIC();
-  if(channel > 0 && channel <= 3 && i2c_channel != channel){
+  if(channel > 0 && channel <= MAX_CHANNEL_INDEX && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
     i2c_channel = channel;
   }
@@ -45,7 +45,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
   unsigned char cnt = 0;
 
   Task_Mesg.Take_Semaphore_IIC();
-  if(channel > 0 && channel <= 3 && i2c_channel != channel){
+  if(channel > 0 && channel <= MAX_CHANNEL_INDEX && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
     i2c_channel = channel;
   }
@@ -63,8 +63,10 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
     return rc;
   }
 
-  cnt = 0;
-  if( 0 != Wire.requestFrom(_device_address, size, (byte)true) ){
+  cnt = Wire.requestFrom(_device_address, size, (byte)true);
+  Serial.printf("rx %d\n", cnt);
+  if( 0 != cnt ){
+    cnt = 0;
     while (Wire.available() && cnt < size)
     {
       data[cnt] = Wire.read();

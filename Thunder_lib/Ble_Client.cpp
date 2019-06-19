@@ -65,7 +65,6 @@ class MyBLEClientCallbacks: public BLEClientCallbacks {
     if(Task_Mesg.ble_connect_type == BLE_CLIENT_CONNECTED){
       Task_Mesg.ble_connect_type = BLE_CLIENT_DISCONNECT;
     }
-    Ble_Client.Scan_Ble_Server();
   }
 };
 
@@ -76,15 +75,26 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
  /**
    * Called for each advertising BLE server.
    */
-  void onResult(BLEAdvertisedDevice advertisedDevice) {
+  void onResult(BLEAdvertisedDevice advertisedDevice) 
+  {
+    // 统计扫描到设备的个数，超出一定数量就停止扫描，防止内存溢出
+    // （重新开启扫描，会清空里面的std::vector<BLEAdvertisedDevice>）
+    // if(scanDeviceCounts > 20) {
+    //   scanDeviceCounts = 0;
+    //   advertisedDevice.getScan()->stop();
+    //   return;
+    // }else {
+    //   scanDeviceCounts++;
+    // }
+
 #ifdef DEBUG_BLE_CLIENT
-    Serial.print("Founs Device: ");
+    Serial.print("Founs Device : ");
     Serial.println(advertisedDevice.toString().c_str());
 #endif
 
 #if(SERVER_STYLE == SERVER_IS_REMOTER)
     // We have found a device, let us now see if it contains the right infomation
-    #ifdef RECORD_SERVER_MAC
+#ifdef RECORD_SERVER_MAC
     const uint8_t clearServerAddr[DISK_SIZE_BLE_SERVER_MAC] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     if(memcmp(clearServerAddr, storedServerAddr, DISK_SIZE_BLE_SERVER_MAC) == 0){
       if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller")
@@ -95,6 +105,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Serial.printf("AdvertiseData: %2x\n", advertisedPayload[advertisedPayload[0]+1+1]);
         advertisedDevice.getScan()->stop();
 
+        if(pServerAddress != NULL) { delete pServerAddress;}
         pServerAddress = new BLEAddress(advertisedDevice.getAddress());
         Serial.print("New device address: "); 
         Serial.println(pServerAddress->toString().c_str());
@@ -107,6 +118,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }else{
+      if(pServerAddress != NULL) { delete pServerAddress;}
       pServerAddress = new BLEAddress(storedServerAddr);
       if ( advertisedDevice.getAddress().equals(*pServerAddress) ) {
       // 
@@ -118,15 +130,16 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }
-    #else
+#else
       if (advertisedDevice.haveName() && advertisedDevice.getName() == std::string("bell_Controller") )
       {
         uint8_t *advertisedPayload;
         advertisedPayload = advertisedDevice.getPayload();
         // 遥控器存有连接上的雷霆BLE address，在广播期间广播出来，
-        // 所以雷霆可以通过广播信息判断是否与本设备address相同,否则需要去判断距离是否合适新建连接
+        // 所以雷霆可以通过广播信息判断手柄是否已经被绑定,否则需要去判断距离是否合适新建连接
         if(advertisedPayload[advertisedPayload[0]+1+1] == 0x17){
           for(int i=3; i < 3+6; i++){
+            // 手柄已经被绑定，但是广播中的绑定地址 与 本设备address不相同，则不进行连接
             if(storedServerAddr[8-i] != advertisedPayload[advertisedPayload[0]+i]){
               return;
             }
@@ -144,18 +157,22 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
         advertisedDevice.getScan()->stop();
 
+        if(pServerAddress != NULL) { delete pServerAddress;}
         pServerAddress = new BLEAddress(advertisedDevice.getAddress());
         Serial.print("remoter device address: "); 
         Serial.println(pServerAddress->toString().c_str());
 
         Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
-    #endif
+#endif
 #else
-      if (advertisedDevice.haveServiceUUID() && advertisedDevice.getServiceUUID().equals(deviceUUID)) {
-      } // onResult
+      if (advertisedDevice.haveServiceUUID() && advertisedDevice.getServiceUUID().equals(deviceUUID))
+      { } // onResult
 #endif
   }
+
+private:
+  int scanDeviceCounts = 0;
 }; // MyAdvertisedDeviceCallbacks
 
 BLE_CLIENT::BLE_CLIENT(/* args */)
@@ -199,17 +216,18 @@ void BLE_CLIENT::Setup_Ble_Client()
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setActiveScan(true);
 
-    pBLEScan->start(30);
+    // pBLEScan->start(30); // 会阻塞，所以不能放在主线里面
   }
 } // End of setup.
 
+// pBLEScan->start 会产生阻塞，所以只能在辅线程中调用
 void BLE_CLIENT::Scan_Ble_Server()
 {
   if(pBLEScan == NULL)
     return;
 
-  // start the scan to run for 30 seconds.
-  pBLEScan->start(30);
+  // start the scan to run for seconds.
+  pBLEScan->start(15);
 }
 void BLE_CLIENT::Stop_Scan()
 {
@@ -260,11 +278,11 @@ bool BLE_CLIENT::connectToServer(BLEAddress pAddress)
   // }
 
   // Read the value of the characteristic.
-  // std::string value = pRemoteCharacteristic->readValue();
-  // Serial.print("The characteristic value was: ");
-  // Serial.println(value.c_str());
+  std::string value = pRemoteCharacteristic->readValue();
+  Serial.print("The characteristic value was: ");
+  Serial.println(value.c_str());
 
-  // pRemoteCharacteristic->registerForNotify(notifyCallback);
+  pRemoteCharacteristic->registerForNotify(notifyCallback);
   
 }
 void BLE_CLIENT::Connect_Ble_Server()

@@ -78,6 +78,8 @@
 #include "sensor_flame.h"
 // 风扇电动机
 #include "motor_fan.h"
+// 空气温湿度
+#include "sensor_ht.h"
 // 遥控器
 #include <Remoter.h>
 
@@ -161,6 +163,8 @@ extern US_I2C US;
 extern SENSOR_FLAME Flame_Sensor;
 // 风扇电动机
 extern MOTOR_FAN Fan_Motor;
+// 空气温湿度
+extern SENSOR_HT HumTemp_Sensor;
 // 颜色识别
 extern BH1745NUC Colour_Sensor;
 // 彩色LED

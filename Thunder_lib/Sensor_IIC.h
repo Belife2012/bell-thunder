@@ -7,6 +7,8 @@
 #include <Wire.h>
 #include <Task_Mesg.h>
 
+#define MAX_CHANNEL_INDEX     (3)
+
 class SENSOR_IIC
 {
 public:
