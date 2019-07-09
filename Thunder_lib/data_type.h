@@ -19,6 +19,7 @@ typedef enum {
   PROCESS_INDICATE_SWITCH,
   PROCESS_WAIT_SWITCH,
   PROCESS_STOP,
+  PROCESS_INDICATE_STOP,
   PROCESS_READY_RUN
 } enum_Process_Status;
 
@@ -39,7 +40,8 @@ typedef enum{
 } enum_Ble_Type; // BLE 角色
 
 typedef enum{
-  BLE_CLIENT_DISCONNECT = 0, // 作为BLE Client, 未连接蓝牙手柄
+  BLE_NOT_OPEN,
+  BLE_CLIENT_DISCONNECT, // 作为BLE Client, 未连接蓝牙手柄
   BLE_SERVER_CONNECTED,   // 作为BLE Server
   BLE_CLIENT_CONNECTED    // 作为BLE Client, 已经连接蓝牙手柄
 } enum_Ble_Status; //  BLE 工作状态

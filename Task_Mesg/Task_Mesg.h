@@ -93,7 +93,7 @@ public:
   QueueHandle_t Queue_encoder_left;
   QueueHandle_t Queue_encoder_right;
 
-  enum_Ble_Status ble_connect_type = BLE_CLIENT_DISCONNECT;
+  enum_Ble_Status ble_connect_type = BLE_NOT_OPEN;
 
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];

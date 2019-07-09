@@ -39,6 +39,18 @@ LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
 Bell_Barbette Thunder_Barbette;
 // 空气温湿度 （IIC address：0x05）
 SENSOR_HT HumTemp_Sensor(HT_IIC_ADDR);
+// 有毒气体传感器 （IIC address：0x06）
+SENSOR_GAS Gas_Sensor(GAS_IIC_ADDR);
+// 温度探头 （IIC address：0x07）
+SENSOR_TEMP Temp_Sensor(TEMP_IIC_ADDR);
+// 土壤湿度传感器（IIC address：0x08）
+SENSOR_SOIL Soil_Sensor(SOIL_IIC_ADDR);
+// 声音传感器（IIC address：0x09）
+SENSOR_SOUND Sound_Sensor(SOUND_IIC_ADDR);
+// 人体移动传感器（IIC address：0x0A）
+SENSOR_HUMAN Human_Sensor(HUMAN_IIC_ADDR);
+// 红外遥控器（IIC address：0x04）
+SENSOR_INFRARED Infrared_Sensor(INFRARED_IIC_ADDR);
 
 // 蓝牙
 uint8_t Rx_Data[21] = {0};
@@ -147,6 +159,12 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 
 	Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
 
+  }else if( (ble_type != BLE_TYPE_NONE) && (new_type == BLE_TYPE_NONE) ) {
+	ble_type = BLE_TYPE_NONE;
+	Task_Mesg.ble_connect_type = BLE_NOT_OPEN;
+	Ble_Client.Disconnect_Ble_Server();
+	Ble_Client.Stop_Scan();
+	Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
   }
 
   return;
@@ -643,6 +661,11 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
 	led_indication_param.led_indication_off_duty = 100;
 	led_indication_param.led_indication_amount = 1;
 	break;
+  case PROCESS_INDICATE_STOP:
+	Task_Mesg.Clear_All_Loops();
+	Set_Process_Status(PROCESS_STOP);
+	return; // 做好STOP 的工作，直接退出函数，以免函数后续有变动
+	break;
   case PROCESS_THUNDER_GO:
 	// if(thunder_system_parameter == 1){
 	//   led_indication_param.led_indication_period = 3000;
@@ -729,137 +752,137 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
 
   switch (process_status)
   {
-  case PROCESS_STOP:
-  { //
-	if (button_event == KEY_LONG_NO_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_INDICATE_SWITCH);
-	  system_program_mode = 1;
-	}
-	else if (button_event == KEY_CLICK_ONE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Program_Run_Index(program_user);
-	  system_program_mode = 1;
-	}
-	else if (button_event == KEY_CLICK_TWO && system_program_mode == 0) // 只有未确定系统程序时才能选APP程序
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Program_Run_Index(PROCESS_THUNDER_GO);
-	  system_program_mode = 2;
-	}
+	case PROCESS_STOP:
+	{ //
+		if (button_event == KEY_LONG_NO_RELEASE)
+		{
+			function_button_event = KEY_NONE;
+			Set_Process_Status(PROCESS_INDICATE_SWITCH);
+			system_program_mode = 1;
+		}
+		else if (button_event == KEY_CLICK_ONE)
+		{
+			function_button_event = KEY_NONE;
+			Set_Program_Run_Index(program_user);
+			system_program_mode = 1;
+		}
+		else if (button_event == KEY_CLICK_TWO && system_program_mode == 0) // 只有未确定系统程序时才能选APP程序
+		{
+			function_button_event = KEY_NONE;
+			Set_Program_Run_Index(PROCESS_THUNDER_GO);
+			system_program_mode = 2;
+		}
 
-	break;
-  }
-  case PROCESS_THUNDER_GO: // APP程序不能接受程序切换
-  { 
-	// if (button_event == KEY_LONG_NO_RELEASE)
-	// {
-	//   function_button_event = KEY_NONE;
-	//   Set_Process_Status(PROCESS_INDICATE_SWITCH);
-	// }
+		break;
+	}
+	case PROCESS_THUNDER_GO: // APP程序不能接受程序切换
+	{ 
+		// if (button_event == KEY_LONG_NO_RELEASE)
+		// {
+		//   function_button_event = KEY_NONE;
+		//   Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		// }
 
-	break;
-  }
-  case PROCESS_USER_1:
-  {
-	if (button_event == KEY_LONG_NO_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		break;
 	}
+	case PROCESS_USER_1:
+	{
+		if (button_event == KEY_LONG_NO_RELEASE)
+		{
+		function_button_event = KEY_NONE;
+		Set_Process_Status(PROCESS_INDICATE_STOP);
+		}
 
-	break;
-  }
-  case PROCESS_USER_2:
-  {
-	if (button_event == KEY_LONG_NO_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		break;
 	}
+	case PROCESS_USER_2:
+	{
+		if (button_event == KEY_LONG_NO_RELEASE)
+		{
+		function_button_event = KEY_NONE;
+		Set_Process_Status(PROCESS_INDICATE_STOP);
+		}
 
-	break;
-  }
-  case PROCESS_USER_3:
-  {
-	if (button_event == KEY_LONG_NO_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		break;
 	}
+	case PROCESS_USER_3:
+	{
+		if (button_event == KEY_LONG_NO_RELEASE)
+		{
+		function_button_event = KEY_NONE;
+		Set_Process_Status(PROCESS_INDICATE_STOP);
+		}
 
-	break;
-  }
-  case PROCESS_USER_4:
-  {
-	if (button_event == KEY_LONG_NO_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		break;
 	}
+	case PROCESS_USER_4:
+	{
+		if (button_event == KEY_LONG_NO_RELEASE)
+		{
+		function_button_event = KEY_NONE;
+		Set_Process_Status(PROCESS_INDICATE_STOP);
+		}
 
-	break;
-  }
-  case PROCESS_INDICATE_SWITCH:
-  {
-	if (button_event == KEY_LONG_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_WAIT_SWITCH);
+		break;
 	}
+	case PROCESS_INDICATE_SWITCH:
+	{
+		if (button_event == KEY_LONG_RELEASE)
+		{
+		function_button_event = KEY_NONE;
+		Set_Process_Status(PROCESS_WAIT_SWITCH);
+		}
 
-	break;
-  }
-  case PROCESS_WAIT_SWITCH:
-  {
-	if (button_event == KEY_LONG_NO_RELEASE)
-	{
-	  function_button_event = KEY_NONE;
-	  Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		break;
 	}
-	else if (button_event == KEY_CLICK_ONE)
+	case PROCESS_WAIT_SWITCH:
 	{
-	  function_button_event = KEY_NONE;
-	  // Speaker.Play_Song(3);
-	  Set_Program_User(PROCESS_USER_1);
-	  Disk_Manager.Wirte_Program_User(program_user);
-	}
-	else if (button_event == KEY_CLICK_TWO)
-	{
-	  function_button_event = KEY_NONE;
-	  // Speaker.Play_Song(4);
-	  Set_Program_User(PROCESS_USER_2);
-	  Disk_Manager.Wirte_Program_User(program_user);
-	}
-	else if (button_event == KEY_CLICK_THREE)
-	{
-	  function_button_event = KEY_NONE;
-	  // Speaker.Play_Song(5);
-	  Set_Program_User(PROCESS_USER_3);
-	  Disk_Manager.Wirte_Program_User(program_user);
-	}
-	else if (button_event == KEY_CLICK_FOUR)
-	{
-	  function_button_event = KEY_NONE;
-	  // Speaker.Play_Song(6);
-	  Set_Program_User(PROCESS_USER_4);
-	  Disk_Manager.Wirte_Program_User(program_user);
-	}
+		if (button_event == KEY_LONG_NO_RELEASE)
+		{
+		function_button_event = KEY_NONE;
+		Set_Process_Status(PROCESS_INDICATE_SWITCH);
+		}
+		else if (button_event == KEY_CLICK_ONE)
+		{
+		function_button_event = KEY_NONE;
+		// Speaker.Play_Song(3);
+		Set_Program_User(PROCESS_USER_1);
+		Disk_Manager.Wirte_Program_User(program_user);
+		}
+		else if (button_event == KEY_CLICK_TWO)
+		{
+		function_button_event = KEY_NONE;
+		// Speaker.Play_Song(4);
+		Set_Program_User(PROCESS_USER_2);
+		Disk_Manager.Wirte_Program_User(program_user);
+		}
+		else if (button_event == KEY_CLICK_THREE)
+		{
+		function_button_event = KEY_NONE;
+		// Speaker.Play_Song(5);
+		Set_Program_User(PROCESS_USER_3);
+		Disk_Manager.Wirte_Program_User(program_user);
+		}
+		else if (button_event == KEY_CLICK_FOUR)
+		{
+		function_button_event = KEY_NONE;
+		// Speaker.Play_Song(6);
+		Set_Program_User(PROCESS_USER_4);
+		Disk_Manager.Wirte_Program_User(program_user);
+		}
 
-	break;
-  }
-  case PROCESS_READY_RUN:
-  {
+		break;
+	}
+	case PROCESS_READY_RUN:
+	{
 
-	break;
-  }
-  default:
-  {
+		break;
+	}
+	default:
+	{
 
-	break;
-  }
+		break;
+	}
   }
 }
 

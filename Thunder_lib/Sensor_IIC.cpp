@@ -38,7 +38,7 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
   return (rc);
 }
 
-// 类内部使用，I2C通讯，发送并读取；返回值 非0 表示失败，其中0xFF表示没有读取数量有误
+// 类内部使用，I2C通讯，发送并读取；返回值 非0 表示失败，其中0xFF表示没有读取到数据
 byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigned char size, unsigned char channel)
 {
   byte rc;
@@ -64,7 +64,6 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
   }
 
   cnt = Wire.requestFrom(_device_address, size, (byte)true);
-  Serial.printf("rx %d\n", cnt);
   if( 0 != cnt ){
     cnt = 0;
     while (Wire.available() && cnt < size)

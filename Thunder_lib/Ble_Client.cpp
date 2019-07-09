@@ -79,7 +79,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
   {
     // 统计扫描到设备的个数，超出一定数量就停止扫描，防止内存溢出
     // （重新开启扫描，会清空里面的std::vector<BLEAdvertisedDevice>）
-    // if(scanDeviceCounts > 20) {
+    // if(scanDeviceCounts > 30) {
     //   scanDeviceCounts = 0;
     //   advertisedDevice.getScan()->stop();
     //   return;

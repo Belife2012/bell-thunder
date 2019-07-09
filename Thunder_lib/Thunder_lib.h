@@ -80,6 +80,18 @@
 #include "motor_fan.h"
 // 空气温湿度
 #include "sensor_ht.h"
+// 有毒气体传感器
+#include "sensor_gas.h"
+// 温度探头
+#include "sensor_temp.h"
+// 土壤湿度传感器
+#include "sensor_soil.h"
+// 声音传感器
+#include "sensor_sound.h"
+// 人体移动传感器
+#include "sensor_human.h"
+// 红外遥控器
+#include "sensor_infrared.h"
 // 遥控器
 #include <Remoter.h>
 
@@ -165,6 +177,16 @@ extern SENSOR_FLAME Flame_Sensor;
 extern MOTOR_FAN Fan_Motor;
 // 空气温湿度
 extern SENSOR_HT HumTemp_Sensor;
+// 有毒气体传感器
+extern SENSOR_GAS Gas_Sensor;
+// 温度探头
+extern SENSOR_TEMP Temp_Sensor;
+// 土壤湿度传感器
+extern SENSOR_SOIL Soil_Sensor;
+// 声音传感器
+extern SENSOR_SOUND Sound_Sensor;
+extern SENSOR_HUMAN Human_Sensor;
+extern SENSOR_INFRARED Infrared_Sensor;
 // 颜色识别
 extern BH1745NUC Colour_Sensor;
 // 彩色LED
