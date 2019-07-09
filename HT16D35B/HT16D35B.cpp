@@ -81,7 +81,7 @@ byte HT16D35B::Setup(void)
     return (rc);
   }
 
-  reg = 20;
+  reg = 35;
   rc = write(HT16D35B_GLOBAL_BRIGHT, &reg, sizeof(reg)); // 全局亮度设置：该命令用于控制 64 级 PWM 亮度
   if (rc != 0)
   {

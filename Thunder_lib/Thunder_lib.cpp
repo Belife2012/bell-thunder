@@ -173,7 +173,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 {
   if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
     ble_type = BLE_TYPE_SERVER;
-    Task_Mesg.ble_connect_type = 1;
+    Task_Mesg.ble_connect_type = BLE_SERVER_CONNECTED;
     Ble_Client.Disconnect_Ble_Server();
     Ble_Client.Stop_Scan();
 
@@ -181,11 +181,17 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
     ble_type = BLE_TYPE_CLIENT;
-    Task_Mesg.ble_connect_type = 0; // 允许启动 client scan
+    Task_Mesg.ble_connect_type = BLE_CLIENT_DISCONNECT; // 允许启动 client scan
     Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
 
     Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
 
+  }else if( (ble_type != BLE_TYPE_NONE) && (new_type == BLE_TYPE_NONE) ) {
+    ble_type = BLE_TYPE_NONE;
+    Task_Mesg.ble_connect_type = BLE_NOT_OPEN;
+    Ble_Client.Disconnect_Ble_Server();
+    Ble_Client.Stop_Scan();
+    Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
   }
 
   return;
@@ -682,6 +688,11 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
     led_indication_param.led_indication_off_duty = 100;
     led_indication_param.led_indication_amount = 1;
     break;
+  case PROCESS_INDICATE_STOP:
+    Task_Mesg.Clear_All_Loops();
+    Set_Process_Status(PROCESS_STOP);
+    return; // 做好STOP 的工作，直接退出函数，以免函数后续有变动
+    break;
   case PROCESS_THUNDER_GO:
     // if(thunder_system_parameter == 1){
     //   led_indication_param.led_indication_period = 3000;
@@ -806,7 +817,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     if (button_event == KEY_LONG_NO_RELEASE)
     {
       function_button_event = KEY_NONE;
-      Set_Process_Status(PROCESS_INDICATE_SWITCH);
+      Set_Process_Status(PROCESS_INDICATE_STOP);
     }
 
     break;
@@ -816,7 +827,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     if (button_event == KEY_LONG_NO_RELEASE)
     {
       function_button_event = KEY_NONE;
-      Set_Process_Status(PROCESS_INDICATE_SWITCH);
+      Set_Process_Status(PROCESS_INDICATE_STOP);
     }
 
     break;
@@ -826,7 +837,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     if (button_event == KEY_LONG_NO_RELEASE)
     {
       function_button_event = KEY_NONE;
-      Set_Process_Status(PROCESS_INDICATE_SWITCH);
+      Set_Process_Status(PROCESS_INDICATE_STOP);
     }
 
     break;
@@ -836,7 +847,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
     if (button_event == KEY_LONG_NO_RELEASE)
     {
       function_button_event = KEY_NONE;
-      Set_Process_Status(PROCESS_INDICATE_SWITCH);
+      Set_Process_Status(PROCESS_INDICATE_STOP);
     }
 
     break;
@@ -1077,9 +1088,9 @@ void THUNDER::Servo_Percent_Setting(int servo_index,
             int max_value, int min_value, int zero_value, int direction)
 {
   if(direction < 0){
-    servo_percent_zero[servo_index - 1] = -1 * zero_value;
-    servo_percent_max[servo_index - 1] = -1 * max_value;
-    servo_percent_min[servo_index - 1] = -1 * min_value;
+    servo_percent_zero[servo_index - 1] = zero_value;
+    servo_percent_max[servo_index - 1] = min_value;
+    servo_percent_min[servo_index - 1] = max_value;
   }else{
     servo_percent_zero[servo_index - 1] = zero_value;
     servo_percent_max[servo_index - 1] = max_value;

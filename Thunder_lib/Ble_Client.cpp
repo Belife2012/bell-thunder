@@ -54,6 +54,7 @@ static void notifyCallback(
 #endif
 }
 
+
 class MyBLEClientCallbacks: public BLEClientCallbacks {
 	void onConnect(BLEClient *pClient){
     Serial.println("## Ble Client connected");
@@ -62,8 +63,8 @@ class MyBLEClientCallbacks: public BLEClientCallbacks {
 	void onDisconnect(BLEClient *pClient){
     Serial.println("## Ble Client Disconnected");
     Ble_Client.Disconnect_Ble_Server();
-    if(Task_Mesg.ble_connect_type == 2){
-      Task_Mesg.ble_connect_type = 0;
+    if(Task_Mesg.ble_connect_type == BLE_CLIENT_CONNECTED){
+      Task_Mesg.ble_connect_type = BLE_CLIENT_DISCONNECT;
     }
   }
 };
@@ -103,7 +104,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
           Serial.println("Wirte_Ble_Server_Mac Fail");
         }
 
-        Task_Mesg.Give_Semaphore_BLE(2);
+        Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }else{
       pServerAddress = new BLEAddress(storedServerAddr);
@@ -114,7 +115,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Serial.print("Old device address: "); 
         Serial.println(pServerAddress->toString().c_str());
 
-        Task_Mesg.Give_Semaphore_BLE(2);
+        Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }
     #else
@@ -145,7 +146,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Serial.print("remoter device address: "); 
         Serial.println(pServerAddress->toString().c_str());
 
-        Task_Mesg.Give_Semaphore_BLE(2);
+        Task_Mesg.Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     #endif
 #else
@@ -204,7 +205,7 @@ void BLE_CLIENT::Scan_Ble_Server()
     return;
 
   // start the scan to run for 30 seconds.
-  pBLEScan->start(30);
+  pBLEScan->start(15);
 }
 void BLE_CLIENT::Stop_Scan()
 {

@@ -100,15 +100,17 @@ void Proc_Ble_Command(void *pvParameters)
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
       // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
-      if(ble_mesg_type == 1){
+      if(ble_mesg_type == BLE_SERVER_SEMAPHORE_RX){ // 作为Server，接收到client的信息
         Thunder.Check_BLE_Communication();
-      }else if(ble_mesg_type ==2){
-        if(Task_Mesg.ble_connect_type == 0){
-          Task_Mesg.ble_connect_type = 2;
+      }else if(ble_mesg_type == BLE_CLIENT_SEMAPHORE_CONN){
+        if(Task_Mesg.ble_connect_type == BLE_CLIENT_DISCONNECT)
+        { // 搜索到BLE Server，进行连接动作
+          Task_Mesg.ble_connect_type = BLE_CLIENT_CONNECTED;
           Ble_Client.Connect_Ble_Server();
-        }else if(Task_Mesg.ble_connect_type == 2){
-          Thunder.Check_BLE_Communication();
         }
+        // else if(Task_Mesg.ble_connect_type == BLE_CLIENT_CONNECTED){ // 接收到Server的信息
+        //   Thunder.Check_BLE_Communication();
+        // }
       }
     }
   }
@@ -132,8 +134,9 @@ void Operator_Mode_Deamon(void *pvParameters)
       Thunder.Line_Tracing();
       // Thunder.Line_Tracing_Speed_Ctrl();
     }
-    if(Task_Mesg.ble_connect_type == 0){
-      Ble_Client.Scan_Ble_Server();
+    // 作为辅线程搜索BLE Server
+    if(Task_Mesg.ble_connect_type == BLE_CLIENT_DISCONNECT){
+      Ble_Client.Scan_Ble_Server(); // 搜索BLE Server
     }
     vTaskDelay(pdMS_TO_TICKS(50));
   }

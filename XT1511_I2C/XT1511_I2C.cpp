@@ -103,18 +103,18 @@ void XT1511_I2C::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
 
   Set_LED_Dynamic(0);
 
+  for (byte i = 0; i < size; i++)
+  {
+    LEDs_Data[startIndex + i] = data[i] * 1 / 10;
+  }
+
   // rc = write(address, data, sizeof(data));
-  rc = write(address, data, size);
+  rc = write(address, &(LEDs_Data[startIndex]), size);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
     Serial.println("# XT1511_I2C Set LEDs fail");
     #endif
-  }
-
-  for (byte i = 0; i < size; i++)
-  {
-    LEDs_Data[startIndex + i] = data[i];
   }
 }
 
