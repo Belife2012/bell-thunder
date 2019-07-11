@@ -54,6 +54,7 @@ static void notifyCallback(
 #endif
 }
 
+
 class MyBLEClientCallbacks: public BLEClientCallbacks {
 	void onConnect(BLEClient *pClient){
     Serial.println("## Ble Client connected");
@@ -77,8 +78,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
    */
   void onResult(BLEAdvertisedDevice advertisedDevice) 
   {
-    // ç»Ÿè®¡æ‰«æåˆ°è®¾å¤‡çš„ä¸ªæ•°ï¼Œè¶…å‡ºä¸€å®šæ•°é‡å°±åœæ­¢æ‰«æï¼Œé˜²æ­¢å†…å­˜æº¢å‡º
-    // ï¼ˆé‡æ–°å¼€å¯æ‰«æï¼Œä¼šæ¸…ç©ºé‡Œé¢çš„std::vector<BLEAdvertisedDevice>ï¼‰
+    // Í³¼ÆÉ¨Ãèµ½Éè±¸µÄ¸öÊı£¬³¬³öÒ»¶¨ÊıÁ¿¾ÍÍ£Ö¹É¨Ãè£¬·ÀÖ¹ÄÚ´æÒç³ö
+    // £¨ÖØĞÂ¿ªÆôÉ¨Ãè£¬»áÇå¿ÕÀïÃæµÄstd::vector<BLEAdvertisedDevice>£©
     // if(scanDeviceCounts > 30) {
     //   scanDeviceCounts = 0;
     //   advertisedDevice.getScan()->stop();
@@ -135,11 +136,11 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
       {
         uint8_t *advertisedPayload;
         advertisedPayload = advertisedDevice.getPayload();
-        // é¥æ§å™¨å­˜æœ‰è¿æ¥ä¸Šçš„é›·éœ†BLE addressï¼Œåœ¨å¹¿æ’­æœŸé—´å¹¿æ’­å‡ºæ¥ï¼Œ
-        // æ‰€ä»¥é›·éœ†å¯ä»¥é€šè¿‡å¹¿æ’­ä¿¡æ¯åˆ¤æ–­æ‰‹æŸ„æ˜¯å¦å·²ç»è¢«ç»‘å®š,å¦åˆ™éœ€è¦å»åˆ¤æ–­è·ç¦»æ˜¯å¦åˆé€‚æ–°å»ºè¿æ¥
+        // Ò£¿ØÆ÷´æÓĞÁ¬½ÓÉÏµÄÀ×öªBLE address£¬ÔÚ¹ã²¥ÆÚ¼ä¹ã²¥³öÀ´£¬
+        // ËùÒÔÀ×öª¿ÉÒÔÍ¨¹ı¹ã²¥ĞÅÏ¢ÅĞ¶ÏÊÖ±úÊÇ·ñÒÑ¾­±»°ó¶¨,·ñÔòĞèÒªÈ¥ÅĞ¶Ï¾àÀëÊÇ·ñºÏÊÊĞÂ½¨Á¬½Ó
         if(advertisedPayload[advertisedPayload[0]+1+1] == 0x17){
           for(int i=3; i < 3+6; i++){
-            // æ‰‹æŸ„å·²ç»è¢«ç»‘å®šï¼Œä½†æ˜¯å¹¿æ’­ä¸­çš„ç»‘å®šåœ°å€ ä¸ æœ¬è®¾å¤‡addressä¸ç›¸åŒï¼Œåˆ™ä¸è¿›è¡Œè¿æ¥
+            // ÊÖ±úÒÑ¾­±»°ó¶¨£¬µ«ÊÇ¹ã²¥ÖĞµÄ°ó¶¨µØÖ· Óë ±¾Éè±¸address²»ÏàÍ¬£¬Ôò²»½øĞĞÁ¬½Ó
             if(storedServerAddr[8-i] != advertisedPayload[advertisedPayload[0]+i]){
               return;
             }
@@ -216,11 +217,11 @@ void BLE_CLIENT::Setup_Ble_Client()
     pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     pBLEScan->setActiveScan(true);
 
-    // pBLEScan->start(30); // ä¼šé˜»å¡ï¼Œæ‰€ä»¥ä¸èƒ½æ”¾åœ¨ä¸»çº¿é‡Œé¢
+    // pBLEScan->start(30); // »á×èÈû£¬ËùÒÔ²»ÄÜ·ÅÔÚÖ÷ÏßÀïÃæ
   }
 } // End of setup.
 
-// pBLEScan->start ä¼šäº§ç”Ÿé˜»å¡ï¼Œæ‰€ä»¥åªèƒ½åœ¨è¾…çº¿ç¨‹ä¸­è°ƒç”¨
+// pBLEScan->start »á²úÉú×èÈû£¬ËùÒÔÖ»ÄÜÔÚ¸¨Ïß³ÌÖĞµ÷ÓÃ
 void BLE_CLIENT::Scan_Ble_Server()
 {
   if(pBLEScan == NULL)

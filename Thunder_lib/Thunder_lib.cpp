@@ -886,6 +886,15 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
   }
 }
 
+// 复位程序号为 1号程序
+void THUNDER::Reset_Process_Status()
+{
+  if(program_user != PROCESS_USER_1){
+    Set_Program_User(PROCESS_USER_1);
+    Disk_Manager.Wirte_Program_User(program_user);
+  }
+}
+
 void THUNDER::Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount)
 {
   led_indication_param.wait_led_timer = 700;
