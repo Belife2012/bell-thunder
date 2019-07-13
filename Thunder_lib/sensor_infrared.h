@@ -18,18 +18,17 @@ typedef enum {
 class SENSOR_INFRARED : public SENSOR_IIC
 {
 private:
-    /* data */
+    unsigned char Check_Out_IRdata(uint16_t data);
 public:
     SENSOR_INFRARED(int slave_address) : SENSOR_IIC(slave_address) {};
 
-    void SetSysMode(uint8_t sensorChannel, unsigned char sys_mode);
-    void SetSysChannel(uint8_t sensorChannel, unsigned char sys_channel);
+    void SetSysMode(unsigned char sys_mode, uint8_t sensorChannel=0);
+    void SetSysChannel(unsigned char sys_channel, uint8_t sensorChannel=0);
 
-    unsigned char GetDistance(uint8_t sensorChannel);
-    unsigned char GetBeaconDist(uint8_t sensorChannel);
-    unsigned char GetBeaconDire(uint8_t sensorChannel);
-    unsigned char GetRemoteInfo(uint8_t sensorChannel);
-    unsigned char Check_Out_IRdata(uint16_t data);
+    unsigned char GetDistance(uint8_t sensorChannel=0);
+    unsigned char GetBeaconDist(uint8_t sensorChannel=0);
+    unsigned char GetBeaconDire(uint8_t sensorChannel=0);
+    unsigned char GetRemoteInfo(uint8_t sensorChannel=0);
 };
 
 #endif

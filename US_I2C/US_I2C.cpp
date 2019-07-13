@@ -46,12 +46,12 @@ US_I2C::US_I2C(int slave_address) : SENSOR_IIC(slave_address)
  * 如果返回 0 ，   代表获取了传感器的原始数据
  * 如果返回 非0 ， 则代表无法获取数据，数据无效
  */
-byte US_I2C::Get_US_Data(unsigned short *data)
+byte US_I2C::Get_US_Data(unsigned short *data, unsigned char channel)
 {
   byte rc;
   unsigned char val[2];
 
-  rc = get_rawval(val);
+  rc = get_rawval(val, channel);
 
   if (rc != 0)
   {
@@ -71,13 +71,13 @@ byte US_I2C::Get_US_Data(unsigned short *data)
  * 如果返回300.0， 代表超出量程；可能超出最大，可能超出最小
  * 如果返回 0 ，   则代表无法获取数据，数据无效
  */
-float US_I2C::Get_US_cm(void)
+float US_I2C::Get_US_cm(unsigned char channel)
 {
   byte rc;
   unsigned char val[2];
   int data;
 
-  rc = get_rawval(val);
+  rc = get_rawval(val, channel);
 
   if (rc != 0)
   {
@@ -103,11 +103,11 @@ float US_I2C::Get_US_cm(void)
 }
 
 // 类内部使用，I2C通讯，读取超声波数据
-byte US_I2C::get_rawval(unsigned char *data)
+byte US_I2C::get_rawval(unsigned char *data, unsigned char channel)
 {
   byte rc;
 
-  rc = read(0X01, data, 2);
+  rc = read(0X01, data, 2, channel);
 
   // if (rc != 0) {
   //   Serial.println(F("### 无法获取超声波数据 ###"));
@@ -118,16 +118,15 @@ byte US_I2C::get_rawval(unsigned char *data)
 
 int US_I2C::Thunder_Get_US_Data(uint8_t sensorChannel)
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
   float US_Data_cm = 0;
-  US_Data_cm = Get_US_cm();
+  US_Data_cm = Get_US_cm(sensorChannel);
   return (int) US_Data_cm;
 }
 
-int US_I2C::Thunder_Detect_Obstacle()
+int US_I2C::Thunder_Detect_Obstacle(uint8_t sensorChannel)
 {
   float US_Data_cm = 0;
-  US_Data_cm = Get_US_cm();
+  US_Data_cm = Get_US_cm(sensorChannel);
   if(US_Data_cm == 0.0) {
       return 0;
   } else if(US_Data_cm == 300.0) {

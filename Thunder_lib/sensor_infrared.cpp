@@ -1,10 +1,10 @@
 #include "sensor_infrared.h"
 
-void SENSOR_INFRARED::SetSysChannel(uint8_t sensorChannel, unsigned char sys_channel)
+void SENSOR_INFRARED::SetSysChannel(unsigned char sys_channel, uint8_t sensorChannel)
 {
     write(INFRARED_IIC_REG_SYSCHANNEL, &sys_channel, 1, sensorChannel);
 }
-void SENSOR_INFRARED::SetSysMode(uint8_t sensorChannel, unsigned char sys_mode)
+void SENSOR_INFRARED::SetSysMode(unsigned char sys_mode, uint8_t sensorChannel)
 {
     write(INFRARED_IIC_REG_SYSMODE, &sys_mode, 1, sensorChannel);
 }

@@ -12,7 +12,7 @@ private:
 public:
     SENSOR_HUMAN(int slave_address) : SENSOR_IIC(slave_address) { };
 
-    unsigned char GetStatus(uint8_t sensorChannel);
+    unsigned char GetStatus(uint8_t sensorChannel=0);
 };
 
 #endif

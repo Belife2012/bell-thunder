@@ -6,16 +6,14 @@
  * 
  * @return int8_t 红外光源相对角度，取值范围 -45 ~ 45
  */
-int8_t SENSOR_FLAME::Get_Flame_Angle()
+int8_t SENSOR_FLAME::Get_Flame_Angle(unsigned char channel)
 {
     unsigned char read_angle;
-    if(0 == read(FLAME_REG_ANGLE, &read_angle, 1)){
-        angle = read_angle;
+    if(0 == read(FLAME_REG_ANGLE, &read_angle, 1, channel)){
+        return read_angle;
     }else {
-        angle = 0;
+        return 0;
     }
-
-    return angle;
 }
 
 /**
@@ -23,16 +21,14 @@ int8_t SENSOR_FLAME::Get_Flame_Angle()
  * 
  * @return unsigned char 红外光相对强度，取值范围0~100
  */
-unsigned char SENSOR_FLAME::Get_Flame_Intensity()
+unsigned char SENSOR_FLAME::Get_Flame_Intensity(unsigned char channel)
 {
     unsigned char read_intensity;
-    if(0 == read(FLAME_REG_INTENSITY, &read_intensity, 1)){
-        intensity = read_intensity;
+    if(0 == read(FLAME_REG_INTENSITY, &read_intensity, 1, channel)){
+        return read_intensity;
     }else {
-        intensity = 0;
+        return 0;
     }
-
-    return intensity;
 }
 
 /**
@@ -43,9 +39,9 @@ unsigned char SENSOR_FLAME::Get_Flame_Intensity()
  * @return true 有火苗
  * @return false 没有火苗
  */
-bool SENSOR_FLAME::Check_Flame()
+bool SENSOR_FLAME::Check_Flame(unsigned char channel)
 {
-    if( CHECK_FLAME_INTENSITY < Get_Flame_Intensity() ){
+    if( CHECK_FLAME_INTENSITY < Get_Flame_Intensity(channel) ){
         return true;
     }else {
         return false;

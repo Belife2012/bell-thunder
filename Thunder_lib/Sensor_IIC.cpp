@@ -1,7 +1,7 @@
 #include "Sensor_IIC.h"
 
 #define SELECT_IIC_CHANNEL(channel) do{ Wire.beginTransmission(0x70); \
-                                      Wire.write( 0x38 | (0x01 << (channel-1)) ); \
+                                      Wire.write( 0x38 | ( (channel&0x07)==0x07 ? 0x07 : (0x01 << (channel-1)) ) ); \
                                       Wire.endTransmission(true); }while(0)
 
 
@@ -18,7 +18,7 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
   byte rc;
 
   Task_Mesg.Take_Semaphore_IIC();
-  if(channel > 0 && channel <= MAX_CHANNEL_INDEX && i2c_channel != channel){
+  if(channel > 0 && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
     i2c_channel = channel;
   }
@@ -45,7 +45,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
   unsigned char cnt = 0;
 
   Task_Mesg.Take_Semaphore_IIC();
-  if(channel > 0 && channel <= MAX_CHANNEL_INDEX && i2c_channel != channel){
+  if(channel > 0 && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
     i2c_channel = channel;
   }

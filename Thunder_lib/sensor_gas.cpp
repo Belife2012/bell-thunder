@@ -13,7 +13,7 @@ unsigned char SENSOR_GAS::GetToxicgasRatio(unsigned char sensorChannel)
     return read_data;
 }
 
-void SENSOR_GAS::SetDetectRange(unsigned char sensorChannel, unsigned char max_value, unsigned char min_value)
+void SENSOR_GAS::SetDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)
 {
     unsigned char ret,times;
 

@@ -13,7 +13,7 @@ private:
 public:
     SENSOR_TEMP(int slave_address) : SENSOR_IIC(slave_address) { };
 
-    float GetTemperature(uint8_t sensorChannel);
+    float GetTemperature(uint8_t sensorChannel=0);
 };
 
 #endif

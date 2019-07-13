@@ -51,18 +51,6 @@ typedef enum{
   BLE_CLIENT_SEMAPHORE_CONN
 } enum_Ble_Mesg;
 
-typedef enum{
-  BLE_NOT_OPEN,
-  BLE_CLIENT_DISCONNECT, // 作为BLE Client, 未连接蓝牙手柄
-  BLE_SERVER_CONNECTED,   // 作为BLE Server
-  BLE_CLIENT_CONNECTED    // 作为BLE Client, 已经连接蓝牙手柄
-} enum_Ble_Status; //  BLE 工作状态
-
-typedef enum{
-  BLE_SERVER_SEMAPHORE_RX = 1,
-  BLE_CLIENT_SEMAPHORE_CONN
-} enum_Ble_Mesg;
-
 /* 串口指令的数据包相关宏 旧协议 */
 #define UART_GENERAL_IR_SENSOR           (0x51)
 #define UART_GENERAL_US_SENSOR           (0x52)

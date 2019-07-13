@@ -24,13 +24,13 @@ TOUCH_I2C::TOUCH_I2C(int slave_address) :
  *      0 获取数据正常
  *      非0 获取数据出错
  */
-byte TOUCH_I2C::Get_Status(byte *readValue)
+byte TOUCH_I2C::Get_Status(byte *readValue, unsigned char channel)
 {
   unsigned char ret;
 
-  ret = read(TOUCH_ADDRESS_VALUE, readValue, 1);
+  ret = read(TOUCH_ADDRESS_VALUE, readValue, 1, channel);
   if(*readValue == 0){
-    if(Check_Touch_Event(TOUCH_EVENT_TOUCH) == true){
+    if(Check_Touch_Event(TOUCH_EVENT_TOUCH, channel) == true){
       *readValue = 2;
     }
   }
@@ -44,13 +44,13 @@ byte TOUCH_I2C::Get_Status(byte *readValue)
  * @parameters: 
  * @return: 
  */
-byte TOUCH_I2C::Reset_Mode(void)
+byte TOUCH_I2C::Reset_Mode(unsigned char channel)
 {
   unsigned char ctl_data, ret;
 
   ctl_data = 0;
 
-  ret = write(TOUCH_ADDRESS_CONTROL, &ctl_data, 1);
+  ret = write(TOUCH_ADDRESS_CONTROL, &ctl_data, 1, channel);
 
   return ret;
 }
@@ -61,17 +61,17 @@ byte TOUCH_I2C::Reset_Mode(void)
  * @parameters: 
  * @return: true是有发生过，false是未发生过
  */
-bool TOUCH_I2C::Check_Touch_Event(enum_touch_event check_event)
+bool TOUCH_I2C::Check_Touch_Event(enum_touch_event check_event, unsigned char channel)
 {
   byte ret;
   byte readValue = 0;
 
   if(check_event == TOUCH_EVENT_RELEASE){
-    ret = read(TOUCH_ADDRESS_RELEASE, &readValue, 1);
+    ret = read(TOUCH_ADDRESS_RELEASE, &readValue, 1, channel);
   }else if(check_event == TOUCH_EVENT_PRESS){
-    ret = read(TOUCH_ADDRESS_PRESS, &readValue, 1);
+    ret = read(TOUCH_ADDRESS_PRESS, &readValue, 1, channel);
   }else if(check_event == TOUCH_EVENT_TOUCH){
-    ret = read(TOUCH_ADDRESS_TOUCH, &readValue, 1);
+    ret = read(TOUCH_ADDRESS_TOUCH, &readValue, 1, channel);
   }
 
   if(ret != 0){
@@ -92,7 +92,7 @@ bool TOUCH_I2C::Check_Touch_Event(enum_touch_event check_event)
  *      0 写数据正常
  *      非0 写数据出错
  */
-byte TOUCH_I2C::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueValue)
+byte TOUCH_I2C::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueValue, unsigned char channel)
 {
   unsigned char rgb[3], ret;
 
@@ -100,33 +100,30 @@ byte TOUCH_I2C::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueValue)
   rgb[1] = GreenValue;
   rgb[2] = BlueValue;
 
-  ret = write(TOUCH_ADDRESS_RGB, rgb, 3);
+  ret = write(TOUCH_ADDRESS_RGB, rgb, 3, channel);
 
   return ret;
 }
 
 int TOUCH_I2C::Thunder_Get_Touch_Data(uint8_t sensorChannel)
 {
-    SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
     byte statusValue1;
-    Get_Status( & statusValue1);
+    Get_Status( &statusValue1, sensorChannel);
     return statusValue1;
 }
 
 void TOUCH_I2C::Thunder_Set_Touch_Value(uint8_t sensorChannel, byte RedValue, byte GreenValue, byte BlueValue)
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
-  Set_LED_RGBvalue(RedValue, GreenValue, BlueValue);
+  Set_LED_RGBvalue(RedValue, GreenValue, BlueValue, sensorChannel);
 }
 
 bool TOUCH_I2C::Thunder_Get_Touch_Status(uint8_t sensorChannel, int status) 
 {
-  SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
   if(status == 0) {
-    return Check_Touch_Event(TOUCH_EVENT_RELEASE);
+    return Check_Touch_Event(TOUCH_EVENT_RELEASE, sensorChannel);
   } else if(status == 1) {
-    return Check_Touch_Event(TOUCH_EVENT_PRESS);
+    return Check_Touch_Event(TOUCH_EVENT_PRESS, sensorChannel);
   } else if(status == 2) {
-    return Check_Touch_Event(TOUCH_EVENT_TOUCH);
+    return Check_Touch_Event(TOUCH_EVENT_TOUCH, sensorChannel);
   }
 }

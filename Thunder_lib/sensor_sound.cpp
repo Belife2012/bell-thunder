@@ -14,7 +14,7 @@ unsigned char SENSOR_SOUND::GetSoundDB(unsigned char sensorChannel)
     return read_data;
 }
 
-void SENSOR_SOUND::SetDetectRange(unsigned char sensorChannel, unsigned char max_value, unsigned char min_value)
+void SENSOR_SOUND::SetDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)
 {
     unsigned char ret,times;
 

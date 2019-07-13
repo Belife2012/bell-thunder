@@ -15,12 +15,10 @@ class SENSOR_FLAME : public SENSOR_IIC
 public:
     SENSOR_FLAME(int slave_address) : SENSOR_IIC(slave_address) {};
 
-    int8_t Get_Flame_Angle();
-    unsigned char Get_Flame_Intensity();
-    bool Check_Flame();
+    int8_t Get_Flame_Angle(unsigned char channel=0);
+    unsigned char Get_Flame_Intensity(unsigned char channel=0);
+    bool Check_Flame(unsigned char channel=0);
 private:
-    int8_t angle;
-    unsigned char intensity;
 };
 
 #endif

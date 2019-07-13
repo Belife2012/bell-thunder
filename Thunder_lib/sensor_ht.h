@@ -13,8 +13,8 @@ private:
 public:
     SENSOR_HT(int slave_address);
 
-    float GetHumidity(uint8_t sensorChannel);
-    float GetTemperature(uint8_t sensorChannel);
+    float GetHumidity(uint8_t sensorChannel=0);
+    float GetTemperature(uint8_t sensorChannel=0);
 };
 
 #endif
