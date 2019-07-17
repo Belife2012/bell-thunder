@@ -148,8 +148,8 @@ void THUNDER::Setup_All(void)
   I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
 	
 	// 九轴传感器初始化
-	Attitude_Sensor.Init_Sensor();
-	Attitude_Sensor.Open_Sensor();
+	// Attitude_Sensor.Init_Sensor();
+	// Attitude_Sensor.Open_Sensor();
   
   Thunder_BLE.Setup_BLE();
 
