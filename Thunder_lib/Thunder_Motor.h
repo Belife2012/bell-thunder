@@ -255,8 +255,6 @@ class THUNDER_MOTOR
     void Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed);
     void Control_Motor_Turnning(MotorTurnning_Struct &turnning_data);
     void Control_Motor_Turnning(byte _mode, float _data, float _percent, float _speed);
-    MotorRunning_Struct motor_running_data;
-    MotorTurnning_Struct motor_turnning_data;
 
     void Update_Encoder_Value();
 
