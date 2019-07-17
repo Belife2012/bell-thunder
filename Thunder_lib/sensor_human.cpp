@@ -11,6 +11,7 @@ unsigned char SENSOR_HUMAN::GetStatus(uint8_t sensorChannel)
 
         break;
     }
+    _data = (_data==1) ? 0 : 1;
 
     // Serial.printf("GetTemperature: %d data: %d %d\n", ret, high_data, low_data);
 
