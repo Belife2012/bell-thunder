@@ -217,7 +217,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
         // 分析BLE数据后，如果指令Rx_Data[0] 不为 0 ，则give BLE信号
         if(Rx_Data[0] != 0){
-          Task_Mesg.Give_Semaphore_BLE(1);
+          Task_Mesg.Give_Semaphore_BLE(BLE_SERVER_SEMAPHORE_RX);
         }
       }
     }

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <function_macro.h>
+#include "data_type.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -92,7 +93,7 @@ public:
   QueueHandle_t Queue_encoder_left;
   QueueHandle_t Queue_encoder_right;
 
-  int ble_connect_type = 0;
+  enum_Ble_Status ble_connect_type = BLE_NOT_OPEN;
 
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];

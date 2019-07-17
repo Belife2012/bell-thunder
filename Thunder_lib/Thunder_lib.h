@@ -340,6 +340,7 @@ class THUNDER
     bool Check_Function_Button_Event(enum_Key_Value key_event);
     void Set_Process_Status(enum_Process_Status new_status);
     void Update_Process_Status(enum_Key_Value button_event);
+    void Reset_Process_Status();
     void Set_Program_User(enum_Process_Status new_program_user);
     void Set_Program_Run_Index(enum_Process_Status new_program);
     void Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount);
