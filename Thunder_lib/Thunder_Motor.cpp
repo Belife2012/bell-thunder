@@ -916,6 +916,18 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
   }
 }
 
+void THUNDER_MOTOR::Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed)
+{
+  MotorRunning_Struct _running_data;
+
+  _running_data.motor_select = _select;
+  _running_data.running_mode = _mode;
+  _running_data.mode_data = _data;
+  _running_data.left_motor_speed = _left_speed;
+  _running_data.right_motor_speed = _right_speed;
+
+  Control_Motor_Running(_running_data);
+}
 /* 
  * 控制电机转向运行，可以设置控制模式：0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
  * 
@@ -990,6 +1002,18 @@ void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
   Set_Car_Speed_Direction(0, 0);
   // Motor_Free(1);
   // Motor_Free(2);
+}
+
+void THUNDER_MOTOR::Control_Motor_Turnning(byte _mode, float _data, float _percent, float _speed)
+{
+  MotorTurnning_Struct _turnning_data;
+
+  _turnning_data.turnning_mode = _mode;
+  _turnning_data.mode_data = _data;
+  _turnning_data.turn_percent = _percent;
+  _turnning_data.motor_speed = _speed;
+
+  Control_Motor_Turnning(_turnning_data);
 }
 
 void THUNDER_MOTOR::Calculate_Left_Control()
