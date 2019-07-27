@@ -29,7 +29,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <US_I2C.h>
-#include <Task_Mesg.h>
 
 // #define DEBUG_US_IIC
 

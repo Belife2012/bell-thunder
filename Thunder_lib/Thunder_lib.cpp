@@ -92,9 +92,8 @@ void THUNDER::Setup_All(void)
   Close_Multi_Message();
 
   Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
+  SENSOR_IIC::CreateSemaphoreIIC();
   SENSOR_IIC::Select_Sensor_AllChannel();
-
-  Thunder_BLE.Setup_EEPROM(); // 配置EEPROM
 
   Disk_Manager.Disk_Manager_Initial();
 
@@ -118,6 +117,7 @@ void THUNDER::Setup_All(void)
 	// Attitude_Sensor.Init_Sensor();
 	// Attitude_Sensor.Open_Sensor();
   
+  THUNDER_BLE::CreateQueueBLE();
   Thunder_BLE.Setup_BLE();
 
   Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED);      // 把 LED点阵显示动画效果刷新工作 交给后台守护线程进行
@@ -145,23 +145,26 @@ void THUNDER::Setup_All(void)
 void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 {
   if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
+	Serial.println("ble type: server");
 	ble_type = BLE_TYPE_SERVER;
-	Task_Mesg.ble_connect_type = BLE_SERVER_CONNECTED;
+	THUNDER_BLE::SetBleConnectType(BLE_SERVER_CONNECTED);
 	Ble_Client.Disconnect_Ble_Server();
 	Ble_Client.Stop_Scan();
 
 	Thunder_BLE.New_Ble_Server_Service(); // 配置 BLE Server 
 
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
+	Serial.println("ble type: client");
 	ble_type = BLE_TYPE_CLIENT;
-	Task_Mesg.ble_connect_type = BLE_CLIENT_DISCONNECT; // 允许启动 client scan
+	THUNDER_BLE::SetBleConnectType(BLE_CLIENT_DISCONNECT); // 允许启动 client scan
 	Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
 
 	Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
 
   }else if( (ble_type != BLE_TYPE_NONE) && (new_type == BLE_TYPE_NONE) ) {
+	Serial.println("ble turn off");
 	ble_type = BLE_TYPE_NONE;
-	Task_Mesg.ble_connect_type = BLE_NOT_OPEN;
+	THUNDER_BLE::SetBleConnectType(BLE_NOT_OPEN);
 	Ble_Client.Disconnect_Ble_Server();
 	Ble_Client.Stop_Scan();
 	Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
@@ -395,7 +398,7 @@ void THUNDER::Setup_Led_Indication()
 	if ((uint8_t)store_program_mode >= (uint8_t)PROCESS_THUNDER_GO)
 	{
 	  Set_Program_User(PROCESS_USER_1);
-	  Disk_Manager.Wirte_Program_User(program_user);
+	  Disk_Manager.Write_Program_User(program_user);
 	}
 	else
 	{
@@ -847,28 +850,28 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
 		function_button_event = KEY_NONE;
 		// Speaker.Play_Song(3);
 		Set_Program_User(PROCESS_USER_1);
-		Disk_Manager.Wirte_Program_User(program_user);
+		Disk_Manager.Write_Program_User(program_user);
 		}
 		else if (button_event == KEY_CLICK_TWO)
 		{
 		function_button_event = KEY_NONE;
 		// Speaker.Play_Song(4);
 		Set_Program_User(PROCESS_USER_2);
-		Disk_Manager.Wirte_Program_User(program_user);
+		Disk_Manager.Write_Program_User(program_user);
 		}
 		else if (button_event == KEY_CLICK_THREE)
 		{
 		function_button_event = KEY_NONE;
 		// Speaker.Play_Song(5);
 		Set_Program_User(PROCESS_USER_3);
-		Disk_Manager.Wirte_Program_User(program_user);
+		Disk_Manager.Write_Program_User(program_user);
 		}
 		else if (button_event == KEY_CLICK_FOUR)
 		{
 		function_button_event = KEY_NONE;
 		// Speaker.Play_Song(6);
 		Set_Program_User(PROCESS_USER_4);
-		Disk_Manager.Wirte_Program_User(program_user);
+		Disk_Manager.Write_Program_User(program_user);
 		}
 
 		break;
@@ -891,7 +894,7 @@ void THUNDER::Reset_Process_Status()
 {
   if(program_user != PROCESS_USER_1){
     Set_Program_User(PROCESS_USER_1);
-    Disk_Manager.Wirte_Program_User(program_user);
+    Disk_Manager.Write_Program_User(program_user);
   }
 }
 
@@ -3322,7 +3325,7 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_BLE_NAME:                                  //蓝牙命名
-	Thunder_BLE.Write_BLE_Name(ADD_BLE_NAME); //从地址0开始写入命名的蓝牙
+	Thunder_BLE.Set_BLE_Name(); //从地址0开始写入命名的蓝牙
 	break;
 
   case UART_GENERAL_SERVO_CTRL:                            //控制舵机
@@ -3621,29 +3624,6 @@ void THUNDER::Reset_Rx_Data()
 {
   memset(Rx_Data, 0, COMMUNICATION_FIXED_LENGTH_MAX);
   ble_command_busy = false;
-}
-
-/* 
- * 开环控制电机时，获取编码器数据，用于测试电机编码器(一个PID控制周期才能获取一次)
- * 数据 通过队列发到打印线程
- *   打印线程在loop里面
- */
-void THUNDER::Get_Queue_Encoder(void){
-#ifdef PRINT_DEBUG_INFO
-// if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
-// {
-//   float F_encoder_left;
-//   float F_encoder_right;
-
-//   // Serial.printf("left: %d\n", (int)Encoder_Counter_Left);
-//   F_encoder_left = Encoder_Counter_Left;
-//   xQueueSend(Task_Mesg.Queue_encoder_left, &F_encoder_left, 0);
-
-//   // Serial.printf("right: %d\n\n", (int)Encoder_Counter_Right);
-//   F_encoder_right = Encoder_Counter_Right;
-//   xQueueSend(Task_Mesg.Queue_encoder_right, &F_encoder_right, 0);
-// }
-#endif
 }
 
 uint32_t THUNDER::Get_Virtual_Timer(uint32_t timer_index)

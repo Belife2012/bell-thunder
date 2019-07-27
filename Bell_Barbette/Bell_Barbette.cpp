@@ -1,6 +1,5 @@
 #include "Bell_Barbette.h"
-#include "Task_Mesg.h"
-#include "Sensor_IIC.h"
+#include "SENSOR_IIC.h"
 
 int currrent_pos = 900;
 unsigned long last_shooting_time = 0;
@@ -38,11 +37,11 @@ uint8_t Bell_Barbette::send_data(uint8_t *data)
     length = data[2] + 4;
     data[length - 1] = compute_crc(data,length - 1);
     
-  Task_Mesg.Take_Semaphore_IIC();
+  SENSOR_IIC::Take_Semaphore_IIC();
     Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(data,length);
     status = Wire.endTransmission();
-  Task_Mesg.Give_Semaphore_IIC();
+  SENSOR_IIC::Give_Semaphore_IIC();
     // while(status != 0)
     // {
     //     Wire.reset();
@@ -122,12 +121,12 @@ uint16_t Bell_Barbette::Get_Bullet()
     uint8_t temp[6];
     uint8_t read_bullet_buf[2] = {0xea,0x02};
 
-  Task_Mesg.Take_Semaphore_IIC();
+  SENSOR_IIC::Take_Semaphore_IIC();
     Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(read_bullet_buf,2);
     Wire.endTransmission(false);
     receive_data(temp,2);
-  Task_Mesg.Give_Semaphore_IIC();
+  SENSOR_IIC::Give_Semaphore_IIC();
     bullet = temp[0];
     bullet = (bullet << 8) | temp[1];
     return bullet;
@@ -140,12 +139,12 @@ uint32_t Bell_Barbette::Get_Used_Time()
     uint8_t temp[4];
     uint8_t read_bullet_buf[2] = {0xea,0x01};
     
-  Task_Mesg.Take_Semaphore_IIC();
+  SENSOR_IIC::Take_Semaphore_IIC();
     Wire.beginTransmission((uint8_t)BARBETTE_ADDR);
     Wire.write(read_bullet_buf,2);
     Wire.endTransmission(false);
     receive_data(temp,4);
-  Task_Mesg.Give_Semaphore_IIC();
+  SENSOR_IIC::Give_Semaphore_IIC();
     used_time = temp[0];
     used_time = (used_time << 8) | temp[1];
     used_time = (used_time << 8) | temp[2];

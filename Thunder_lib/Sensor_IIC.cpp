@@ -6,6 +6,7 @@
 
 
 uint8_t SENSOR_IIC::i2c_channel = 0;
+SemaphoreHandle_t SENSOR_IIC::xSemaphore_IIC;
 
 SENSOR_IIC::SENSOR_IIC(int slave_address)
 {
@@ -17,7 +18,7 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
 {
   byte rc;
 
-  Task_Mesg.Take_Semaphore_IIC();
+  Take_Semaphore_IIC();
   if(channel > 0 && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
     i2c_channel = channel;
@@ -34,7 +35,7 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
     Wire.reset();
   }
   #endif
-  Task_Mesg.Give_Semaphore_IIC();
+  Give_Semaphore_IIC();
   return (rc);
 }
 
@@ -44,7 +45,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
   byte rc;
   unsigned char cnt = 0;
 
-  Task_Mesg.Take_Semaphore_IIC();
+  Take_Semaphore_IIC();
   if(channel > 0 && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
     i2c_channel = channel;
@@ -59,7 +60,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
       Wire.reset();
     }
     #endif
-    Task_Mesg.Give_Semaphore_IIC();
+    Give_Semaphore_IIC();
     return rc;
   }
 
@@ -72,7 +73,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
       cnt++;
     }
   }
-  Task_Mesg.Give_Semaphore_IIC();
+  Give_Semaphore_IIC();
 
   return (cnt != 0) ? 0 : 0xff;
 }
@@ -95,7 +96,7 @@ uint8_t SENSOR_IIC::Set_I2C_Chanel(uint8_t channelData)
   {
 	// TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
 
-	Task_Mesg.Take_Semaphore_IIC();
+	Take_Semaphore_IIC();
 	Wire.beginTransmission(0x70);
 	Wire.write(channelData);
 	ret = Wire.endTransmission(true);
@@ -105,7 +106,7 @@ uint8_t SENSOR_IIC::Set_I2C_Chanel(uint8_t channelData)
 	  Wire.reset();
 	}
 #endif
-	Task_Mesg.Give_Semaphore_IIC();
+	Give_Semaphore_IIC();
 	if (ret != 0)
 	{
 	  Serial.printf("### TCA9548 Write I2C Channel Error: %d \n", ret);
@@ -115,7 +116,7 @@ uint8_t SENSOR_IIC::Set_I2C_Chanel(uint8_t channelData)
 	else
 	{
 	  // read TCA9548
-	  Task_Mesg.Take_Semaphore_IIC();
+	  Take_Semaphore_IIC();
 	  if (0 != Wire.requestFrom((byte)0x70, (byte)1, (byte) true))
 	  {
 		while (Wire.available())
@@ -123,7 +124,7 @@ uint8_t SENSOR_IIC::Set_I2C_Chanel(uint8_t channelData)
 		  regValue = Wire.read();
 		}
 	  }
-	  Task_Mesg.Give_Semaphore_IIC();
+	  Give_Semaphore_IIC();
 
 	  if (regValue == channelData)
 	  {
@@ -209,4 +210,40 @@ uint8_t SENSOR_IIC::Select_Sensor_AllChannel()
   }
 
   return 0;
+}
+
+void SENSOR_IIC::CreateSemaphoreIIC()
+{
+  // 创建 IIC互斥体
+  xSemaphore_IIC = xSemaphoreCreateMutex();
+  if (xSemaphore_IIC == NULL)
+  {
+    while (1)
+    {
+      Serial.println("Mutex_IIC create fail");
+    }
+  }
+}
+
+/* 
+ * 用于IIC硬件驱动，阻止其他线程占用IIC，恢复前 不建议使用delay
+ * 
+ * @parameters:
+ * @return
+ */
+void SENSOR_IIC::Take_Semaphore_IIC()
+{
+  do
+  {
+  } while (xSemaphoreTake(xSemaphore_IIC, portMAX_DELAY) != pdPASS);
+}
+/* 
+ * 用于硬件驱动，恢复其他线程使用IIC
+ * 
+ * @parameters:
+ * @return
+ */
+void SENSOR_IIC::Give_Semaphore_IIC()
+{
+  xSemaphoreGive(xSemaphore_IIC);
 }

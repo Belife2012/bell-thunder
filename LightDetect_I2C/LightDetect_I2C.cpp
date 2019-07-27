@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <LightDetect_I2C.h>
-#include <Task_Mesg.h>
 
 LIGHTDETECT_I2C::LIGHTDETECT_I2C(int slave_address):
   SENSOR_IIC(slave_address)

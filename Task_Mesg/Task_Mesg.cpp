@@ -1,5 +1,12 @@
+/* 
+ * Task_Mesg模块：编写了各种系统守护线程，用于实现系统管理，还有后台运行的线程
+ * 实现一些周期性的采集和刷新动作。
+ * 
+ */
+
 #include "Task_Mesg.h"
-#include <Thunder_lib.h>
+#include "Sensor_IIC.h"
+#include "Thunder_lib.h"
 
 #ifdef COMPETITION_FW_001
   #define MAX_APPS_TASK_COUNTER_AUTOCTRL  (MAX_APPS_TASK_COUNTER)
@@ -96,19 +103,18 @@ void Proc_Ble_Command(void *pvParameters)
     // 等待 xSemaphore_BLE, 如果没有give xSemaphore_BLE, 这个task是阻塞状态的
     // Serial.println("wait BLE command...");
     int ble_mesg_type;
-    ble_mesg_type = Task_Mesg.Take_Semaphore_BLE();
+    ble_mesg_type = THUNDER_BLE::Take_Semaphore_BLE();
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
       // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
       if(ble_mesg_type == BLE_SERVER_SEMAPHORE_RX){ // 作为Server，接收到client的信息
         Thunder.Check_BLE_Communication();
       }else if(ble_mesg_type == BLE_CLIENT_SEMAPHORE_CONN){
-        if(Task_Mesg.ble_connect_type == BLE_CLIENT_DISCONNECT)
+        if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_DISCONNECT)
         { // 搜索到BLE Server，进行连接动作
-          Task_Mesg.ble_connect_type = BLE_CLIENT_CONNECTED;
           Ble_Client.Connect_Ble_Server();
         }
-        // else if(Task_Mesg.ble_connect_type == BLE_CLIENT_CONNECTED){ // 接收到Server的信息
+        // else if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_CONNECTED){ // 接收到Server的信息
         //   Thunder.Check_BLE_Communication();
         // }
       }
@@ -135,7 +141,7 @@ void Operator_Mode_Deamon(void *pvParameters)
       // Thunder.Line_Tracing_Speed_Ctrl();
     }
     // 作为辅线程搜索BLE Server
-    if(Task_Mesg.ble_connect_type == BLE_CLIENT_DISCONNECT){
+    if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_DISCONNECT){
       Ble_Client.Scan_Ble_Server(); // 搜索BLE Server
     }
     vTaskDelay(pdMS_TO_TICKS(50));
@@ -242,8 +248,6 @@ void New_Loop_Task(void *pvParameters)
 
 TASK_MESG::TASK_MESG()
 {
-  Queue_encoder_left = xQueueCreate(3, sizeof(float));
-  Queue_encoder_right = xQueueCreate(3, sizeof(float));
 
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
@@ -256,15 +260,6 @@ TASK_MESG::TASK_MESG()
 #endif
   }
 
-  // 创建 IIC互斥体
-  xSemaphore_IIC = xSemaphoreCreateMutex();
-  if (xSemaphore_IIC == NULL)
-  {
-    while (1)
-    {
-      Serial.println("Mutex_IIC create fail");
-    }
-  }
   // 创建 BLE二进制信号量
   /* xSemaphore_BLE = xSemaphoreCreateBinary();
   if (xSemaphore_BLE == NULL)
@@ -274,14 +269,6 @@ TASK_MESG::TASK_MESG()
       Serial.println("Semaphore_BLE create fail");
     }
   } */
-  Queue_Semaphore_BLE = xQueueCreate(1, sizeof(int));
-  if (Queue_Semaphore_BLE == NULL)
-  {
-    while (1)
-    {
-      Serial.println("Semaphore_BLE create fail");
-    }
-  }
 
   vPortCPUInitializeMutex(&spinlockMUX);
 
@@ -293,115 +280,6 @@ TASK_MESG::TASK_MESG()
 
 TASK_MESG::~TASK_MESG()
 {
-}
-
-#if 1
-/* 
- * 用于硬件驱动，阻止其他线程占用CPU，恢复前不允许delay
- * 
- * @parameters:
- * @return
- */
-void TASK_MESG::Suspend_Others_AppsTask()
-{
-  // former_Priority = uxTaskPriorityGet( NULL );
-
-  // // highese Priority in the AppTasks
-  // vTaskPrioritySet(NULL, 12);
-}
-/* 
- * 用于硬件驱动，恢复其他线程
- * 
- * @parameters:
- * @return
- */
-void TASK_MESG::Resume_Others_AppsTask()
-{
-  // // No suspend any one, then no resume
-  // if(former_Priority == 0){
-  //     return;
-  // }
-
-  // vTaskPrioritySet(NULL, former_Priority);
-}
-#endif
-
-/* 
- * 用于IIC硬件驱动，阻止其他线程占用IIC，恢复前 不建议使用delay
- * 
- * @parameters:
- * @return
- */
-void TASK_MESG::Take_Semaphore_IIC()
-{
-  do
-  {
-  } while (xSemaphoreTake(xSemaphore_IIC, portMAX_DELAY) != pdPASS);
-}
-/* 
- * 用于硬件驱动，恢复其他线程使用IIC
- * 
- * @parameters:
- * @return
- */
-void TASK_MESG::Give_Semaphore_IIC()
-{
-  xSemaphoreGive(xSemaphore_IIC);
-}
-
-/* 
- * 处理BLE command前需要take xSemaphore_BLE
- * 
- * @parameters:
- * @return
- */
-/* void TASK_MESG::Take_Semaphore_BLE()
-{
-  do
-  {
-  } while ( xSemaphoreTake(xSemaphore_BLE, portMAX_DELAY) != pdTRUE );
-} */
-int TASK_MESG::Take_Semaphore_BLE()
-{
-  int recv;
-
-  do
-  {
-  } while ( xQueueReceive(Queue_Semaphore_BLE, &recv, portMAX_DELAY) != pdTRUE );
-
-  return recv;
-}
-
-/* 
- * BLECharacteristicCallbacks onWrite函数 give xSemaphore_BLE
- * 
- * @parameters:
- * @return
- */
-/* void TASK_MESG::Give_Semaphore_BLE()
-{
-  xSemaphoreGive(xSemaphore_BLE);
-} */
-void TASK_MESG::Give_Semaphore_BLE(int ble_mesg_type)
-{
-  xQueueSend( Queue_Semaphore_BLE, ( void * )&ble_mesg_type, ( TickType_t ) 0 );
-}
-
-/* 
- * 作为BLE client，scan完成后得到相应的Server，发出信号量 xSemaphore_BLE_scanned
- * 
- * @parameters: 
- * @return: 
- */
-void TASK_MESG::Take_Semaphore_BLE_Scanned()
-{
-  do
-  {
-  } while ( xSemaphoreTake(xSemaphore_BLE_scanned, portMAX_DELAY) != pdTRUE );
-}
-void TASK_MESG::Give_Semaphore_BLE_Scanned()
-{
-  xSemaphoreGive(xSemaphore_BLE_scanned);
 }
 
 /* 
@@ -548,7 +426,7 @@ void TASK_MESG::Clear_All_Loops()
 {
   uint8_t ret;
 
-  Take_Semaphore_IIC();// 拿到资源控制权才开始删除线程
+  SENSOR_IIC::Take_Semaphore_IIC();// 拿到资源控制权才开始删除线程
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
     if(Task_Apps[i] != NULL)
@@ -562,7 +440,7 @@ void TASK_MESG::Clear_All_Loops()
       task_param[i] = NULL;
     }
   }
-  Give_Semaphore_IIC();
+  SENSOR_IIC::Give_Semaphore_IIC();
 
   tasks_num = 0;
   Thunder.Reset_All_Components();
@@ -572,7 +450,7 @@ void TASK_MESG::Clear_All_Loops()
 #ifdef COMPETITION_FW_001
 void Clear_All_Loops_AutoCtrl()
 {
-  Task_Mesg.Take_Semaphore_IIC();
+  SENSOR_IIC::Take_Semaphore_IIC();
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
     if(Task_Apps_AutoCtrl[i] != NULL)
@@ -586,7 +464,7 @@ void Clear_All_Loops_AutoCtrl()
       task_param_AutoCtrl[i] = NULL;
     }
   }
-  Task_Mesg.Give_Semaphore_IIC();
+  SENSOR_IIC::Give_Semaphore_IIC();
 
   tasks_num_AutoCtrl = 0;
   Thunder.Stop_All();
@@ -633,15 +511,9 @@ void TASK_MESG::Create_Deamon_Threads()
 }
 
 /*
- * 
- * 
- * @parameters: 
- * @return: 
+ * 获得后台线程的标识变量；
+ * 根据返回的数据可以得出有哪些后台线程在运行
  */
-void TASK_MESG::Remove_Deamon_Threads()
-{
-}
-
 UBaseType_t TASK_MESG::Get_flush_Tasks()
 {
   return flush_Tasks;

@@ -33,7 +33,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <XT1511_I2C.h>
-#include <Task_Mesg.h>
 
 // 配置I2C地址
 XT1511_I2C::XT1511_I2C(uint8_t slave_address) : 

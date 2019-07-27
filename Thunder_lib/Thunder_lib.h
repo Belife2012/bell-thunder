@@ -378,9 +378,6 @@ class THUNDER
     void Enable_Motor_Position(void);
     void Disable_En_Motor(void);  // 关闭编码电机计算
 
-    // 只能开环控制电机时使用
-    void Get_Queue_Encoder(void);
-
     // 舵机
     void Setup_Servo(void);                 // 舵机初始化配置
     void Servo_Turn(int servo, int angle);  // 舵机角度控制

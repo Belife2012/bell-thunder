@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <BH1745NUC.h>
-#include <Task_Mesg.h>
 
 // 配置I2C地址
 BH1745NUC::BH1745NUC(int slave_address):

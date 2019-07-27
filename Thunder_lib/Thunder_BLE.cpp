@@ -22,8 +22,8 @@
  * 功能列表：
  *  1.  uint64_t Get_ID(void);                        // 获取并返回芯片ID
  *  2.  void Setup_EEPROM(void);                      // 配置EEPROM
- *  3.  void Read_BLE_Name (int addr);                // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
- *  4.  void Write_BLE_Name (int addr);               // 写入自定义蓝牙名称
+ *  3.  void Get_BLE_Name (int addr);                // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
+ *  4.  void Set_BLE_Name (int addr);               // 写入自定义蓝牙名称
  *  5.  void Write_ROM (int addr, int val);           // 写ROM
  *  6.  void Reset_ROM (void);                        // 重置ROM
  *  7.  void Setup_BLE(void);                         // 配置BLE
@@ -35,10 +35,12 @@
 #include "esp_task_wdt.h"
 #include <Thunder_BLE.h>
 #include <Thunder_lib.h>
-#include <Task_Mesg.h>
 #include "function_macro.h"
+#include "Disk_Manager.h"
 
 uint8_t BLE_Name_Data[BLE_NAME_SIZE] = {0x00};
+QueueHandle_t THUNDER_BLE::Queue_Semaphore_BLE;
+enum_Ble_Status THUNDER_BLE::ble_connect_type = BLE_NOT_OPEN;
 
 // 蓝牙连接/断开的回调函数
 class MyServerCallbacks: public BLEServerCallbacks 
@@ -217,7 +219,7 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
         // 分析BLE数据后，如果指令Rx_Data[0] 不为 0 ，则give BLE信号
         if(Rx_Data[0] != 0){
-          Task_Mesg.Give_Semaphore_BLE(BLE_SERVER_SEMAPHORE_RX);
+          THUNDER_BLE::Give_Semaphore_BLE(BLE_SERVER_SEMAPHORE_RX);
         }
       }
     }
@@ -228,7 +230,7 @@ void THUNDER_BLE::Setup_BLE()
 {
   Serial.printf("\nstart BLE ...\n");
 
-  Read_BLE_Name(ADD_BLE_NAME);  // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
+  Get_BLE_Name();  // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
 
   if(BLE_Named == 1)
   {
@@ -269,11 +271,11 @@ void THUNDER_BLE::Setup_BLE()
   }
   else
   {
-    Serial.printf("* Dev BLE No name\n");
-
     char buf[5];
     sprintf(buf, "%X", (uint16_t)(SEP32_ID>>32));   // 取芯片ID后4位
     User_BLE_Name += buf;  // 结尾添加芯片ID后4位
+    
+    Serial.printf("* default BLE name: %s\n", User_BLE_Name.c_str());
     BLEDevice::init(User_BLE_Name);  // 创建BLE设备并命名 最多26个字母可以，一个汉字对应3个字母
   }
 
@@ -313,7 +315,7 @@ void THUNDER_BLE::New_Ble_Server_Service()
 
     Serial.println("AdvertisementData:");
     for(int i=0; i<oAdvertisementData.getPayload().length(); i++){
-      Serial.printf( " 0x%02x", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
+      Serial.printf( "0x%02x ", (int)( (oAdvertisementData.getPayload().c_str())[i] ) );
     }
     Serial.println();
 
@@ -341,7 +343,7 @@ void THUNDER_BLE::New_Ble_Server_Service()
   
   pServer->getAdvertising()->start(); // 开始广播
 
-  Serial.printf("BLE Server Service\n");
+  Serial.printf("Open BLE Server\n");
 }
 
 void THUNDER_BLE::Delete_Ble_Server_Service()
@@ -407,44 +409,10 @@ uint64_t THUNDER_BLE::Get_ID(void)
   return SEP32_ID;
 }
 
-// 配置EEPROM
-uint32_t flash_size;
-void THUNDER_BLE::Setup_EEPROM(void)
-{
-  Serial.println("Init EEPROM...");
-#if 0
-  if (!EEPROM.begin(EEPROM_SIZE))
-  {
-    Serial.println("Init EEPROM fail!"); 
-    delay(100000);
-  }
-  
-  Serial.print("* EEPROM_SIZE : ");
-  Serial.println(EEPROM_SIZE);
-  
-  for (int i = 0; i < EEPROM_SIZE; i++)
-  {
-    Serial.print(" ");
-    Serial.print(byte(EEPROM.read(i)));
-  }
-#else
-  flash_size = spi_flash_get_chip_size();
-  Serial.printf("Flash size: 0x%x\n", flash_size);
-
-#endif
-  Serial.println("\nInit EEPROM end");
-}
-
 // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
-void THUNDER_BLE::Read_BLE_Name (uint32_t addr)
+void THUNDER_BLE::Get_BLE_Name ()
 {
-  Serial.println("\nEEPROM:");
-  Read_ROM(ADD_BLE_NAME, BLE_Name_Data, BLE_NAME_SIZE);
-  for (int i = 0; i < BLE_NAME_SIZE; i++)
-  {
-    Serial.printf("0x%2x ", BLE_Name_Data[i]);
-  }
-  Serial.println();
+  Disk_Manager.Read_Ble_Name(BLE_Name_Data);
 
   if(BLE_Name_Data[0] != 0xFF)
   {
@@ -459,89 +427,65 @@ void THUNDER_BLE::Read_BLE_Name (uint32_t addr)
 #define RTC_CNTL_OPTIONS0_REG     0x3ff48000
 #define RTC_CNTL_SW_SYS_RST       0x80000000
 // 写入自定义蓝牙名称
-void THUNDER_BLE::Write_BLE_Name (uint32_t addr)
+void THUNDER_BLE::Set_BLE_Name ()
 {
-  if( ESP_OK != Reset_ROM() ){  // 清空定义出来的ROM
-    Serial.println("\nFlash erase fail.");
-    return;
+  if( true == Disk_Manager.Write_Ble_Name(BLE_Name_Data) ){
+    Serial.print("\nBLE w name: "); Serial.printf("%s\n", BLE_Name_Data);
+    Serial.println("BLE rename Success!");
   }
-  Serial.print("\nBLE w name: "); Serial.printf("%s\n", BLE_Name_Data);
-
-  if( ESP_OK != Write_ROM(ADD_BLE_NAME, BLE_Name_Data, BLE_NAME_SIZE) ){
-    Serial.println("\nFlash W fail.");
-    return;
-  }
-
-  Serial.println("BLE rename Success!");
   // 断开蓝牙连接，使重命名有效
   Serial.print("Device reset...");
   delay(50);
-  // for(uint32_t i = 0; i < 6; i++){
-  //   Serial.print(".");
-  //   delay(300);
-  // }
-  // 复位系统，重启设备
+  
   *((UBaseType_t *)RTC_CNTL_OPTIONS0_REG) |= RTC_CNTL_SW_SYS_RST;
 }
 
-// 写ROM
-uint32_t THUNDER_BLE::Write_ROM (uint32_t addr, void *src_value, uint8_t size)
+void THUNDER_BLE::CreateQueueBLE()
 {
-#if 0
-  // Serial.println("Start Write_ROM...");
-  
-  EEPROM.write(addr, val);
-  // EEPROM.commit();
-
-  // Serial.println("Finish Write_ROM");
-#else
-  if(addr + size > 0x1000){
-    return ESP_FAIL;
-  }
-
-  uint32_t backCode;
-  
-  Thunder_Motor.Disable_PID_Timer();
-  backCode = spi_flash_write(flash_size - 0x1000 + addr, src_value, size);
-  Thunder_Motor.Enable_PID_Timer();
-
-  return backCode;
-#endif
-}
-
-// 写ROM
-uint32_t THUNDER_BLE::Read_ROM (uint32_t addr, void *dest_value, uint8_t size)
-{
-  if(addr + size > 0x1000){
-    return ESP_FAIL;
-  }
-
-  uint32_t backCode;
-
-  Thunder_Motor.Disable_PID_Timer();
-  backCode = spi_flash_read(flash_size - 0x1000 + addr, dest_value, size);
-  Thunder_Motor.Enable_PID_Timer();
-  
-  return backCode;
-}
-
-// 重置ROM
-uint32_t THUNDER_BLE::Reset_ROM ()
-{
-#if 0
-  for(int i = 0; i < EEPROM_SIZE; i++)
+  Queue_Semaphore_BLE = xQueueCreate(1, sizeof(int));
+  if (Queue_Semaphore_BLE == NULL)
   {
-    EEPROM.write(i, 0xFF);
+    while (1)
+    {
+      Serial.println("Semaphore_BLE create fail");
+    }
   }
-  // EEPROM.commit();
-#else
+}
 
-  uint32_t backCode;
+/* 
+ * 处理BLE command前需要take xSemaphore_BLE
+ * 
+ * @parameters:
+ * @return
+ */
+int THUNDER_BLE::Take_Semaphore_BLE()
+{
+  int recv;
 
-  Thunder_Motor.Disable_PID_Timer();
-  backCode = spi_flash_erase_range(flash_size - 0x1000, 0x1000);
-  Thunder_Motor.Enable_PID_Timer();
-  
-  return backCode;
-#endif
+  do
+  {
+  } while ( xQueueReceive(Queue_Semaphore_BLE, &recv, portMAX_DELAY) != pdTRUE );
+
+  return recv;
+}
+
+/* 
+ * BLECharacteristicCallbacks onWrite函数 give xSemaphore_BLE
+ * 
+ * @parameters:
+ * @return
+ */
+void THUNDER_BLE::Give_Semaphore_BLE(int ble_mesg_type)
+{
+  xQueueSend( Queue_Semaphore_BLE, ( void * )&ble_mesg_type, ( TickType_t ) 0 );
+}
+
+
+void THUNDER_BLE::SetBleConnectType(enum_Ble_Status new_status)
+{
+  ble_connect_type = new_status;
+}
+enum_Ble_Status THUNDER_BLE::GetBleConnectType()
+{
+  return ble_connect_type;
 }

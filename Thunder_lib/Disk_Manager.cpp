@@ -20,7 +20,7 @@ bool DISK_MANAGER::Disk_Manager_Initial()
   return true;
 }
 
-bool DISK_MANAGER::Wirte_Program_User(enum_Process_Status new_mode)
+bool DISK_MANAGER::Write_Program_User(enum_Process_Status new_mode)
 {
   EEPROM.writeByte( DISK_ADDR_PROGRAM_MODE, (uint8_t)new_mode );
 
@@ -36,7 +36,7 @@ enum_Process_Status DISK_MANAGER::Read_Program_Mode()
   return (enum_Process_Status)read_value;
 }
 
-bool DISK_MANAGER::Wirte_Ble_Server_Mac(const uint8_t* new_mac)
+bool DISK_MANAGER::Write_Ble_Server_Mac(const uint8_t* new_mac)
 {
   size_t length;
 
@@ -48,12 +48,36 @@ bool DISK_MANAGER::Wirte_Ble_Server_Mac(const uint8_t* new_mac)
   return EEPROM.commit();
 }
 
-bool DISK_MANAGER::Read_Ble_Server_Mac(uint8_t* mac_addr)
+bool DISK_MANAGER::Read_Ble_Server_Mac(uint8_t* const mac_addr)
 {
   size_t length;
 
   length = EEPROM.readBytes( DISK_ADDR_BLE_SERVER_MAC, mac_addr, DISK_SIZE_BLE_SERVER_MAC );
   if(length != DISK_SIZE_BLE_SERVER_MAC){
+    return false;
+  }
+
+  return true;
+}
+
+bool DISK_MANAGER::Write_Ble_Name(const uint8_t* new_name)
+{
+  size_t length;
+
+  length = EEPROM.writeBytes( DISK_ADDR_BLE_NAME, new_name, DISK_SIZE_BLE_NAME);
+  if(length != DISK_SIZE_BLE_NAME) {
+    return false;
+  }
+
+  return EEPROM.commit();
+}
+
+bool DISK_MANAGER::Read_Ble_Name(uint8_t* const name)
+{
+  size_t length;
+
+  length = EEPROM.readBytes( DISK_ADDR_BLE_NAME, name, DISK_SIZE_BLE_NAME);
+  if(length != DISK_SIZE_BLE_NAME) {
     return false;
   }
 

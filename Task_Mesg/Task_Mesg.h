@@ -68,32 +68,17 @@ public:
                           func_Program_Loop program_loop );
   void Clear_All_Loops();
   void Create_Deamon_Threads();
-  void Remove_Deamon_Threads();
   void Set_Flush_Task(byte flushType);
   void Remove_Flush_Task(byte flushType);
 
   UBaseType_t Get_flush_Tasks();
-
-  void Suspend_Others_AppsTask();
-  void Resume_Others_AppsTask();
-  void Take_Semaphore_IIC();
-  void Give_Semaphore_IIC();
-  int Take_Semaphore_BLE();
-  void Give_Semaphore_BLE(int ble_mesg_type);
-  void Take_Semaphore_BLE_Scanned();
-  void Give_Semaphore_BLE_Scanned();
+  
   void Set_Current_Task_Supreme();
   void Clear_Current_Task_Supreme();
   void Enter_Task_Critical();
   void Exit_Task_Critical();
   
   void Toggle_Competition_Status(int status_index);
-
-  // 串口“示波器”的数据队列
-  QueueHandle_t Queue_encoder_left;
-  QueueHandle_t Queue_encoder_right;
-
-  enum_Ble_Status ble_connect_type = BLE_NOT_OPEN;
 
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
@@ -105,9 +90,6 @@ private:
 
   uint8_t tasks_num;
   uint8_t deamon_task_running;
-  volatile SemaphoreHandle_t xSemaphore_IIC;
-  QueueHandle_t Queue_Semaphore_BLE;
-  volatile SemaphoreHandle_t xSemaphore_BLE_scanned;
 };
 
 extern TASK_MESG Task_Mesg;

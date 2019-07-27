@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Touch_I2C.h>
-#include <Task_Mesg.h>
 
 /* 
  * 构造函数

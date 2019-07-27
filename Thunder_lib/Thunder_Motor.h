@@ -49,7 +49,6 @@
 #define _THUNDER_MOTOR_H_
 
 #include <Arduino.h>
-#include <Task_Mesg.h>
 
 #define MOTOR_DRIVER_IC_TB6612    (0x01)
 #define MOTOR_DRIVER_IC_PT5126    (0x02)
