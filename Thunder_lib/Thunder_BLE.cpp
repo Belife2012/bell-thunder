@@ -1,40 +1,7 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 蓝牙库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  1.  uint64_t Get_ID(void);                        // 获取并返回芯片ID
- *  2.  void Setup_EEPROM(void);                      // 配置EEPROM
- *  3.  void Get_BLE_Name (int addr);                // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
- *  4.  void Set_BLE_Name (int addr);               // 写入自定义蓝牙名称
- *  5.  void Write_ROM (int addr, int val);           // 写ROM
- *  6.  void Reset_ROM (void);                        // 重置ROM
- *  7.  void Setup_BLE(void);                         // 配置BLE
- *  8.  void Tx_BLE(uint8_t Tx_Data[], int byte_num); // 发送蓝牙数据
- * 
- ************************************************/
-
 #include "esp_spi_flash.h"
 #include "esp_task_wdt.h"
-#include <Thunder_BLE.h>
-#include <Thunder_lib.h>
+#include "Thunder_lib.h"
+#include "Thunder_BLE.h"
 #include "function_macro.h"
 #include "Disk_Manager.h"
 
@@ -281,7 +248,7 @@ void THUNDER_BLE::Setup_BLE()
 
 }
 
-void THUNDER_BLE::New_Ble_Server_Service()
+void THUNDER_BLE::Start_Advertisement()
 {
   if(pServer == NULL)
   {

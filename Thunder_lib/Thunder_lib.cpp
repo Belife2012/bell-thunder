@@ -151,7 +151,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 	Ble_Client.Disconnect_Ble_Server();
 	Ble_Client.Stop_Scan();
 
-	Thunder_BLE.New_Ble_Server_Service(); // 配置 BLE Server 
+	Thunder_BLE.Start_Advertisement(); // 配置 BLE Server 
 
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
 	Serial.println("ble type: client");

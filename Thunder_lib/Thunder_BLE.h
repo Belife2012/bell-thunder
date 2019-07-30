@@ -23,7 +23,6 @@
 // 单色点阵
 #include <HT16D35B.h>
 
-#include "data_type.h"
 // 内存读取
 #define EEPROM_SIZE 64
 #define BLE_NAME_SIZE 32
@@ -87,7 +86,7 @@ class THUNDER_BLE
 
     // 蓝牙
     void Setup_BLE(void);                           // 配置BLE
-    void New_Ble_Server_Service();
+    void Start_Advertisement();
     void Delete_Ble_Server_Service();
     void Tx_BLE(uint8_t Tx_Data[], int byte_num);   // 发送蓝牙数据
 

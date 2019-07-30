@@ -1,9 +1,3 @@
-/* 
- * Task_Mesg模块：编写了各种系统守护线程，用于实现系统管理，还有后台运行的线程
- * 实现一些周期性的采集和刷新动作。
- * 
- */
-
 #include "Task_Mesg.h"
 #include "Sensor_IIC.h"
 #include "Thunder_lib.h"
@@ -248,6 +242,9 @@ void New_Loop_Task(void *pvParameters)
 
 TASK_MESG::TASK_MESG()
 {
+  // BUG（arduino-esp32更新到1.0.2后改正了）: 删除会影响到BLE的Advertise
+  // xQueueCreate(3, sizeof(float));
+  // xQueueCreate(3, sizeof(float));
 
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
@@ -259,16 +256,6 @@ TASK_MESG::TASK_MESG()
     task_param_AutoCtrl[i] = NULL;
 #endif
   }
-
-  // 创建 BLE二进制信号量
-  /* xSemaphore_BLE = xSemaphoreCreateBinary();
-  if (xSemaphore_BLE == NULL)
-  {
-    while (1)
-    {
-      Serial.println("Semaphore_BLE create fail");
-    }
-  } */
 
   vPortCPUInitializeMutex(&spinlockMUX);
 
