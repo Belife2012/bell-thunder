@@ -7,10 +7,6 @@ class BLE_CLIENT
 {
 private:
     /* data */
-    BLEClient*  pClient = NULL;
-    BLEScan* pBLEScan = NULL;
-
-    bool connectToServer(BLEAddress pAddress);
 
 public:
     BLE_CLIENT(/* args */);

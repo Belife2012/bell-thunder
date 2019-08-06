@@ -75,7 +75,7 @@ void THUNDER::Setup_All(void)
 {
   delay(300);
 #ifdef SERIAL_PRINT_HIGHSPEED
-  Serial.begin(500000);
+  Serial.begin(SERIAL_PRINT_HIGHSPEED);
 #else
   Serial.begin(115200);
 #endif
@@ -146,28 +146,37 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 {
   if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
 	Serial.println("ble type: server");
-	ble_type = BLE_TYPE_SERVER;
 	THUNDER_BLE::SetBleConnectType(BLE_SERVER_CONNECTED);
-	Ble_Client.Disconnect_Ble_Server();
-	Ble_Client.Stop_Scan();
+	if(ble_type == BLE_TYPE_CLIENT){
+		Ble_Client.Disconnect_Ble_Server();
+		Ble_Client.Stop_Scan();
+	}
 
 	Thunder_BLE.Start_Advertisement(); // 配置 BLE Server 
 
+	ble_type = BLE_TYPE_SERVER;
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
 	Serial.println("ble type: client");
-	ble_type = BLE_TYPE_CLIENT;
 	THUNDER_BLE::SetBleConnectType(BLE_CLIENT_DISCONNECT); // 允许启动 client scan
-	Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
+	if(ble_type == BLE_TYPE_SERVER) {
+		Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
+	}
 
 	Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
 
+	ble_type = BLE_TYPE_CLIENT;
   }else if( (ble_type != BLE_TYPE_NONE) && (new_type == BLE_TYPE_NONE) ) {
 	Serial.println("ble turn off");
-	ble_type = BLE_TYPE_NONE;
 	THUNDER_BLE::SetBleConnectType(BLE_NOT_OPEN);
-	Ble_Client.Disconnect_Ble_Server();
-	Ble_Client.Stop_Scan();
-	Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
+	if(ble_type == BLE_TYPE_CLIENT){
+		Ble_Client.Disconnect_Ble_Server();
+		Ble_Client.Stop_Scan();
+	}
+	if(ble_type == BLE_TYPE_SERVER) {
+		Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
+	}
+
+	ble_type = BLE_TYPE_NONE;
   }
 
   return;

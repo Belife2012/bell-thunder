@@ -104,7 +104,7 @@ void Proc_Ble_Command(void *pvParameters)
       if(ble_mesg_type == BLE_SERVER_SEMAPHORE_RX){ // 作为Server，接收到client的信息
         Thunder.Check_BLE_Communication();
       }else if(ble_mesg_type == BLE_CLIENT_SEMAPHORE_CONN){
-        if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_DISCONNECT)
+        // if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_DISCONNECT)
         { // 搜索到BLE Server，进行连接动作
           Ble_Client.Connect_Ble_Server();
         }
@@ -136,6 +136,7 @@ void Operator_Mode_Deamon(void *pvParameters)
     }
     // 作为辅线程搜索BLE Server
     if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_DISCONNECT){
+      vTaskDelay(pdMS_TO_TICKS(1000));
       Ble_Client.Scan_Ble_Server(); // 搜索BLE Server
     }
     vTaskDelay(pdMS_TO_TICKS(50));
