@@ -1,7 +1,7 @@
 #ifndef _SENSOR_FLAME_
 #define _SENSOR_FLAME_
 
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define FLAME_IIC_ADDR      (0x02)
 

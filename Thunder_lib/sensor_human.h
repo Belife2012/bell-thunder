@@ -1,6 +1,6 @@
 #ifndef __SENSOR_HUMAN_H__
 #define __SENSOR_HUMAN_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define HUMAN_IIC_ADDR              (0x0A)
 #define HUMAN_IIC_REG_STATUS_ADDR   (0x01)

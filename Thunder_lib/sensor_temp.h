@@ -1,6 +1,6 @@
 #ifndef __SENSOR_TEMP_H__
 #define __SENSOR_TEMP_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define TEMP_IIC_ADDR         (0x07)
 #define TEMP_IIC_REG_LOWD_ADDR      (0x01)

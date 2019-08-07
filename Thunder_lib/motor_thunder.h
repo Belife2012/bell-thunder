@@ -1,50 +1,3 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 电机库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  // 定时器
- *  1.  void Setup_PID_Timer(void);         // 配置PID用定时器
- *  2.  void Uninstall_PID_Timer(void);     // 移除PID用定时器(会影响其它用到此定时器的功能)
- * 
- *  // 开环电机
- *  3.  void Setup_Motor(void);                                 // 配置电机
- *  4.  void Motor_Move(int motor, int speed, int direction);   // 开环电机控制函数
- * 
- *  // 闭环电机
- *  5.  void PID_Reset(struct PID_Struct_t *pid);                               // 重置PID计算过程值
- *  6.  void PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float Kd);  // PID参数初始化
- *  7.  void All_PID_Init();                                                    // 按默认PID参数初始化左右电机
- *  8.  void Setup_Motor_PID(void);                                             // 配置左右两个电机编码器
- *  9.  void PID_Speed(void);                                                   // 按PID输出控制左右两个电机
- *  10. void Set_L_Target(float target);                                        // 设定左轮目标速度(编码器计数值)
- *  11. void Set_R_Target(float target);                                        // 设定右轮目标速度(编码器计数值)
- *  12. int16_t Get_L_Speed(void);                                              // 获取左轮速度(编码器计数值)
- *  13. int16_t Get_R_Speed(void);                                              // 获取右轮速度(编码器计数值)
- *  14. int16_t Get_L_Target(void);                                             // 获取左轮目标(编码器计数值)
- *  15. int16_t Get_R_Target(void);                                             // 获取右轮目标(编码器计数值)
- * 
- * 
- * 
- ************************************************/
-
 #ifndef _THUNDER_MOTOR_H_
 #define _THUNDER_MOTOR_H_
 
@@ -214,7 +167,7 @@ struct MotorTurnning_Struct{
   float motor_speed;
 };
 
-class THUNDER_MOTOR
+class MOTOR_THUNDER
 {
   public:
     // 定时器

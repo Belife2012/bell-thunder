@@ -1,49 +1,3 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 雷霆库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  1.  void Setup_All(void);                   // 所有模块初始化
- *  2.  void Stop_All(void);                    // 全部终止(电机)
- *  3.  void Setup_Battery(void);               // 电池电压检测初始化配置
- *  4.  float Get_Battery_Data(void);           // 获取电池电压
- *  5.  void En_Motor(void);                    // 编码电机  闭环计算
- *  6.  void Enable_En_Motor(void);             // 打开编码电机计算
- *  7.  void Disable_En_Motor(void);            // 关闭编码电机计算
- *  8.  void Setup_Servo(void);                 // 舵机初始化配置
- *  9.  void Servo_Turn(int servo, int angle);  // 舵机角度控制
- *  10. void Setup_IR(void);                    // 巡线IR传感器初始化配置
- *  11. void Get_IR_Data(uint8_t data[]);       // 获取巡线IR数据
- *  12. void Line_Tracing(void);                // 巡线模式
- *  13. void Start_Show(void);                  // 开机动画/声效
- *  14. void Wait_BLE(void);                    // 等待蓝牙连接动画 (有串口数据也跳出)
- *  15. void Set_LED_Show_No(uint8_t Show_No);  // 设置将要播放的内置动画编号
- *  16. void LED_Show(void);                    // 循环执行的内置动画控制程序
- *  17. void Check_Communication(void);         // 通信确认，蓝牙/串口
- *  18. void Check_Protocol(void);              // 协议解析
- *  19. void Reset_Rx_Data(void);               // 清空接收数据
- * 
- * 
- * 
- ************************************************/
-
 #ifndef _THUNDER_H_
 #define _THUNDER_H_
 
@@ -54,24 +8,24 @@
 #include "generalFunc.h"
 
 // 音频
-#include "WT588.h"
+#include "speaker_thunder.h"
 // 超声波
-#include <US_I2C.h>
+#include <sensor_us.h>
 // 颜色识别
-#include <BH1745NUC.h>
+#include <sensor_color.h>
 // 触碰传感器
-#include <Touch_I2C.h>
+#include <sensor_touch.h>
 // 光电传感器
-#include <LightDetect_I2C.h>
+#include <sensor_light.h>
 // 雷霆
-#include <Thunder_BLE.h>
-#include <Ble_Client.h>
-#include <Thunder_Display.h>
-#include <Thunder_Motor.h>
-#include <Task_Mesg.h>
-#include <Bell_Barbette.h>
+#include <ble_thundergo.h>
+#include <ble_client.h>
+#include <display_thunder.h>
+#include <motor_thunder.h>
+#include <system_task.h>
+#include <bell_barbette.h>
 // 串口多机通信
-#include <wk2xxx.h>
+#include <mult_devices.h>
 // 九轴姿态传感器
 #include "Sensor_Attitude.h"
 // 火焰传感器
@@ -93,7 +47,7 @@
 // 红外遥控器
 #include "sensor_infrared.h"
 // 遥控器
-#include <Remoter.h>
+#include <sensor_remoter.h>
 
 /* 通用宏 */
 #define MOTOR_WITHOUT_CTRL_FOR_USER   1
@@ -164,47 +118,46 @@
 #define BUTTON_CONTINUE_CLICK_TIME  600   // 连续click的最大间隔
 
 // 雷霆
-extern THUNDER_BLE Thunder_BLE;
-extern BLE_CLIENT Ble_Client;
-extern THUNDER_MOTOR Thunder_Motor;
+extern BLE_THUNDERGO BLE_ThunderGo;
+extern BLE_CLIENT BLE_Client;
+extern MOTOR_THUNDER Motor_Thunder;
 // 音频
-extern WT588 Speaker;
+extern SPEAKER_WT588 Speaker_Thunder;
 // 超声波
-extern US_I2C US;
+extern SENSOR_US Sensor_Ultrasonic;
 // 火焰传感器
-extern SENSOR_FLAME Flame_Sensor;
+extern SENSOR_FLAME Sensor_Flame;
 // 风扇电动机
-extern MOTOR_FAN Fan_Motor;
+extern MOTOR_FAN Motor_Fan;
 // 空气温湿度
-extern SENSOR_HT HumTemp_Sensor;
+extern SENSOR_HT Sensor_HumTemp;
 // 有毒气体传感器
-extern SENSOR_GAS Gas_Sensor;
+extern SENSOR_GAS Sensor_Gas;
 // 温度探头
-extern SENSOR_TEMP Temp_Sensor;
+extern SENSOR_TEMP Sensor_Temp;
 // 土壤湿度传感器
-extern SENSOR_SOIL Soil_Sensor;
+extern SENSOR_SOIL Sensor_Soil;
 // 声音传感器
-extern SENSOR_SOUND Sound_Sensor;
-extern SENSOR_HUMAN Human_Sensor;
-extern SENSOR_INFRARED Infrared_Sensor;
+extern SENSOR_SOUND Sensor_Sound;
+extern SENSOR_HUMAN Sensor_Human;
+extern SENSOR_INFRARED Sensor_Infrared;
 // 颜色识别
-extern BH1745NUC Colour_Sensor;
+extern SENSOR_COLOR Sensor_Color;
 // 彩色LED
-extern XT1511_I2C Color_LED;
+extern LED_COLOR LED_Color;
 // 触碰传感器
-extern TOUCH_I2C Touch_Sensor;
+extern SENSOR_TOUCH Sensor_Touch;
 // 光电传感器
-extern LIGHTDETECT_I2C Light_Sensor;
+extern SENSOR_LIGHT Sensor_Light;
 // 单色LED
-extern DOT_MATRIX_LED Display_Screen;
-extern HT16D35B HT16D35B;// IIC Address: 0x69
+extern DISPLAY_THUNDER Display_Screen;
 // 遥控器
-extern REMOTER Ble_Remoter;
-extern Bell_Barbette Thunder_Barbette;
+extern SENSOR_REMOTER BLE_Remoter;
+extern BELL_BARBETTE Barbette_Thunder;
 
 extern uint32_t thunder_system_parameter;
 
-class THUNDER
+class BELL_THUNDER
 {
   private:
     // 舵机 PWM频率50Hz，0度时 脉宽最小500us，180度时 脉宽最大2500us，开机舵机居中为 90度
@@ -331,8 +284,8 @@ class THUNDER
     };
 
     // 彩色灯图案
-    uint8_t Color_LED_BUFF1[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    uint8_t Color_LED_BUFF2[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    uint8_t LED_Color_BUFF1[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    uint8_t LED_Color_BUFF2[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     uint8_t line_state = 0;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
   // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
@@ -422,6 +375,6 @@ class THUNDER
     void InitNameVarInt(char *name, int init_value);
 };
 
-extern THUNDER Thunder;
+extern BELL_THUNDER Thunder;
 
 #endif

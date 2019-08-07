@@ -1,6 +1,6 @@
 #ifndef __SENSOR_SOIL_H__
 #define __SENSOR_SOIL_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define SOIL_IIC_ADDR               (0x08)
 #define SOIL_IIC_REG_HUM_ADDR       (0x01)

@@ -1,6 +1,6 @@
 #ifndef __SENSOR_GAS_H__
 #define __SENSOR_GAS_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define GAS_IIC_ADDR            (0x06)
 #define GAS_IIC_REG_RATIO_ADDR  (0x01)

@@ -1,6 +1,6 @@
 #ifndef __SENSOR_SOUND_H__
 #define __SENSOR_SOUND_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define SOUND_IIC_ADDR              (0x09)
 #define SOUND_IIC_REG_DB_ADDR       (0x01)

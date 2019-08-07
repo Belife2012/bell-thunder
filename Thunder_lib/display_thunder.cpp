@@ -1,34 +1,4 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 灯板库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- * 
- * 
- * 功能列表(单色)：
- *  1.  void Setup(void);                               // 初始化单色点阵灯驱动
- *  2.  void Play_LED_HT16F35B(void);                   // 跑马灯
- *  3.  void Play_LED_HT16F35B_Show(int LED_Show_No);   // 内置单色点阵图案
- * 
- ************************************************/
-
-#include <Thunder_Display.h>
-
-HT16D35B HT16D35B(HT16D35B_DEVICE_ADDRESS_69);
+#include <display_thunder.h>
 
 #if 1
 const LedDotLocation led_location_16D35[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM] = {
@@ -1305,21 +1275,26 @@ const uint8_t LED_SHOW1_101[29] =
 // };
 
 // 初始化单色点阵灯驱动
-void DOT_MATRIX_LED::Setup()
+void DISPLAY_THUNDER::Setup()
 {
-  HT16D35B.Setup();
+  ht16d35b.Setup();
   display_string_len = 0;
 }
 
+void DISPLAY_THUNDER::Play_LEDs(const unsigned char *data, int size)
+{
+  ht16d35b.LED_Show(data, size);
+}
+
 // 跑马灯
-void DOT_MATRIX_LED::Play_LED_HT16F35B()
+void DISPLAY_THUNDER::Play_LED_HT16F35B()
 {
   for(int i = 1;i < 29; i++)
   {
     for(int j = 0; j<8; j++){
       delay(200);
       LED_BUFF[i] = 0x01<<j; 
-      HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+      ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
       LED_BUFF[i] = 0x00;
     }
   }
@@ -1327,345 +1302,345 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B()
 
 // 内置单色点阵图案
 // 参数-->内置的单色点阵图案编号
-void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
+void DISPLAY_THUNDER::Play_LED_HT16F35B_Show(int LED_Show_No)
 {
   switch(LED_Show_No)
   {
     case 0:
-      HT16D35B.LED_Show(LED_Clear, sizeof(LED_Clear));
+      ht16d35b.LED_Show(LED_Clear, sizeof(LED_Clear));
       break;
     case 1:
-      HT16D35B.LED_Show(LED_SHOW1_1, sizeof(LED_SHOW1_1));
+      ht16d35b.LED_Show(LED_SHOW1_1, sizeof(LED_SHOW1_1));
       break;
     case 2:
-      HT16D35B.LED_Show(LED_SHOW1_2, sizeof(LED_SHOW1_2));
+      ht16d35b.LED_Show(LED_SHOW1_2, sizeof(LED_SHOW1_2));
       break;
     case 3:
-      HT16D35B.LED_Show(LED_SHOW1_3, sizeof(LED_SHOW1_3));
+      ht16d35b.LED_Show(LED_SHOW1_3, sizeof(LED_SHOW1_3));
       break;
     case 4:
-      HT16D35B.LED_Show(LED_SHOW1_4, sizeof(LED_SHOW1_4));
+      ht16d35b.LED_Show(LED_SHOW1_4, sizeof(LED_SHOW1_4));
       break;
     case 5:
-      HT16D35B.LED_Show(LED_SHOW1_5, sizeof(LED_SHOW1_5));
+      ht16d35b.LED_Show(LED_SHOW1_5, sizeof(LED_SHOW1_5));
       break;
     case 6:
-      HT16D35B.LED_Show(LED_SHOW1_6, sizeof(LED_SHOW1_6));
+      ht16d35b.LED_Show(LED_SHOW1_6, sizeof(LED_SHOW1_6));
       break;
     case 7:
-      HT16D35B.LED_Show(LED_SHOW1_7, sizeof(LED_SHOW1_7));
+      ht16d35b.LED_Show(LED_SHOW1_7, sizeof(LED_SHOW1_7));
       break;
     case 8:
-      HT16D35B.LED_Show(LED_SHOW1_8, sizeof(LED_SHOW1_8));
+      ht16d35b.LED_Show(LED_SHOW1_8, sizeof(LED_SHOW1_8));
       break;
     case 9:
-      HT16D35B.LED_Show(LED_SHOW1_9, sizeof(LED_SHOW1_9));
+      ht16d35b.LED_Show(LED_SHOW1_9, sizeof(LED_SHOW1_9));
       break;
     case 10:
-      HT16D35B.LED_Show(LED_SHOW1_10, sizeof(LED_SHOW1_10));
+      ht16d35b.LED_Show(LED_SHOW1_10, sizeof(LED_SHOW1_10));
       break;
     case 11:
-      HT16D35B.LED_Show(LED_SHOW1_11, sizeof(LED_SHOW1_11));
+      ht16d35b.LED_Show(LED_SHOW1_11, sizeof(LED_SHOW1_11));
       break;
     case 12:
-      HT16D35B.LED_Show(LED_SHOW1_12, sizeof(LED_SHOW1_12));
+      ht16d35b.LED_Show(LED_SHOW1_12, sizeof(LED_SHOW1_12));
       break;
     case 13:
-      HT16D35B.LED_Show(LED_SHOW1_13, sizeof(LED_SHOW1_13));
+      ht16d35b.LED_Show(LED_SHOW1_13, sizeof(LED_SHOW1_13));
       break;
     case 14:
-      HT16D35B.LED_Show(LED_SHOW1_14, sizeof(LED_SHOW1_14));
+      ht16d35b.LED_Show(LED_SHOW1_14, sizeof(LED_SHOW1_14));
       break;
     case 15:
-      HT16D35B.LED_Show(LED_SHOW1_15, sizeof(LED_SHOW1_15));
+      ht16d35b.LED_Show(LED_SHOW1_15, sizeof(LED_SHOW1_15));
       break;
     case 16:
-      HT16D35B.LED_Show(LED_SHOW1_16, sizeof(LED_SHOW1_16));
+      ht16d35b.LED_Show(LED_SHOW1_16, sizeof(LED_SHOW1_16));
       break;
     case 17:
-      HT16D35B.LED_Show(LED_SHOW1_17, sizeof(LED_SHOW1_17));
+      ht16d35b.LED_Show(LED_SHOW1_17, sizeof(LED_SHOW1_17));
       break;
     case 18:
-      HT16D35B.LED_Show(LED_SHOW1_18, sizeof(LED_SHOW1_18));
+      ht16d35b.LED_Show(LED_SHOW1_18, sizeof(LED_SHOW1_18));
       break;
     case 19:
-      HT16D35B.LED_Show(LED_SHOW1_19, sizeof(LED_SHOW1_19));
+      ht16d35b.LED_Show(LED_SHOW1_19, sizeof(LED_SHOW1_19));
       break;
     case 20:
-      HT16D35B.LED_Show(LED_SHOW1_20, sizeof(LED_SHOW1_20));
+      ht16d35b.LED_Show(LED_SHOW1_20, sizeof(LED_SHOW1_20));
       break;
     case 21:
-      HT16D35B.LED_Show(LED_SHOW1_21, sizeof(LED_SHOW1_21));
+      ht16d35b.LED_Show(LED_SHOW1_21, sizeof(LED_SHOW1_21));
       break;
     case 22:
-      HT16D35B.LED_Show(LED_SHOW1_22, sizeof(LED_SHOW1_22));
+      ht16d35b.LED_Show(LED_SHOW1_22, sizeof(LED_SHOW1_22));
       break;
     case 23:
-      HT16D35B.LED_Show(LED_SHOW1_23, sizeof(LED_SHOW1_23));
+      ht16d35b.LED_Show(LED_SHOW1_23, sizeof(LED_SHOW1_23));
       break;
     case 24:
-      HT16D35B.LED_Show(LED_SHOW1_24, sizeof(LED_SHOW1_24));
+      ht16d35b.LED_Show(LED_SHOW1_24, sizeof(LED_SHOW1_24));
       break;
     case 25:
-      HT16D35B.LED_Show(LED_SHOW1_25, sizeof(LED_SHOW1_25));
+      ht16d35b.LED_Show(LED_SHOW1_25, sizeof(LED_SHOW1_25));
       break;
     case 26:
-      HT16D35B.LED_Show(LED_SHOW1_26, sizeof(LED_SHOW1_26));
+      ht16d35b.LED_Show(LED_SHOW1_26, sizeof(LED_SHOW1_26));
       break;
     case 27:
-      HT16D35B.LED_Show(LED_SHOW1_27, sizeof(LED_SHOW1_27));
+      ht16d35b.LED_Show(LED_SHOW1_27, sizeof(LED_SHOW1_27));
       break;
     case 28:
-      HT16D35B.LED_Show(LED_SHOW1_28, sizeof(LED_SHOW1_28));
+      ht16d35b.LED_Show(LED_SHOW1_28, sizeof(LED_SHOW1_28));
       break;
     case 29:
-      HT16D35B.LED_Show(LED_SHOW1_29, sizeof(LED_SHOW1_29));
+      ht16d35b.LED_Show(LED_SHOW1_29, sizeof(LED_SHOW1_29));
       break;
     case 30:
-      HT16D35B.LED_Show(LED_SHOW1_30, sizeof(LED_SHOW1_30));
+      ht16d35b.LED_Show(LED_SHOW1_30, sizeof(LED_SHOW1_30));
       break;
     case 31:
-      HT16D35B.LED_Show(LED_SHOW1_31, sizeof(LED_SHOW1_31));
+      ht16d35b.LED_Show(LED_SHOW1_31, sizeof(LED_SHOW1_31));
       break;
     case 32:
-      HT16D35B.LED_Show(LED_SHOW1_32, sizeof(LED_SHOW1_32));
+      ht16d35b.LED_Show(LED_SHOW1_32, sizeof(LED_SHOW1_32));
       break;
     case 33:
-      HT16D35B.LED_Show(LED_SHOW1_33, sizeof(LED_SHOW1_33));
+      ht16d35b.LED_Show(LED_SHOW1_33, sizeof(LED_SHOW1_33));
       break;
     case 34:
-      HT16D35B.LED_Show(LED_SHOW1_34, sizeof(LED_SHOW1_34));
+      ht16d35b.LED_Show(LED_SHOW1_34, sizeof(LED_SHOW1_34));
       break;
     case 35:
-      HT16D35B.LED_Show(LED_SHOW1_35, sizeof(LED_SHOW1_35));
+      ht16d35b.LED_Show(LED_SHOW1_35, sizeof(LED_SHOW1_35));
       break;
     case 36:
-      HT16D35B.LED_Show(LED_SHOW1_36, sizeof(LED_SHOW1_36));
+      ht16d35b.LED_Show(LED_SHOW1_36, sizeof(LED_SHOW1_36));
       break;
     case 37:
-      HT16D35B.LED_Show(LED_SHOW1_37, sizeof(LED_SHOW1_37));
+      ht16d35b.LED_Show(LED_SHOW1_37, sizeof(LED_SHOW1_37));
       break;
     case 38:
-      HT16D35B.LED_Show(LED_SHOW1_38, sizeof(LED_SHOW1_38));
+      ht16d35b.LED_Show(LED_SHOW1_38, sizeof(LED_SHOW1_38));
       break;
     case 39:
-      HT16D35B.LED_Show(LED_SHOW1_39, sizeof(LED_SHOW1_39));
+      ht16d35b.LED_Show(LED_SHOW1_39, sizeof(LED_SHOW1_39));
       break;
     case 40:
-      HT16D35B.LED_Show(LED_SHOW1_40, sizeof(LED_SHOW1_40));
+      ht16d35b.LED_Show(LED_SHOW1_40, sizeof(LED_SHOW1_40));
       break;
     case 41:
-      HT16D35B.LED_Show(LED_SHOW1_41, sizeof(LED_SHOW1_41));
+      ht16d35b.LED_Show(LED_SHOW1_41, sizeof(LED_SHOW1_41));
       break;
     case 42:
-      HT16D35B.LED_Show(LED_SHOW1_42, sizeof(LED_SHOW1_42));
+      ht16d35b.LED_Show(LED_SHOW1_42, sizeof(LED_SHOW1_42));
       break;
     case 43:
-      HT16D35B.LED_Show(LED_SHOW1_43, sizeof(LED_SHOW1_43));
+      ht16d35b.LED_Show(LED_SHOW1_43, sizeof(LED_SHOW1_43));
       break;
     case 44:
-      HT16D35B.LED_Show(LED_SHOW1_44, sizeof(LED_SHOW1_44));
+      ht16d35b.LED_Show(LED_SHOW1_44, sizeof(LED_SHOW1_44));
       break;
     case 45:
-      HT16D35B.LED_Show(LED_SHOW1_45, sizeof(LED_SHOW1_45));
+      ht16d35b.LED_Show(LED_SHOW1_45, sizeof(LED_SHOW1_45));
       break;
     case 46:
-      HT16D35B.LED_Show(LED_SHOW1_46, sizeof(LED_SHOW1_46));
+      ht16d35b.LED_Show(LED_SHOW1_46, sizeof(LED_SHOW1_46));
       break;
     case 47:
-      HT16D35B.LED_Show(LED_SHOW1_47, sizeof(LED_SHOW1_47));
+      ht16d35b.LED_Show(LED_SHOW1_47, sizeof(LED_SHOW1_47));
       break;
     case 48:
-      HT16D35B.LED_Show(LED_SHOW1_48, sizeof(LED_SHOW1_48));
+      ht16d35b.LED_Show(LED_SHOW1_48, sizeof(LED_SHOW1_48));
       break;
     case 49:
-      HT16D35B.LED_Show(LED_SHOW1_49, sizeof(LED_SHOW1_49));
+      ht16d35b.LED_Show(LED_SHOW1_49, sizeof(LED_SHOW1_49));
       break;
     case 50:
-      HT16D35B.LED_Show(LED_SHOW1_50, sizeof(LED_SHOW1_50));
+      ht16d35b.LED_Show(LED_SHOW1_50, sizeof(LED_SHOW1_50));
       break;
     case 51:
-      HT16D35B.LED_Show(LED_SHOW1_51, sizeof(LED_SHOW1_51));
+      ht16d35b.LED_Show(LED_SHOW1_51, sizeof(LED_SHOW1_51));
       break;
     case 52:
-      HT16D35B.LED_Show(LED_SHOW1_52, sizeof(LED_SHOW1_52));
+      ht16d35b.LED_Show(LED_SHOW1_52, sizeof(LED_SHOW1_52));
       break;
     case 53:
-      HT16D35B.LED_Show(LED_SHOW1_53, sizeof(LED_SHOW1_53));
+      ht16d35b.LED_Show(LED_SHOW1_53, sizeof(LED_SHOW1_53));
       break;
     case 54:
-      HT16D35B.LED_Show(LED_SHOW1_54, sizeof(LED_SHOW1_54));
+      ht16d35b.LED_Show(LED_SHOW1_54, sizeof(LED_SHOW1_54));
       break;
     case 55:
-      HT16D35B.LED_Show(LED_SHOW1_55, sizeof(LED_SHOW1_55));
+      ht16d35b.LED_Show(LED_SHOW1_55, sizeof(LED_SHOW1_55));
       break;
     case 56:
-      HT16D35B.LED_Show(LED_SHOW1_56, sizeof(LED_SHOW1_56));
+      ht16d35b.LED_Show(LED_SHOW1_56, sizeof(LED_SHOW1_56));
       break;
     case 57:
-      HT16D35B.LED_Show(LED_SHOW1_57, sizeof(LED_SHOW1_57));
+      ht16d35b.LED_Show(LED_SHOW1_57, sizeof(LED_SHOW1_57));
       break;
     case 58:
-      HT16D35B.LED_Show(LED_SHOW1_58, sizeof(LED_SHOW1_58));
+      ht16d35b.LED_Show(LED_SHOW1_58, sizeof(LED_SHOW1_58));
       break;
     case 59:
-      HT16D35B.LED_Show(LED_SHOW1_59, sizeof(LED_SHOW1_59));
+      ht16d35b.LED_Show(LED_SHOW1_59, sizeof(LED_SHOW1_59));
       break;
     case 60:
-      HT16D35B.LED_Show(LED_SHOW1_60, sizeof(LED_SHOW1_60));
+      ht16d35b.LED_Show(LED_SHOW1_60, sizeof(LED_SHOW1_60));
       break;
     case 61:
-      HT16D35B.LED_Show(LED_SHOW1_61, sizeof(LED_SHOW1_61));
+      ht16d35b.LED_Show(LED_SHOW1_61, sizeof(LED_SHOW1_61));
       break;
     case 62:
-      HT16D35B.LED_Show(LED_SHOW1_62, sizeof(LED_SHOW1_62));
+      ht16d35b.LED_Show(LED_SHOW1_62, sizeof(LED_SHOW1_62));
       break;
     case 63:
-      HT16D35B.LED_Show(LED_SHOW1_63, sizeof(LED_SHOW1_63));
+      ht16d35b.LED_Show(LED_SHOW1_63, sizeof(LED_SHOW1_63));
       break;
     case 64:
-      HT16D35B.LED_Show(LED_SHOW1_64, sizeof(LED_SHOW1_64));
+      ht16d35b.LED_Show(LED_SHOW1_64, sizeof(LED_SHOW1_64));
       break;
     case 65:
-      HT16D35B.LED_Show(LED_SHOW1_65, sizeof(LED_SHOW1_65));
+      ht16d35b.LED_Show(LED_SHOW1_65, sizeof(LED_SHOW1_65));
       break;
     case 66:
-      HT16D35B.LED_Show(LED_SHOW1_66, sizeof(LED_SHOW1_66));
+      ht16d35b.LED_Show(LED_SHOW1_66, sizeof(LED_SHOW1_66));
       break;
     case 67:
-      HT16D35B.LED_Show(LED_SHOW1_67, sizeof(LED_SHOW1_67));
+      ht16d35b.LED_Show(LED_SHOW1_67, sizeof(LED_SHOW1_67));
       break;
     case 68:
-      HT16D35B.LED_Show(LED_SHOW1_68, sizeof(LED_SHOW1_68));
+      ht16d35b.LED_Show(LED_SHOW1_68, sizeof(LED_SHOW1_68));
       break;
     case 69:
-      HT16D35B.LED_Show(LED_SHOW1_69, sizeof(LED_SHOW1_69));
+      ht16d35b.LED_Show(LED_SHOW1_69, sizeof(LED_SHOW1_69));
       break;
     case 70:
-      HT16D35B.LED_Show(LED_SHOW1_70, sizeof(LED_SHOW1_70));
+      ht16d35b.LED_Show(LED_SHOW1_70, sizeof(LED_SHOW1_70));
       break;
     case 71:
-      HT16D35B.LED_Show(LED_SHOW1_71, sizeof(LED_SHOW1_71));
+      ht16d35b.LED_Show(LED_SHOW1_71, sizeof(LED_SHOW1_71));
       break;
     case 72:
-      HT16D35B.LED_Show(LED_SHOW1_72, sizeof(LED_SHOW1_72));
+      ht16d35b.LED_Show(LED_SHOW1_72, sizeof(LED_SHOW1_72));
       break;
     case 73:
-      HT16D35B.LED_Show(LED_SHOW1_73, sizeof(LED_SHOW1_73));
+      ht16d35b.LED_Show(LED_SHOW1_73, sizeof(LED_SHOW1_73));
       break;
     case 74:
-      HT16D35B.LED_Show(LED_SHOW1_74, sizeof(LED_SHOW1_74));
+      ht16d35b.LED_Show(LED_SHOW1_74, sizeof(LED_SHOW1_74));
       break;
     case 75:
-      HT16D35B.LED_Show(LED_SHOW1_75, sizeof(LED_SHOW1_75));
+      ht16d35b.LED_Show(LED_SHOW1_75, sizeof(LED_SHOW1_75));
       break;
     case 76:
-      HT16D35B.LED_Show(LED_SHOW1_76, sizeof(LED_SHOW1_76));
+      ht16d35b.LED_Show(LED_SHOW1_76, sizeof(LED_SHOW1_76));
       break;
     case 77:
-      HT16D35B.LED_Show(LED_SHOW1_77, sizeof(LED_SHOW1_77));
+      ht16d35b.LED_Show(LED_SHOW1_77, sizeof(LED_SHOW1_77));
       break;
     case 78:
-      HT16D35B.LED_Show(LED_SHOW1_78, sizeof(LED_SHOW1_78));
+      ht16d35b.LED_Show(LED_SHOW1_78, sizeof(LED_SHOW1_78));
       break;
     case 79:
-      HT16D35B.LED_Show(LED_SHOW1_79, sizeof(LED_SHOW1_79));
+      ht16d35b.LED_Show(LED_SHOW1_79, sizeof(LED_SHOW1_79));
       break;
     case 80:
-      HT16D35B.LED_Show(LED_SHOW1_80, sizeof(LED_SHOW1_80));
+      ht16d35b.LED_Show(LED_SHOW1_80, sizeof(LED_SHOW1_80));
       break;
     case 81:
-      HT16D35B.LED_Show(LED_SHOW1_81, sizeof(LED_SHOW1_81));
+      ht16d35b.LED_Show(LED_SHOW1_81, sizeof(LED_SHOW1_81));
       break;
     case 82:
-      HT16D35B.LED_Show(LED_SHOW1_82, sizeof(LED_SHOW1_82));
+      ht16d35b.LED_Show(LED_SHOW1_82, sizeof(LED_SHOW1_82));
       break;
     case 83:
-      HT16D35B.LED_Show(LED_SHOW1_83, sizeof(LED_SHOW1_83));
+      ht16d35b.LED_Show(LED_SHOW1_83, sizeof(LED_SHOW1_83));
       break;
     case 84:
-      HT16D35B.LED_Show(LED_SHOW1_84, sizeof(LED_SHOW1_84));
+      ht16d35b.LED_Show(LED_SHOW1_84, sizeof(LED_SHOW1_84));
       break;
     case 85:
-      HT16D35B.LED_Show(LED_SHOW1_85, sizeof(LED_SHOW1_85));
+      ht16d35b.LED_Show(LED_SHOW1_85, sizeof(LED_SHOW1_85));
       break;
     case 86:
-      HT16D35B.LED_Show(LED_SHOW1_86, sizeof(LED_SHOW1_86));
+      ht16d35b.LED_Show(LED_SHOW1_86, sizeof(LED_SHOW1_86));
       break;
     case 87:
-      HT16D35B.LED_Show(LED_SHOW1_87, sizeof(LED_SHOW1_87));
+      ht16d35b.LED_Show(LED_SHOW1_87, sizeof(LED_SHOW1_87));
       break;
     case 88:
-      HT16D35B.LED_Show(LED_SHOW1_88, sizeof(LED_SHOW1_88));
+      ht16d35b.LED_Show(LED_SHOW1_88, sizeof(LED_SHOW1_88));
       break;
     case 89:
-      HT16D35B.LED_Show(LED_SHOW1_89, sizeof(LED_SHOW1_89));
+      ht16d35b.LED_Show(LED_SHOW1_89, sizeof(LED_SHOW1_89));
       break;
     case 90:
-      HT16D35B.LED_Show(LED_SHOW1_90, sizeof(LED_SHOW1_90));
+      ht16d35b.LED_Show(LED_SHOW1_90, sizeof(LED_SHOW1_90));
       break;
     case 91:
-      HT16D35B.LED_Show(LED_SHOW1_91, sizeof(LED_SHOW1_91));
+      ht16d35b.LED_Show(LED_SHOW1_91, sizeof(LED_SHOW1_91));
       break;
     case 92:
-      HT16D35B.LED_Show(LED_SHOW1_92, sizeof(LED_SHOW1_92));
+      ht16d35b.LED_Show(LED_SHOW1_92, sizeof(LED_SHOW1_92));
       break;
     case 93:
-      HT16D35B.LED_Show(LED_SHOW1_93, sizeof(LED_SHOW1_93));
+      ht16d35b.LED_Show(LED_SHOW1_93, sizeof(LED_SHOW1_93));
       break;
     case 94:
-      HT16D35B.LED_Show(LED_SHOW1_94, sizeof(LED_SHOW1_94));
+      ht16d35b.LED_Show(LED_SHOW1_94, sizeof(LED_SHOW1_94));
       break;
     case 95:
-      HT16D35B.LED_Show(LED_SHOW1_95, sizeof(LED_SHOW1_95));
+      ht16d35b.LED_Show(LED_SHOW1_95, sizeof(LED_SHOW1_95));
       break;
     case 96:
-      HT16D35B.LED_Show(LED_SHOW1_96, sizeof(LED_SHOW1_96));
+      ht16d35b.LED_Show(LED_SHOW1_96, sizeof(LED_SHOW1_96));
       break;
     case 97:
-      HT16D35B.LED_Show(LED_SHOW1_97, sizeof(LED_SHOW1_97));
+      ht16d35b.LED_Show(LED_SHOW1_97, sizeof(LED_SHOW1_97));
       break;
     case 98:
-      HT16D35B.LED_Show(LED_SHOW1_98, sizeof(LED_SHOW1_98));
+      ht16d35b.LED_Show(LED_SHOW1_98, sizeof(LED_SHOW1_98));
       break;
     case 99:
-      HT16D35B.LED_Show(LED_SHOW1_99, sizeof(LED_SHOW1_99));
+      ht16d35b.LED_Show(LED_SHOW1_99, sizeof(LED_SHOW1_99));
       break;
     case 100:
-      HT16D35B.LED_Show(LED_SHOW1_100, sizeof(LED_SHOW1_100));
+      ht16d35b.LED_Show(LED_SHOW1_100, sizeof(LED_SHOW1_100));
       break;
     case 101:
-      HT16D35B.LED_Show(LED_SHOW1_101, sizeof(LED_SHOW1_101));
+      ht16d35b.LED_Show(LED_SHOW1_101, sizeof(LED_SHOW1_101));
       break;
 
     case 111:
-      HT16D35B.LED_Show(LED_SHOW11, sizeof(LED_SHOW11));
+      ht16d35b.LED_Show(LED_SHOW11, sizeof(LED_SHOW11));
       break;
     case 112:
-      HT16D35B.LED_Show(LED_SHOW12, sizeof(LED_SHOW12));
+      ht16d35b.LED_Show(LED_SHOW12, sizeof(LED_SHOW12));
       break;
     case 113:
-      HT16D35B.LED_Show(LED_SHOW13, sizeof(LED_SHOW13));
+      ht16d35b.LED_Show(LED_SHOW13, sizeof(LED_SHOW13));
       break;
     case 114:
-      HT16D35B.LED_Show(LED_SHOW14, sizeof(LED_SHOW14));
+      ht16d35b.LED_Show(LED_SHOW14, sizeof(LED_SHOW14));
       break;
     case 115:
-      HT16D35B.LED_Show(LED_SHOW15, sizeof(LED_SHOW15));
+      ht16d35b.LED_Show(LED_SHOW15, sizeof(LED_SHOW15));
       break;
     case 116:
-      HT16D35B.LED_Show(LED_SHOW16, sizeof(LED_SHOW16));
+      ht16d35b.LED_Show(LED_SHOW16, sizeof(LED_SHOW16));
       break;
     case 117:
-      HT16D35B.LED_Show(LED_SHOW17, sizeof(LED_SHOW17));
+      ht16d35b.LED_Show(LED_SHOW17, sizeof(LED_SHOW17));
       break;
 
     case 255:
-      HT16D35B.LED_Show(LED_Set, sizeof(LED_Set));
+      ht16d35b.LED_Show(LED_Set, sizeof(LED_Set));
       break;
     default:
       Serial.printf("# No frame, clear frame #\n");
-      HT16D35B.LED_Show(LED_Clear, sizeof(LED_Clear));
+      ht16d35b.LED_Show(LED_Clear, sizeof(LED_Clear));
       break; 
   }
 }
@@ -1679,7 +1654,7 @@ void DOT_MATRIX_LED::Play_LED_HT16F35B_Show(int LED_Show_No)
  * @parameters: 传入字符串首地址，字符串最长30字节，NULL 表示清空显示
  * @return: 
  */
-void DOT_MATRIX_LED::Play_LED_String(const char *playString)
+void DISPLAY_THUNDER::Play_LED_String(const char *playString)
 {
   uint8_t i;
 
@@ -1688,7 +1663,7 @@ void DOT_MATRIX_LED::Play_LED_String(const char *playString)
   }else display_string_len = 0;
 
   if(display_string_len == 0){
-    HT16D35B.LED_Show(LED_Clear, sizeof(LED_Clear));
+    ht16d35b.LED_Show(LED_Clear, sizeof(LED_Clear));
     return;
   }
   string_row_dots_num = display_string_len * SINGLE_CHARACTER_WIDTH;
@@ -1723,7 +1698,7 @@ void DOT_MATRIX_LED::Play_LED_String(const char *playString)
  * @parameters: 
  * @return: 
  */
-void DOT_MATRIX_LED::Play_LED_String(double number){
+void DISPLAY_THUNDER::Play_LED_String(double number){
   int number_int;
   String number_char;
 
@@ -1739,13 +1714,13 @@ void DOT_MATRIX_LED::Play_LED_String(double number){
   Play_LED_String( number_char.c_str() );
 
 }
-void DOT_MATRIX_LED::Play_LED_String(uint32_t number){
+void DISPLAY_THUNDER::Play_LED_String(uint32_t number){
   Play_LED_String( (double)number );
 }
-void DOT_MATRIX_LED::Play_LED_String(int number){
+void DISPLAY_THUNDER::Play_LED_String(int number){
   Play_LED_String( (double)number );
 }
-void DOT_MATRIX_LED::Play_LED_String(float number){
+void DISPLAY_THUNDER::Play_LED_String(float number){
   Play_LED_String( (double)number );
 }
 
@@ -1756,7 +1731,7 @@ void DOT_MATRIX_LED::Play_LED_String(float number){
  * @parameters: 
  * @return: 
  */
-void DOT_MATRIX_LED::Play_String_NextFrame()
+void DISPLAY_THUNDER::Play_String_NextFrame()
 {
   uint8_t i;
   uint8_t j;
@@ -1824,7 +1799,7 @@ void DOT_MATRIX_LED::Play_String_NextFrame()
   }
   Serial.printf("\n"); */
 
-  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+  ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
 /* 
@@ -1833,7 +1808,7 @@ void DOT_MATRIX_LED::Play_String_NextFrame()
  * @parameters: 
  * @return: 
  */
-void DOT_MATRIX_LED::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
+void DISPLAY_THUNDER::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
                                     byte display_flag)
 {
   uint8_t i;
@@ -1861,7 +1836,7 @@ void DOT_MATRIX_LED::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM]
   }
   Serial.printf("\n"); */
   if(display_flag == 1){
-    HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+    ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
   }
 }
 
@@ -1871,7 +1846,7 @@ void DOT_MATRIX_LED::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM]
  * @parameters: 
  * @return: 
  */
-void DOT_MATRIX_LED::Move_Picture_To(int x, int y)
+void DISPLAY_THUNDER::Move_Picture_To(int x, int y)
 {
   uint8_t i;
   uint8_t j;
@@ -1908,7 +1883,7 @@ void DOT_MATRIX_LED::Move_Picture_To(int x, int y)
     }
   }
 
-  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+  ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
 /* 
@@ -1917,7 +1892,7 @@ void DOT_MATRIX_LED::Move_Picture_To(int x, int y)
  * @parameters: 
  * @return: 
  */
-void DOT_MATRIX_LED::Set_Single_Dot(uint8_t x, uint8_t y)
+void DISPLAY_THUNDER::Set_Single_Dot(uint8_t x, uint8_t y)
 {
   uint8_t i;
   uint8_t j;
@@ -1935,7 +1910,7 @@ void DOT_MATRIX_LED::Set_Single_Dot(uint8_t x, uint8_t y)
     }
   }
 
-  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+  ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
 /* 
@@ -1944,7 +1919,7 @@ void DOT_MATRIX_LED::Set_Single_Dot(uint8_t x, uint8_t y)
  * @parameters: 
  * @return: 
  */
-void DOT_MATRIX_LED::Clear_Single_Dot(uint8_t x, uint8_t y)
+void DISPLAY_THUNDER::Clear_Single_Dot(uint8_t x, uint8_t y)
 {
   uint8_t i;
   uint8_t j;
@@ -1962,5 +1937,5 @@ void DOT_MATRIX_LED::Clear_Single_Dot(uint8_t x, uint8_t y)
     }
   }
 
-  HT16D35B.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+  ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }

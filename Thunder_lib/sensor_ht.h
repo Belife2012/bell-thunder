@@ -1,6 +1,6 @@
 #ifndef __SENSOR_HT_H__
 #define __SENSOR_HT_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define HT_IIC_ADDR         (0x05)
 #define HT_IIC_REG_HUM_ADDR      (0x01)

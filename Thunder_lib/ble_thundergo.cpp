@@ -1,13 +1,13 @@
 #include "esp_spi_flash.h"
 #include "esp_task_wdt.h"
-#include "Thunder_lib.h"
-#include "Thunder_BLE.h"
+#include "bell_thunder.h"
+#include "ble_thundergo.h"
 #include "function_macro.h"
-#include "Disk_Manager.h"
+#include "disk_manager.h"
 
 uint8_t BLE_Name_Data[BLE_NAME_SIZE] = {0x00};
-QueueHandle_t THUNDER_BLE::Queue_Semaphore_BLE;
-enum_Ble_Status THUNDER_BLE::ble_connect_type = BLE_NOT_OPEN;
+QueueHandle_t BLE_THUNDERGO::Queue_Semaphore_BLE;
+enum_Ble_Status BLE_THUNDERGO::ble_connect_type = BLE_NOT_OPEN;
 
 // 蓝牙连接/断开的回调函数
 class MyServerCallbacks: public BLEServerCallbacks 
@@ -25,7 +25,7 @@ class MyServerCallbacks: public BLEServerCallbacks
       deviceConnected = false;
       Serial.printf("# BLE server DisConnect\n");
       Thunder.Stop_All();
-      Speaker.Play_Song(45);   // 断开声音
+      Speaker_Thunder.Play_Song(45);   // 断开声音
 
       pServer->getAdvertising()->start();
     }
@@ -68,7 +68,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 19; i++)
       {
-        Thunder.Color_LED_BUFF1[i-1] = recv_data[i];
+        Thunder.LED_Color_BUFF1[i-1] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -86,7 +86,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 19; i++)
       {
-        Thunder.Color_LED_BUFF2[i-1] = recv_data[i];
+        Thunder.LED_Color_BUFF2[i-1] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -186,14 +186,14 @@ class MyCallbacks: public BLECharacteristicCallbacks
 
         // 分析BLE数据后，如果指令Rx_Data[0] 不为 0 ，则give BLE信号
         if(Rx_Data[0] != 0){
-          THUNDER_BLE::Give_Semaphore_BLE(BLE_SERVER_SEMAPHORE_RX);
+          BLE_THUNDERGO::Give_Semaphore_BLE(BLE_SERVER_SEMAPHORE_RX);
         }
       }
     }
 };
 
 // 配置BLE
-void THUNDER_BLE::Setup_BLE()
+void BLE_THUNDERGO::Setup_BLE()
 {
   Serial.printf("\nstart BLE ...\n");
 
@@ -248,7 +248,7 @@ void THUNDER_BLE::Setup_BLE()
 
 }
 
-void THUNDER_BLE::Start_Advertisement()
+void BLE_THUNDERGO::Start_Advertisement()
 {
   if(pServer == NULL)
   {
@@ -313,7 +313,7 @@ void THUNDER_BLE::Start_Advertisement()
   Serial.printf("Open BLE Server\n");
 }
 
-void THUNDER_BLE::Delete_Ble_Server_Service()
+void BLE_THUNDERGO::Delete_Ble_Server_Service()
 {
   if(pServer == NULL || pService == NULL){
     return;
@@ -324,7 +324,7 @@ void THUNDER_BLE::Delete_Ble_Server_Service()
   // pService = NULL;
 }
 
-void THUNDER_BLE::Setup_Ble_Security()
+void BLE_THUNDERGO::Setup_Ble_Security()
 {
   BLESecurity ble_security;
 
@@ -344,7 +344,7 @@ void THUNDER_BLE::Setup_Ble_Security()
 // 发送蓝牙数据
 // 参数1-->要发送的地址
 // 参数2-->发送的字节数
-void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
+void BLE_THUNDERGO::Tx_BLE(uint8_t Tx_Data[], int byte_num)
 {
   if (deviceConnected) 
   {
@@ -366,7 +366,7 @@ void THUNDER_BLE::Tx_BLE(uint8_t Tx_Data[], int byte_num)
 }
 
 // 获取并返回芯片ID
-uint64_t THUNDER_BLE::Get_ID(void)
+uint64_t BLE_THUNDERGO::Get_ID(void)
 {
   SEP32_ID = ESP.getEfuseMac();   // 获取ESP32芯片ID
   
@@ -377,7 +377,7 @@ uint64_t THUNDER_BLE::Get_ID(void)
 }
 
 // 查看是否有自定义蓝牙名称，如没自定义则读取芯片ID
-void THUNDER_BLE::Get_BLE_Name ()
+void BLE_THUNDERGO::Get_BLE_Name ()
 {
   Disk_Manager.Read_Ble_Name(BLE_Name_Data);
 
@@ -394,7 +394,7 @@ void THUNDER_BLE::Get_BLE_Name ()
 #define RTC_CNTL_OPTIONS0_REG     0x3ff48000
 #define RTC_CNTL_SW_SYS_RST       0x80000000
 // 写入自定义蓝牙名称
-void THUNDER_BLE::Set_BLE_Name ()
+void BLE_THUNDERGO::Set_BLE_Name ()
 {
   if( true == Disk_Manager.Write_Ble_Name(BLE_Name_Data) ){
     Serial.print("\nBLE w name: "); Serial.printf("%s\n", BLE_Name_Data);
@@ -407,7 +407,7 @@ void THUNDER_BLE::Set_BLE_Name ()
   *((UBaseType_t *)RTC_CNTL_OPTIONS0_REG) |= RTC_CNTL_SW_SYS_RST;
 }
 
-void THUNDER_BLE::CreateQueueBLE()
+void BLE_THUNDERGO::CreateQueueBLE()
 {
   Queue_Semaphore_BLE = xQueueCreate(1, sizeof(int));
   if (Queue_Semaphore_BLE == NULL)
@@ -425,7 +425,7 @@ void THUNDER_BLE::CreateQueueBLE()
  * @parameters:
  * @return
  */
-int THUNDER_BLE::Take_Semaphore_BLE()
+int BLE_THUNDERGO::Take_Semaphore_BLE()
 {
   int recv;
 
@@ -442,17 +442,17 @@ int THUNDER_BLE::Take_Semaphore_BLE()
  * @parameters:
  * @return
  */
-void THUNDER_BLE::Give_Semaphore_BLE(int ble_mesg_type)
+void BLE_THUNDERGO::Give_Semaphore_BLE(int ble_mesg_type)
 {
   xQueueSend( Queue_Semaphore_BLE, ( void * )&ble_mesg_type, ( TickType_t ) 0 );
 }
 
 
-void THUNDER_BLE::SetBleConnectType(enum_Ble_Status new_status)
+void BLE_THUNDERGO::SetBleConnectType(enum_Ble_Status new_status)
 {
   ble_connect_type = new_status;
 }
-enum_Ble_Status THUNDER_BLE::GetBleConnectType()
+enum_Ble_Status BLE_THUNDERGO::GetBleConnectType()
 {
   return ble_connect_type;
 }

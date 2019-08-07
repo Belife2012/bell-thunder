@@ -8,7 +8,7 @@
 #include <Wire.h>
 #endif
 
-#include "SENSOR_IIC.h"
+#include "iic_thunder.h"
 #include "MPU9250RegisterMap.h"
 #include "QuaternionFilter.h"
 

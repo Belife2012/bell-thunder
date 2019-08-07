@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include "BLEDevice.h"
-#include "Ble_Client.h"
-#include <Thunder_lib.h>
-#include <Disk_Manager.h>
+#include "ble_client.h"
+#include <bell_thunder.h>
+#include <disk_manager.h>
 #include "function_macro.h"
 
 // #define RECORD_SERVER_MAC
@@ -49,13 +49,13 @@ static bool connectToServer();
 class MyBLEClientCallbacks: public BLEClientCallbacks {
 	void onConnect(BLEClient *_pClient){
     Serial.println("## Ble Client connected");
-    // Ble_Client.Stop_Scan();
+    // BLE_Client.Stop_Scan();
   }
 	void onDisconnect(BLEClient *_pClient){
     Serial.println("## Ble Client Disconnected");
     connected = false;
-    if(THUNDER_BLE::GetBleConnectType() == BLE_CLIENT_CONNECTED){
-      THUNDER_BLE::SetBleConnectType(BLE_CLIENT_DISCONNECT);
+    if(BLE_THUNDERGO::GetBleConnectType() == BLE_CLIENT_CONNECTED){
+      BLE_THUNDERGO::SetBleConnectType(BLE_CLIENT_DISCONNECT);
     }
   }
 };
@@ -107,7 +107,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
           Serial.println("Write_Ble_Server_Mac Fail");
         }
 
-        THUNDER_BLE::Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
+        BLE_THUNDERGO::Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }else{
       if(pServerAddress != NULL) { delete pServerAddress;}
@@ -119,7 +119,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         Serial.print("Old device address: "); 
         Serial.println(pServerAddress->toString().c_str());
 
-        THUNDER_BLE::Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
+        BLE_THUNDERGO::Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
     }
 #else
@@ -147,7 +147,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
           }
         }
 
-        THUNDER_BLE::SetBleConnectType(BLE_CLIENT_CONNECTED);
+        BLE_THUNDERGO::SetBleConnectType(BLE_CLIENT_CONNECTED);
         advertisedDevice.getScan()->stop();
         Serial.println("Scanned myServerDevice");
 
@@ -156,7 +156,7 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         }
         myServerDevice = new BLEAdvertisedDevice(advertisedDevice);
 
-        THUNDER_BLE::Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
+        BLE_THUNDERGO::Give_Semaphore_BLE(BLE_CLIENT_SEMAPHORE_CONN);
       } // Found our server
 #endif
 #else
@@ -171,7 +171,7 @@ private:
 
 void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic,uint8_t* pData,size_t length,bool isNotify) {
 #if (SERVER_STYLE == SERVER_IS_REMOTER)
-  Ble_Remoter.Analyze_Raw_Data(pData, length);
+  BLE_Remoter.Analyze_Raw_Data(pData, length);
 #else
   Serial.print("Notify callback for characteristic ");
   Serial.print(pBLERemoteCharacteristic->getUUID().toString().c_str());

@@ -1,4 +1,4 @@
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define FAN_IIC_ADDR    (0x03)
 

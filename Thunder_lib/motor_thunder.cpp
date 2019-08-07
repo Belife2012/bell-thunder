@@ -1,52 +1,5 @@
-/************************************************
- * 
- * 公司：贝尔科教集团
- * 公司网站：https://www.bell.ai
- * 
- * 
- * 
- * 电机库文件
- * 
- *   创建日期： 20180606
- *   作者：     宋博伟
- *   邮箱：     songbw123@163.com
- *
- *   版本：     v0.2
- *   修改日期   20180721
- *   修改：     宋博伟
- *   邮箱：     songbw123@163.com
- *   修改内容： 
- * 
- *   
- * 
- * 功能列表：
- *  // 定时器
- *  1.  void Setup_PID_Timer(void);         // 配置PID用定时器
- *  2.  void Uninstall_PID_Timer(void);     // 移除PID用定时器(会影响其它用到此定时器的功能)
- * 
- *  // 开环电机
- *  3.  void Setup_Motor(void);                                 // 配置电机
- *  4.  void Motor_Move(int motor, int speed, int direction);   // 开环电机控制函数
- * 
- *  // 闭环电机
- *  5.  void PID_Reset(struct PID_Struct_t *pid);                               // 重置PID计算过程值
- *  6.  void PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float Kd);  // PID参数初始化
- *  7.  void All_PID_Init();                                                    // 按默认PID参数初始化左右电机
- *  8.  void Setup_Motor_PID(void);                                             // 配置左右两个电机编码器
- *  9.  void PID_Speed(void);                                                   // 按PID输出控制左右两个电机
- *  10. void Set_L_Target(float target);                                        // 设定左轮目标速度(编码器计数值)
- *  11. void Set_R_Target(float target);                                        // 设定右轮目标速度(编码器计数值)
- *  12. int16_t Get_L_Speed(void);                                              // 获取左轮速度(编码器计数值)
- *  13. int16_t Get_R_Speed(void);                                              // 获取右轮速度(编码器计数值)
- *  14. int16_t Get_L_Target(void);                                             // 获取左轮目标(编码器计数值)
- *  15. int16_t Get_R_Target(void);                                             // 获取右轮目标(编码器计数值)
- * 
- * 
- * 
- ************************************************/
-
-#include <Thunder_Motor.h>
-#include <Thunder_lib.h>
+#include <motor_thunder.h>
+#include <bell_thunder.h>
 
 #include "driver/periph_ctrl.h"
 #include "driver/pcnt.h"
@@ -145,7 +98,7 @@ void IRAM_ATTR PID_Timer_Handle()
 }
 
 #else
-void THUNDER_MOTOR::Update_Encoder_Value()
+void MOTOR_THUNDER::Update_Encoder_Value()
 {
   Get_Encoder_Value();
   Update_Rotate_Value();
@@ -155,7 +108,7 @@ void THUNDER_MOTOR::Update_Encoder_Value()
 
 
 // 配置PID定时器
-void THUNDER_MOTOR::Setup_PID_Timer()
+void MOTOR_THUNDER::Setup_PID_Timer()
 {
   #ifdef ENABLE_ENCODER_TIMER
   Timer_PID_Flag = xSemaphoreCreateBinary();
@@ -168,12 +121,12 @@ void THUNDER_MOTOR::Setup_PID_Timer()
 }
 
 // 移除PID定时器(会影响其它用到此定时器的功能)
-void THUNDER_MOTOR::Disable_PID_Timer(void)
+void MOTOR_THUNDER::Disable_PID_Timer(void)
 {
   PID_Timer_Enable = 0;
 }
 // 重启PID定时器
-void THUNDER_MOTOR::Enable_PID_Timer(void)
+void MOTOR_THUNDER::Enable_PID_Timer(void)
 {
   PID_Timer_Enable = 1;
 }
@@ -181,7 +134,7 @@ void THUNDER_MOTOR::Enable_PID_Timer(void)
 #if (MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_TB6612)
 
 // 配置电机
-void THUNDER_MOTOR::Setup_Motor()
+void MOTOR_THUNDER::Setup_Motor()
 {
   ledcSetup(MOTOR_CHANNEL_2, MOTOR_BASE_FREQ, MOTOR_TIMER_13_BIT);
   ledcSetup(MOTOR_CHANNEL_3, MOTOR_BASE_FREQ, MOTOR_TIMER_13_BIT);
@@ -198,7 +151,7 @@ void THUNDER_MOTOR::Setup_Motor()
 // 配置电机速度
 // 参数1-->通道
 // 参数2-->功率
-void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed)
+void MOTOR_THUNDER::set_speed(uint8_t motor_channel,uint32_t speed)
 {
   if(speed > valueMax)
   {
@@ -213,7 +166,7 @@ void THUNDER_MOTOR::set_speed(uint8_t motor_channel,uint32_t speed)
 // 参数1-->电机编号；1或者2
 // 参数2-->速度；范围为0-255
 // 参数3-->方向, 0为反向，1为正向
-void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
+void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 {
   if(direction == 1)
   {  
@@ -252,7 +205,7 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
   }
 }
 
-void THUNDER_MOTOR::Motor_Brake(int motor)
+void MOTOR_THUNDER::Motor_Brake(int motor)
 {
   Thunder.Disable_En_Motor();
   if(motor == 1){
@@ -267,7 +220,7 @@ void THUNDER_MOTOR::Motor_Brake(int motor)
 }
 // 开环电机滑行函数
 // 参数1-->电机编号；1或者2
-void THUNDER_MOTOR::Motor_Free(int motor)
+void MOTOR_THUNDER::Motor_Free(int motor)
 {
   Thunder.Disable_En_Motor();
   if(motor == 1)
@@ -287,7 +240,7 @@ void THUNDER_MOTOR::Motor_Free(int motor)
 #elif(MOTOR_DRIVER_IC == MOTOR_DRIVER_IC_PT5126)
 
 // 配置电机
-void THUNDER_MOTOR::Setup_Motor()
+void MOTOR_THUNDER::Setup_Motor()
 {
   pinMode(PWM_L_A, INPUT_PULLUP);
   // if( digitalRead(PWM_L_A) == HIGH ){
@@ -317,7 +270,7 @@ void THUNDER_MOTOR::Setup_Motor()
 // 配置电机速度
 // 参数1-->通道
 // 参数2-->功率
-void THUNDER_MOTOR::set_speed(uint8_t motor_channel, uint32_t speed) 
+void MOTOR_THUNDER::set_speed(uint8_t motor_channel, uint32_t speed) 
 {
   uint8_t channel = 0;
   uint16_t speed_pulse = 0;
@@ -345,7 +298,7 @@ void THUNDER_MOTOR::set_speed(uint8_t motor_channel, uint32_t speed)
 // 参数1-->电机编号；1或者2
 // 参数2-->速度；范围为0-255
 // 参数3-->方向, 0为反向，1为正向
-void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
+void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 {
   if(speed > 255)
   {
@@ -402,7 +355,7 @@ void THUNDER_MOTOR::Motor_Move(int motor, int speed, int direction)
 
 // 开环电机刹车函数
 // 参数1-->电机编号；1或者2
-void THUNDER_MOTOR::Motor_Brake(int motor)
+void MOTOR_THUNDER::Motor_Brake(int motor)
 {
   #if 0
   Thunder.Disable_En_Motor();
@@ -435,7 +388,7 @@ void THUNDER_MOTOR::Motor_Brake(int motor)
 
 // 开环电机滑行函数
 // 参数1-->电机编号；1或者2
-void THUNDER_MOTOR::Motor_Free(int motor)
+void MOTOR_THUNDER::Motor_Free(int motor)
 {
   Thunder.Disable_En_Motor();
 
@@ -453,7 +406,7 @@ void THUNDER_MOTOR::Motor_Free(int motor)
 #endif
 
 // 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
-void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
+void MOTOR_THUNDER::Set_L_Motor_Output( int M_output ){
   if( M_output >= 0 ){
     Motor_Move(1, M_output, 1);
   }else{
@@ -461,7 +414,7 @@ void THUNDER_MOTOR::Set_L_Motor_Output( int M_output ){
   }
 }
 // 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
-void THUNDER_MOTOR::Set_R_Motor_Output( int M_output ){
+void MOTOR_THUNDER::Set_R_Motor_Output( int M_output ){
   if( M_output >= 0 ){
     Motor_Move(2, M_output, 1);
   }else{
@@ -469,7 +422,7 @@ void THUNDER_MOTOR::Set_R_Motor_Output( int M_output ){
   }
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
-void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
+void MOTOR_THUNDER::Set_L_Motor_Power( int Lpower ){
   Thunder.Disable_En_Motor();
   float M_power;
   M_power = Lpower;
@@ -482,7 +435,7 @@ void THUNDER_MOTOR::Set_L_Motor_Power( int Lpower ){
   }
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
-void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
+void MOTOR_THUNDER::Set_R_Motor_Power( int Rpower ){
   Thunder.Disable_En_Motor();
   float M_power;
   M_power = Rpower;
@@ -496,7 +449,7 @@ void THUNDER_MOTOR::Set_R_Motor_Power( int Rpower ){
 }
 
 // 重置PID计算过程值
-void THUNDER_MOTOR::PID_Reset(struct PID_Struct_t *pid)
+void MOTOR_THUNDER::PID_Reset(struct PID_Struct_t *pid)
 {
   pid->Err = 0;
   pid->SumErr = 0; 
@@ -511,7 +464,7 @@ void THUNDER_MOTOR::PID_Reset(struct PID_Struct_t *pid)
   pid->LastOutD = 0;
   // pid->Out = 0;  
 }
-void THUNDER_MOTOR::PID_Reset()
+void MOTOR_THUNDER::PID_Reset()
 {
   PID_Reset(&Motor_L_Speed_PID);
   PID_Reset(&Motor_R_Speed_PID);
@@ -530,7 +483,7 @@ void THUNDER_MOTOR::PID_Reset()
 }
 
 // PID参数初始化
-void THUNDER_MOTOR::PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float Kd)
+void MOTOR_THUNDER::PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float Kd)
 {
   pid->Kp = Kp;
   pid->Ki = Ki;
@@ -552,7 +505,7 @@ void THUNDER_MOTOR::PID_Init(struct PID_Struct_t *pid, float Kp, float Ki, float
 }
 
 // 按默认PID参数初始化电机闭环控制的变量
-void THUNDER_MOTOR::All_PID_Init()
+void MOTOR_THUNDER::All_PID_Init()
 {
     float Kp,Ki,Kd;
     Kp = PID_Default_Kp;
@@ -576,7 +529,7 @@ void THUNDER_MOTOR::All_PID_Init()
     PID_Init(&Motor_R_Speed_PID, Kp, Ki, Kd);
 }
 
-float THUNDER_MOTOR::motor_PID(struct PID_Struct_t *pid)    //PID计算
+float MOTOR_THUNDER::motor_PID(struct PID_Struct_t *pid)    //PID计算
 {
   //P计算
   pid->Err = pid->Ref - pid->Fdb;   //计算误差
@@ -611,7 +564,7 @@ float THUNDER_MOTOR::motor_PID(struct PID_Struct_t *pid)    //PID计算
 }
 
 // 配置左右两个电机编码器
-void THUNDER_MOTOR::Setup_Motor_PID()
+void MOTOR_THUNDER::Setup_Motor_PID()
 {
   // Serial.printf("SSSSSSSSSS Setup_Motor_PID SSSSSSSSSS\n");
 
@@ -682,7 +635,7 @@ void THUNDER_MOTOR::Setup_Motor_PID()
 }
 
 // 按PID输出控制左右两个电机
-void THUNDER_MOTOR::PID_Speed()
+void MOTOR_THUNDER::PID_Speed()
 {
   // 在定时器里面获取了 计数器的数值，存在Encoder_Counter_Left Encoder_Counter_Right
   // Get_Encoder_Value(); 
@@ -731,7 +684,7 @@ void THUNDER_MOTOR::PID_Speed()
   }
 }
 
-void THUNDER_MOTOR::Motor_Position_Control(MotorPosition_Struct *position_ctrl)
+void MOTOR_THUNDER::Motor_Position_Control(MotorPosition_Struct *position_ctrl)
 {
   // 采用增量式PID
   float pid_result;
@@ -749,7 +702,7 @@ void THUNDER_MOTOR::Motor_Position_Control(MotorPosition_Struct *position_ctrl)
 }
 
 
-void THUNDER_MOTOR::Set_Motor_Position(int motor, int position_target)
+void MOTOR_THUNDER::Set_Motor_Position(int motor, int position_target)
 {
   if(motor == 1){
     Position_Ctrl_L.target = position_target;
@@ -763,13 +716,13 @@ void THUNDER_MOTOR::Set_Motor_Position(int motor, int position_target)
     Position_Ctrl_R.enable_ctrl = true;
   }
 }
-void THUNDER_MOTOR::Clear_Position_Control()
+void MOTOR_THUNDER::Clear_Position_Control()
 {
   Position_Ctrl_L.enable_ctrl = false;
   Position_Ctrl_R.enable_ctrl = false;
 }
 
-void THUNDER_MOTOR::Position_Control()
+void MOTOR_THUNDER::Position_Control()
 {
   if(Position_Ctrl_L.enable_ctrl == true){
     Position_Ctrl_L.variant = Get_L_RotateValue();
@@ -803,7 +756,7 @@ void THUNDER_MOTOR::Position_Control()
  *
  * @return: 
  */
-void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
+void MOTOR_THUNDER::Control_Motor_Running(MotorRunning_Struct &running_data)
 {
   Thunder.Disable_En_Motor();
   
@@ -916,7 +869,7 @@ void THUNDER_MOTOR::Control_Motor_Running(MotorRunning_Struct &running_data)
   }
 }
 
-void THUNDER_MOTOR::Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed)
+void MOTOR_THUNDER::Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed)
 {
   MotorRunning_Struct _running_data;
 
@@ -946,7 +899,7 @@ void THUNDER_MOTOR::Control_Motor_Running(byte _select, byte _mode, float _data,
  *
  * @return: 
  */
-void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
+void MOTOR_THUNDER::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
 {
   Set_Car_Speed_Direction(turnning_data.motor_speed, turnning_data.turn_percent);
 
@@ -1004,7 +957,7 @@ void THUNDER_MOTOR::Control_Motor_Turnning(MotorTurnning_Struct &turnning_data)
   // Motor_Free(2);
 }
 
-void THUNDER_MOTOR::Control_Motor_Turnning(byte _mode, float _data, float _percent, float _speed)
+void MOTOR_THUNDER::Control_Motor_Turnning(byte _mode, float _data, float _percent, float _speed)
 {
   MotorTurnning_Struct _turnning_data;
 
@@ -1016,7 +969,7 @@ void THUNDER_MOTOR::Control_Motor_Turnning(byte _mode, float _data, float _perce
   Control_Motor_Turnning(_turnning_data);
 }
 
-void THUNDER_MOTOR::Calculate_Left_Control()
+void MOTOR_THUNDER::Calculate_Left_Control()
 {
   // calculate left motor out power
   drive_car_pid.OutP_left = drive_car_pid.left_speed_diff * drive_car_pid.Kp;
@@ -1033,7 +986,7 @@ void THUNDER_MOTOR::Calculate_Left_Control()
     drive_car_pid.OutI_left_last = drive_car_pid.OutI_left;
   }
 }
-void THUNDER_MOTOR::Calculate_Right_Control()
+void MOTOR_THUNDER::Calculate_Right_Control()
 {
   // calculate right motor out power
   drive_car_pid.OutP_right = drive_car_pid.right_speed_diff * drive_car_pid.Kp;
@@ -1057,7 +1010,7 @@ void THUNDER_MOTOR::Calculate_Right_Control()
  * @parameters: 
  * @return: 
  */
-void THUNDER_MOTOR::Drive_Car_Control()
+void MOTOR_THUNDER::Drive_Car_Control()
 {
   float time_interval;
   float left_speed, right_speed;
@@ -1137,7 +1090,7 @@ void THUNDER_MOTOR::Drive_Car_Control()
  * @parameters: 
  * @return: 
  */
-void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
+void MOTOR_THUNDER::Set_Car_Speed_Direction(float speed, float direction)
 {
   // All_PID_Init();
 
@@ -1187,7 +1140,7 @@ void THUNDER_MOTOR::Set_Car_Speed_Direction(float speed, float direction)
  * @parameters: target是最大PID控制速度的百分比
  * @return: 
  */
-void THUNDER_MOTOR::Set_L_Target(float target)
+void MOTOR_THUNDER::Set_L_Target(float target)
 {
   float target_encoder_num;
 
@@ -1200,7 +1153,7 @@ void THUNDER_MOTOR::Set_L_Target(float target)
 
   Thunder.Enable_En_Motor();
 }
-void THUNDER_MOTOR::Set_R_Target(float target)
+void MOTOR_THUNDER::Set_R_Target(float target)
 {
   float target_encoder_num;
 
@@ -1218,23 +1171,23 @@ void THUNDER_MOTOR::Set_R_Target(float target)
  * 获取左右轮速度, 这个数值是电机最大PID控制速度 的 百分比
  * 获取这个值，需要打开PID定时器
  */
-int16_t THUNDER_MOTOR::Get_L_Speed(void)
+int16_t MOTOR_THUNDER::Get_L_Speed(void)
 {
   return Encoder_Counter_Left * 100 / MAX_DRIVE_SPEED;
 }
-int16_t THUNDER_MOTOR::Get_R_Speed(void)
+int16_t MOTOR_THUNDER::Get_R_Speed(void)
 {
   return Encoder_Counter_Right * 100 / MAX_DRIVE_SPEED;
 }
 
 // 获取左轮目标(编码器计数值)
-int16_t THUNDER_MOTOR::Get_L_Target(void)
+int16_t MOTOR_THUNDER::Get_L_Target(void)
 {
   return Motor_L_Speed_PID.Ref * 100 / MAX_DRIVE_SPEED;
 }
 
 // 获取右轮目标(编码器计数值)
-int16_t THUNDER_MOTOR::Get_R_Target(void)
+int16_t MOTOR_THUNDER::Get_R_Target(void)
 {
   return Motor_R_Speed_PID.Ref * 100 / MAX_DRIVE_SPEED;
 }
@@ -1284,7 +1237,7 @@ inline void Update_Rotate_Value()
  * @parameters: 
  * @return: 
  */
-int32_t THUNDER_MOTOR::Get_L_RotateValue()
+int32_t MOTOR_THUNDER::Get_L_RotateValue()
 {
   int32_t rotate_value;
 
@@ -1293,7 +1246,7 @@ int32_t THUNDER_MOTOR::Get_L_RotateValue()
   
   return rotate_value;
 }
-int32_t THUNDER_MOTOR::Get_R_RotateValue()
+int32_t MOTOR_THUNDER::Get_R_RotateValue()
 {
   int32_t rotate_value;
 
@@ -1308,7 +1261,7 @@ int32_t THUNDER_MOTOR::Get_R_RotateValue()
  * @parameters: 
  * @return: 
  */
-void THUNDER_MOTOR::Clear_L_RotateValue()
+void MOTOR_THUNDER::Clear_L_RotateValue()
 {
   rotate_Record_Origin_Left = rotate_RawValue_Left;
 }
@@ -1318,7 +1271,7 @@ void THUNDER_MOTOR::Clear_L_RotateValue()
  * @parameters: 
  * @return: 
  */
-void THUNDER_MOTOR::Clear_R_RotateValue()
+void MOTOR_THUNDER::Clear_R_RotateValue()
 {
   rotate_Record_Origin_Right = rotate_RawValue_Right;
 }

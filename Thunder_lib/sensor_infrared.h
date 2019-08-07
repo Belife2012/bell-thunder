@@ -1,6 +1,6 @@
 #ifndef __SENSOR_INFRARED_H__
 #define __SENSOR_INFRARED_H__
-#include "Sensor_IIC.h"
+#include "iic_thunder.h"
 
 #define INFRARED_IIC_ADDR                   (0x04)
 #define INFRARED_IIC_REG_SYSCHANNEL         (0x10)

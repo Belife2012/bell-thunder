@@ -1,58 +1,59 @@
-#include <Thunder_lib.h>
+#include <bell_thunder.h>
 #include "esp_adc_cal.h"
 #include "function_macro.h"
-#include "Disk_Manager.h"
+#include "disk_manager.h"
 #include "common.h"
 
-THUNDER Thunder;
-enum_Program_Index THUNDER::program_change_to = PROGRAM_RUNNING;
-
-THUNDER_BLE Thunder_BLE;
-BLE_CLIENT Ble_Client;
-THUNDER_MOTOR Thunder_Motor;
-REMOTER Ble_Remoter;
+BELL_THUNDER Thunder;
+enum_Program_Index BELL_THUNDER::program_change_to = PROGRAM_RUNNING;
 
 //ADC 校准使用
 esp_adc_cal_characteristics_t adc_chars;
 esp_adc_cal_value_t cal_value_type;
 
-// 音频
-WT588 Speaker = WT588(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
-
 // IIC选通芯片TCA9548的地址是（IIC address：0x70）
+
+MOTOR_THUNDER Motor_Thunder;
+// 风扇电动机(IIC address：0x03)
+MOTOR_FAN Motor_Fan(FAN_IIC_ADDR);
+// 炮台模组 （IIC address：0x24）
+BELL_BARBETTE Barbette_Thunder;
+// 彩色LED（IIC address：0x11）
+LED_COLOR LED_Color(CLOOUR_LED_DEVICE);
+// 单色色LED（IIC address：0x69）
+DISPLAY_THUNDER Display_Screen;
+// 音频
+SPEAKER_WT588 Speaker_Thunder(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
+
 // 姿态传感器（IIC address: 0x68 0x0C）
 // 超声波（IIC address：0x01）
-US_I2C US(ADD_I2C_US);
-// 火焰传感器（IIC address：0x02）
-SENSOR_FLAME Flame_Sensor(FLAME_IIC_ADDR);
-// 风扇电动机(IIC address：0x03)
-MOTOR_FAN Fan_Motor(FAN_IIC_ADDR);
+SENSOR_US Sensor_Ultrasonic(ADD_I2C_US);
 // 颜色识别（IIC address：0x38）
-BH1745NUC Colour_Sensor(ADD_I2C_COLOUR); //I2C从机地址
-// 彩色LED（IIC address：0x11）
-XT1511_I2C Color_LED(CLOOUR_LED_DEVICE);
-// 单色色LED（IIC address：0x69）
-DOT_MATRIX_LED Display_Screen;
+SENSOR_COLOR Sensor_Color(ADD_I2C_COLOUR); //I2C从机地址
 // 触碰传感器（IIC address：0x10）
-TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
+SENSOR_TOUCH Sensor_Touch(TOUCH_ADDR_DEVICE);
 // 光电传感器（IIC address：0x52）
-LIGHTDETECT_I2C Light_Sensor(LIGHT_ADDR_DEVICE);
-// 炮台模组 （IIC address：0x24）
-Bell_Barbette Thunder_Barbette;
+SENSOR_LIGHT Sensor_Light(LIGHT_ADDR_DEVICE);
+// 火焰传感器（IIC address：0x02）
+SENSOR_FLAME Sensor_Flame(FLAME_IIC_ADDR);
 // 空气温湿度 （IIC address：0x05）
-SENSOR_HT HumTemp_Sensor(HT_IIC_ADDR);
+SENSOR_HT Sensor_HumTemp(HT_IIC_ADDR);
 // 有毒气体传感器 （IIC address：0x06）
-SENSOR_GAS Gas_Sensor(GAS_IIC_ADDR);
+SENSOR_GAS Sensor_Gas(GAS_IIC_ADDR);
 // 温度探头 （IIC address：0x07）
-SENSOR_TEMP Temp_Sensor(TEMP_IIC_ADDR);
+SENSOR_TEMP Sensor_Temp(TEMP_IIC_ADDR);
 // 土壤湿度传感器（IIC address：0x08）
-SENSOR_SOIL Soil_Sensor(SOIL_IIC_ADDR);
+SENSOR_SOIL Sensor_Soil(SOIL_IIC_ADDR);
 // 声音传感器（IIC address：0x09）
-SENSOR_SOUND Sound_Sensor(SOUND_IIC_ADDR);
+SENSOR_SOUND Sensor_Sound(SOUND_IIC_ADDR);
 // 人体移动传感器（IIC address：0x0A）
-SENSOR_HUMAN Human_Sensor(HUMAN_IIC_ADDR);
+SENSOR_HUMAN Sensor_Human(HUMAN_IIC_ADDR);
 // 红外遥控器（IIC address：0x04）
-SENSOR_INFRARED Infrared_Sensor(INFRARED_IIC_ADDR);
+SENSOR_INFRARED Sensor_Infrared(INFRARED_IIC_ADDR);
+
+BLE_THUNDERGO BLE_ThunderGo;
+BLE_CLIENT BLE_Client;
+SENSOR_REMOTER BLE_Remoter;
 
 // 蓝牙
 uint8_t Rx_Data[21] = {0};
@@ -73,7 +74,7 @@ const uint8_t Version_FW[4] = {'V', 1, 2, 0};
 
 uint32_t thunder_system_parameter = 0;
 // 所有模块初始化
-void THUNDER::Setup_All(void)
+void BELL_THUNDER::Setup_All(void)
 {
   delay(300);
 #ifdef SERIAL_PRINT_HIGHSPEED
@@ -105,30 +106,30 @@ void THUNDER::Setup_All(void)
   Setup_Led_Indication(); // 初始化指示灯LED
   Setup_Function_Button();   // 初始化程序控制按键：BUTTON_START
 
-  Colour_Sensor.Setup();           // 配置颜色传感器
+  Sensor_Color.Setup();           // 配置颜色传感器
 
   Display_Screen.Setup(); // 初始化单色LED驱动IC配置
 
-  Thunder_Motor.Setup_Motor();     // 配置电机
-  Thunder_Motor.Setup_Motor_PID(); // 配置左右两个电机编码器
+  Motor_Thunder.Setup_Motor();     // 配置电机
+  Motor_Thunder.Setup_Motor_PID(); // 配置左右两个电机编码器
   Stop_All();               // 
 
-  Color_LED.LED_OFF(); // 彩灯全关，立即刷新
+  LED_Color.LED_OFF(); // 彩灯全关，立即刷新
 	
 	// 九轴传感器初始化
 	// Attitude_Sensor.Init_Sensor();
 	// Attitude_Sensor.Open_Sensor();
   
-  THUNDER_BLE::CreateQueueBLE();
-  Thunder_BLE.Setup_BLE();
+  BLE_THUNDERGO::CreateQueueBLE();
+  BLE_ThunderGo.Setup_BLE();
 
-  Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED);      // 把 LED点阵显示动画效果刷新工作 交给后台守护线程进行
-  Task_Mesg.Set_Flush_Task(FLUSH_COLOR_LED);       // 把 彩灯刷新工作 交给后台守护线程进行
-  Task_Mesg.Set_Flush_Task(FLUSH_MOTOR_PID_CTRL);  // 把 电机闭环控制 交给后台守护线程进行
-  Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL);  // 把 滚动显示的刷新工作 交给后台守护线程进行
-  Task_Mesg.Set_Flush_Task(FLUSH_BATTERY_MEASURE); // 每300ms检测一次电池电压，以保证每次测量都有之前的数据作为滤波数据
-  Task_Mesg.Set_Flush_Task(FLUSH_COMMUNICATIONS);  // 开启UART指令、BLE指令 通信控制功能
-  Task_Mesg.Create_Deamon_Threads();               // 创建并开始 守护线程
+  System_Task.Set_Flush_Task(FLUSH_MATRIX_LED);      // 把 LED点阵显示动画效果刷新工作 交给后台守护线程进行
+  System_Task.Set_Flush_Task(FLUSH_COLOR_LED);       // 把 彩灯刷新工作 交给后台守护线程进行
+  System_Task.Set_Flush_Task(FLUSH_MOTOR_PID_CTRL);  // 把 电机闭环控制 交给后台守护线程进行
+  System_Task.Set_Flush_Task(FLUSH_CHARACTER_ROLL);  // 把 滚动显示的刷新工作 交给后台守护线程进行
+  System_Task.Set_Flush_Task(FLUSH_BATTERY_MEASURE); // 每300ms检测一次电池电压，以保证每次测量都有之前的数据作为滤波数据
+  System_Task.Set_Flush_Task(FLUSH_COMMUNICATIONS);  // 开启UART指令、BLE指令 通信控制功能
+  System_Task.Create_Deamon_Threads();               // 创建并开始 守护线程
 
   Serial.printf("\n*** Initial Completes, spend time:%d ***\n\n", millis());
 
@@ -140,43 +141,43 @@ void THUNDER::Setup_All(void)
   Serial.printf("Battery Vlotage: %fV\n", ((float)Get_Battery_Data() / 1000));
   
   if ( thunder_system_parameter == 1 ){
-	Task_Mesg.Toggle_Competition_Status(1);
+	System_Task.Toggle_Competition_Status(1);
   }
 }
 
-void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
+void BELL_THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 {
   if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
 	Serial.println("BLE type: server");
-	THUNDER_BLE::SetBleConnectType(BLE_SERVER_CONNECTED);
+	BLE_THUNDERGO::SetBleConnectType(BLE_SERVER_CONNECTED);
 	if(ble_type == BLE_TYPE_CLIENT){
-		Ble_Client.Disconnect_Ble_Server();
-		Ble_Client.Stop_Scan();
+		BLE_Client.Disconnect_Ble_Server();
+		BLE_Client.Stop_Scan();
 	}
 
-	Thunder_BLE.Start_Advertisement(); // 配置 BLE Server 
+	BLE_ThunderGo.Start_Advertisement(); // 配置 BLE Server 
 
 	ble_type = BLE_TYPE_SERVER;
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
 	Serial.println("BLE type: client");
-	THUNDER_BLE::SetBleConnectType(BLE_CLIENT_DISCONNECT); // 允许启动 client scan
+	BLE_THUNDERGO::SetBleConnectType(BLE_CLIENT_DISCONNECT); // 允许启动 client scan
 	if(ble_type == BLE_TYPE_SERVER) {
-		Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
+		BLE_ThunderGo.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
 	}
 
-	Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
+	BLE_Client.Setup_Ble_Client();        // 配置 BLE Client
 
 	ble_type = BLE_TYPE_CLIENT;
 	Serial.println("Starting BLE Client application...");
   }else if( (ble_type != BLE_TYPE_NONE) && (new_type == BLE_TYPE_NONE) ) {
 	Serial.println("BLE turn off");
-	THUNDER_BLE::SetBleConnectType(BLE_NOT_OPEN);
+	BLE_THUNDERGO::SetBleConnectType(BLE_NOT_OPEN);
 	if(ble_type == BLE_TYPE_CLIENT){
-		Ble_Client.Disconnect_Ble_Server();
-		Ble_Client.Stop_Scan();
+		BLE_Client.Disconnect_Ble_Server();
+		BLE_Client.Stop_Scan();
 	}
 	if(ble_type == BLE_TYPE_SERVER) {
-		Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
+		BLE_ThunderGo.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
 	}
 
 	ble_type = BLE_TYPE_NONE;
@@ -185,7 +186,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
   return;
 }
 
-void THUNDER::Reset_All_Components()
+void BELL_THUNDER::Reset_All_Components()
 {
   Stop_All();
   delay(50);
@@ -193,25 +194,25 @@ void THUNDER::Reset_All_Components()
   delay(50);
   
   Display_Screen.Setup();
-  Color_LED.LED_OFF();
+  LED_Color.LED_OFF();
 
 }
 
 // 全部终止(电机)
-void THUNDER::Stop_All(void)
+void BELL_THUNDER::Stop_All(void)
 {
   // Serial.printf("Stop Motor... \n");
 
   Disable_En_Motor(); // 关闭编码电机计算
-  Thunder_Motor.Set_L_Motor_Output(0);
-  Thunder_Motor.Set_R_Motor_Output(0);
+  Motor_Thunder.Set_L_Motor_Output(0);
+  Motor_Thunder.Set_R_Motor_Output(0);
 
   // Servo_Turn(1, 90);
   // Servo_Turn(2, 90);
 }
 
 // 电池电压检测初始化配置
-void THUNDER::Setup_Battery()
+void BELL_THUNDER::Setup_Battery()
 {
   adc_power_on();
   adc1_config_width(ADC_WIDTH_12Bit);
@@ -248,7 +249,7 @@ void THUNDER::Setup_Battery()
   }
 }
 
-uint32_t THUNDER::Battery_Power_Filter(uint32_t new_data)
+uint32_t BELL_THUNDER::Battery_Power_Filter(uint32_t new_data)
 {
   uint32_t i, valid_num = 0;
   uint32_t sum_data = 0, max_data = 0, min_data = 15000;
@@ -291,13 +292,13 @@ uint32_t THUNDER::Battery_Power_Filter(uint32_t new_data)
   }
 }
 
-uint32_t THUNDER::Get_Battery_Value()
+uint32_t BELL_THUNDER::Get_Battery_Value()
 {
   return Battery_Value;
 }
 
 // 获取电池电压
-uint32_t THUNDER::Get_Battery_Data()
+uint32_t BELL_THUNDER::Get_Battery_Data()
 {
   uint32_t ADC_mV;
   uint32_t Battery_Voltage;
@@ -334,7 +335,7 @@ uint32_t THUNDER::Get_Battery_Data()
  * @parameters: 
  * @return: 
  */
-void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
+void BELL_THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 {
   if( Battery_Voltage < BATTERY_RESTART_VALUE){
 	Serial.printf("\nRestart With Power: %dmV\n", Battery_Voltage);
@@ -350,11 +351,11 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 
 	Display_Screen.Play_LED_HT16F35B_Show(101);
 
-	Speaker.Play_Song(79);
+	Speaker_Thunder.Play_Song(79);
 	delay(300);
-	Speaker.Play_Song(79);
+	Speaker_Thunder.Play_Song(79);
 	delay(300);
-	Speaker.Play_Song(79);
+	Speaker_Thunder.Play_Song(79);
 
 	Serial.printf("\nLow Power: %dmV\n", Battery_Voltage);
 	Low_Power_Old = Battery_Voltage; 
@@ -367,7 +368,7 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Update_Function_Timer()
+void BELL_THUNDER::Update_Function_Timer()
 {
   // TIMER: wait_key_timer
   if (wait_key_timer != 0)
@@ -395,7 +396,7 @@ void THUNDER::Update_Function_Timer()
  * @parameters: 
  * @return: 
  */
-void THUNDER::Setup_Led_Indication()
+void BELL_THUNDER::Setup_Led_Indication()
 {
   pinMode(LED_INDICATION, OUTPUT);
   digitalWrite(LED_INDICATION, LOW);
@@ -425,7 +426,7 @@ void THUNDER::Setup_Led_Indication()
  * @parameters: 
  * @return: 
  */
-void THUNDER::Set_Led_Indication_param()
+void BELL_THUNDER::Set_Led_Indication_param()
 {
   led_indication_counter = 0;
 
@@ -449,7 +450,7 @@ void THUNDER::Set_Led_Indication_param()
  * @parameters: current_counter循环计数器，单位为ms，精度为10ms
  * @return: 
  */
-void THUNDER::Update_Led_Indication_Status(uint32_t &current_counter)
+void BELL_THUNDER::Update_Led_Indication_Status(uint32_t &current_counter)
 {
   // wait_led_timer 存了 Led_Indication使能的倒计时时间，时间到之前LED处于熄灭状态
   if (led_indication_param.wait_led_timer != 0)
@@ -502,7 +503,7 @@ void THUNDER::Update_Led_Indication_Status(uint32_t &current_counter)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Setup_Function_Button()
+void BELL_THUNDER::Setup_Function_Button()
 {
   pinMode(BUTTON_START, INPUT_PULLDOWN);
   button_press_time = 0;
@@ -524,7 +525,7 @@ void THUNDER::Setup_Function_Button()
  * @parameters: 
  * @return: 确认button按下返回 1，否则返回 0
  */
-uint8_t THUNDER::Get_Function_Button_Status()
+uint8_t BELL_THUNDER::Get_Function_Button_Status()
 {
   // digitalRead(BUTTON_START)获取按键状态
   if (digitalRead(BUTTON_START) == 1)
@@ -569,7 +570,7 @@ uint8_t THUNDER::Get_Function_Button_Status()
  * @parameters: 
  * @return: 
  */
-enum_Key_Value THUNDER::Check_Function_Button_Value()
+enum_Key_Value BELL_THUNDER::Check_Function_Button_Value()
 {
   enum_Key_Value button_value = KEY_NONE;
 
@@ -644,7 +645,7 @@ enum_Key_Value THUNDER::Check_Function_Button_Value()
   return button_value;
 }
 
-bool THUNDER::Check_Function_Button_Event(enum_Key_Value key_event)
+bool BELL_THUNDER::Check_Function_Button_Event(enum_Key_Value key_event)
 {
   bool ret = false;
 
@@ -662,7 +663,7 @@ bool THUNDER::Check_Function_Button_Event(enum_Key_Value key_event)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Set_Process_Status(enum_Process_Status new_status)
+void BELL_THUNDER::Set_Process_Status(enum_Process_Status new_status)
 {
   led_indication_param.wait_led_timer = 700;
   led_indication_param.led_indication_once_flag = 0;
@@ -677,7 +678,7 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
 	led_indication_param.led_indication_amount = 1;
 	break;
   case PROCESS_INDICATE_STOP:
-	Task_Mesg.Clear_All_Loops();
+	System_Task.Clear_All_Loops();
 	Set_Process_Status(PROCESS_STOP);
 	return; // 做好STOP 的工作，直接退出函数，以免函数后续有变动
 	break;
@@ -726,7 +727,7 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
 				 + led_indication_param.led_indication_off_duty)*led_indication_param.led_indication_amount+2000;
 	break;
   case PROCESS_INDICATE_SWITCH:
-	Task_Mesg.Clear_All_Loops();
+	System_Task.Clear_All_Loops();
 	led_indication_param.wait_led_timer = 0;
 	led_indication_param.led_indication_period = 100;
 	led_indication_param.led_indication_on_duty = 50;
@@ -751,7 +752,7 @@ void THUNDER::Set_Process_Status(enum_Process_Status new_status)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Update_Process_Status(enum_Key_Value button_event)
+void BELL_THUNDER::Update_Process_Status(enum_Key_Value button_event)
 {
   if ( thunder_system_parameter == 1 ){
 	if((button_event != KEY_CLICK_ONE) && (button_event != KEY_CLICK_TWO)){
@@ -860,28 +861,28 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
 		else if (button_event == KEY_CLICK_ONE)
 		{
 		function_button_event = KEY_NONE;
-		// Speaker.Play_Song(3);
+		// Speaker_Thunder.Play_Song(3);
 		Set_Program_User(PROCESS_USER_1);
 		Disk_Manager.Write_Program_User(program_user);
 		}
 		else if (button_event == KEY_CLICK_TWO)
 		{
 		function_button_event = KEY_NONE;
-		// Speaker.Play_Song(4);
+		// Speaker_Thunder.Play_Song(4);
 		Set_Program_User(PROCESS_USER_2);
 		Disk_Manager.Write_Program_User(program_user);
 		}
 		else if (button_event == KEY_CLICK_THREE)
 		{
 		function_button_event = KEY_NONE;
-		// Speaker.Play_Song(5);
+		// Speaker_Thunder.Play_Song(5);
 		Set_Program_User(PROCESS_USER_3);
 		Disk_Manager.Write_Program_User(program_user);
 		}
 		else if (button_event == KEY_CLICK_FOUR)
 		{
 		function_button_event = KEY_NONE;
-		// Speaker.Play_Song(6);
+		// Speaker_Thunder.Play_Song(6);
 		Set_Program_User(PROCESS_USER_4);
 		Disk_Manager.Write_Program_User(program_user);
 		}
@@ -902,7 +903,7 @@ void THUNDER::Update_Process_Status(enum_Key_Value button_event)
 }
 
 // 复位程序号为 1号程序
-void THUNDER::Reset_Process_Status()
+void BELL_THUNDER::Reset_Process_Status()
 {
   if(program_user != PROCESS_USER_1){
     Set_Program_User(PROCESS_USER_1);
@@ -910,7 +911,7 @@ void THUNDER::Reset_Process_Status()
   }
 }
 
-void THUNDER::Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount)
+void BELL_THUNDER::Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount)
 {
   led_indication_param.wait_led_timer = 700;
   led_indication_param.led_indication_once_flag = 0;
@@ -923,7 +924,7 @@ void THUNDER::Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_du
   Set_Led_Indication_param();
 }
 
-void THUNDER::Set_Program_User(enum_Process_Status new_program_user)
+void BELL_THUNDER::Set_Program_User(enum_Process_Status new_program_user)
 {
   program_user = new_program_user;
 
@@ -940,7 +941,7 @@ void THUNDER::Set_Program_User(enum_Process_Status new_program_user)
   process_status = PROCESS_STOP;
 }
 
-void THUNDER::Set_Program_Run_Index(enum_Process_Status new_program)
+void BELL_THUNDER::Set_Program_Run_Index(enum_Process_Status new_program)
 {
   switch (new_program)
   {
@@ -983,29 +984,29 @@ void THUNDER::Set_Program_Run_Index(enum_Process_Status new_program)
 }
 
 // 编码电机  闭环计算
-void THUNDER::En_Motor(void)
+void BELL_THUNDER::En_Motor(void)
 {
-  Thunder_Motor.Update_Encoder_Value();
+  Motor_Thunder.Update_Encoder_Value();
 
   if (En_Motor_Flag == 2)
   {
-	Thunder_Motor.Drive_Car_Control();
+	Motor_Thunder.Drive_Car_Control();
   }
   else if (En_Motor_Flag == 1)
   {
 	// if (xSemaphoreTake(Timer_PID_Flag, portMAX_DELAY) == pdTRUE) // 控制周期PID_dt[ms]
 	{
-	  Thunder_Motor.PID_Speed();
+	  Motor_Thunder.PID_Speed();
 	}
   }
   else if(En_Motor_Flag == 3)
   {
-	Thunder_Motor.Position_Control();
+	Motor_Thunder.Position_Control();
   }
 }
 
 // 开启 Drive_Car_Control 功能
-void THUNDER::Enable_Drive_Car(void)
+void BELL_THUNDER::Enable_Drive_Car(void)
 {
   if(En_Motor_Flag != 2){
 	En_Motor_Flag = 2;
@@ -1013,7 +1014,7 @@ void THUNDER::Enable_Drive_Car(void)
 }
 
 // 开启 电机PID 功能
-void THUNDER::Enable_En_Motor(void)
+void BELL_THUNDER::Enable_En_Motor(void)
 {
   if(En_Motor_Flag != 1){
 	En_Motor_Flag = 1;
@@ -1021,31 +1022,31 @@ void THUNDER::Enable_En_Motor(void)
 }
 
 // 开启 电机位置 控制
-void THUNDER::Enable_Motor_Position(void)
+void BELL_THUNDER::Enable_Motor_Position(void)
 {
   if(En_Motor_Flag != 3){
-	Thunder_Motor.Clear_Position_Control();
+	Motor_Thunder.Clear_Position_Control();
 	En_Motor_Flag = 3;
   }
 }
 
 // 关闭编码电机计算
-void THUNDER::Disable_En_Motor(void)
+void BELL_THUNDER::Disable_En_Motor(void)
 {
   if( En_Motor_Flag != 0 ){
 	// 清除PID控制的变量
-	// Thunder_Motor.Set_L_Target(0);
-	// Thunder_Motor.Set_R_Target(0);
+	// Motor_Thunder.Set_L_Target(0);
+	// Motor_Thunder.Set_R_Target(0);
 
 	En_Motor_Flag = 0;
-	Thunder_Motor.PID_Reset();
-	Thunder_Motor.All_PID_Init();
+	Motor_Thunder.PID_Reset();
+	Motor_Thunder.All_PID_Init();
 	delay(1); //等待电机PID控制稳定
   }
 }
 
 // 舵机初始化配置
-void THUNDER::Setup_Servo(void)
+void BELL_THUNDER::Setup_Servo(void)
 {
   ledcSetup(SERVO_CHANNEL_0, SERVO_BASE_FREQ, SERVO_TIMER_13_BIT);
   ledcSetup(SERVO_CHANNEL_1, SERVO_BASE_FREQ, SERVO_TIMER_13_BIT);
@@ -1057,7 +1058,7 @@ void THUNDER::Setup_Servo(void)
 // 舵机角度控制
 // 参数1 --> 舵机编号；1-->A口；2-->B口
 // 参数2 --> 角度[°]；范围为0-180
-void THUNDER::Servo_Turn(int servo, int angle)
+void BELL_THUNDER::Servo_Turn(int servo, int angle)
 {
   if (angle > 180)
   {
@@ -1081,7 +1082,7 @@ void THUNDER::Servo_Turn(int servo, int angle)
 	Serial.printf("### No needed Servo\n");
   }
 }
-void THUNDER::Servo_Percent_Setting(int servo_index, 
+void BELL_THUNDER::Servo_Percent_Setting(int servo_index, 
 			int max_value, int min_value, int zero_value, int direction)
 {
   if(direction < 0){
@@ -1094,7 +1095,7 @@ void THUNDER::Servo_Percent_Setting(int servo_index,
 	servo_percent_min[servo_index - 1] = min_value;
   }
 }
-void THUNDER::Servo_Turn_Percent(int servo, int percent)
+void BELL_THUNDER::Servo_Turn_Percent(int servo, int percent)
 {
   if (percent > 100)
   {
@@ -1127,14 +1128,14 @@ void THUNDER::Servo_Turn_Percent(int servo, int percent)
 }
 
 // 巡线IR传感器初始化配置
-void THUNDER::Setup_IR()
+void BELL_THUNDER::Setup_IR()
 {
   pinMode(IR_1, INPUT);
   pinMode(IR_2, INPUT);
 }
 
 // 获取巡线IR数据
-void THUNDER::Get_IR_Data(uint8_t data[])
+void BELL_THUNDER::Get_IR_Data(uint8_t data[])
 {
   data[0] = digitalRead(IR_1);
   data[1] = digitalRead(IR_2);
@@ -1144,17 +1145,17 @@ void THUNDER::Get_IR_Data(uint8_t data[])
 #endif
 }
 
-void THUNDER::Wait_For_Motor_Slow()
+void BELL_THUNDER::Wait_For_Motor_Slow()
 {
-  // Thunder_Motor.Set_L_Motor_Power(0);
-  // Thunder_Motor.Set_R_Motor_Power(0);
-  Thunder_Motor.Motor_Brake(MOTOR_INDEX_LEFT);
-  Thunder_Motor.Motor_Brake(MOTOR_INDEX_RIGHT);
+  // Motor_Thunder.Set_L_Motor_Power(0);
+  // Motor_Thunder.Set_R_Motor_Power(0);
+  Motor_Thunder.Motor_Brake(MOTOR_INDEX_LEFT);
+  Motor_Thunder.Motor_Brake(MOTOR_INDEX_RIGHT);
 
   do
   {
 	delay(1);
-  } while (Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15);
+  } while (Motor_Thunder.Get_L_Speed() > 15 || Motor_Thunder.Get_R_Speed() > 15);
 }
 #if 1
 /* 
@@ -1181,7 +1182,7 @@ void THUNDER::Wait_For_Motor_Slow()
 #define SPIN_L_R_DIFF_ROTATEVALUE 700 //编码器数值的差量300为打转90度
 #define LINE_TRACING_STOP_FLAG (line_tracing_running == false || Rx_Data[0] == 0x61 || deviceConnected == false)
 
-void THUNDER::Line_Tracing(void)
+void BELL_THUNDER::Line_Tracing(void)
 {
   int last_L_R_diffrotate;
   int current_L_R_diffrotate;
@@ -1196,7 +1197,7 @@ void THUNDER::Line_Tracing(void)
   Line_last_sound_time = millis();
   LED_counter = 99;
 
-  Speaker.Play_Song(131);
+  Speaker_Thunder.Play_Song(131);
   while (1)
   {
 	delay(5);
@@ -1213,11 +1214,11 @@ void THUNDER::Line_Tracing(void)
 
 	if ((IR_Data[0] == 0) & (IR_Data[1] == 0)) //Serial.printf("SSSSSSSSSS 没线 SSSSSSSSSS\n");
 	{
-	  // Speaker.Play_Song(7); //test用---------
+	  // Speaker_Thunder.Play_Song(7); //test用---------
 	  if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
 		line_state = 5;
 	  }
 	  else if (line_state == 0) // 忽然从全黑变为全零过程中出线
@@ -1225,8 +1226,8 @@ void THUNDER::Line_Tracing(void)
 		// 左右扭头查找黑线
 		while (1)
 		{
-		  Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);
-		  Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+		  Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
+		  Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
 		  Line_last_time = millis();
 		  current_time = millis();
 		  while (current_time - 2000 < Line_last_time)
@@ -1243,8 +1244,8 @@ void THUNDER::Line_Tracing(void)
 		  {
 			break;
 		  }
-		  Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		  Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+		  Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		  Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
 		  Line_last_time = millis();
 		  current_time = millis();
 		  while (current_time - 2000 < Line_last_time)
@@ -1275,9 +1276,9 @@ void THUNDER::Line_Tracing(void)
 		rotate_back_quantity = 0;
 		while (1)
 		{
-		  Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);
-		  Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
-		  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+		  Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
+		  Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+		  current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 		  last_L_R_diffrotate = current_L_R_diffrotate;
 		  while (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE + rotate_back_quantity > last_L_R_diffrotate)
 		  {
@@ -1286,7 +1287,7 @@ void THUNDER::Line_Tracing(void)
 			{
 			  break;
 			}
-			current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+			current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 			delay(5);
 		  }
 		  if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1294,9 +1295,9 @@ void THUNDER::Line_Tracing(void)
 			break;
 		  }
 
-		  Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		  Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
-		  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+		  Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		  Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
+		  current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 		  last_L_R_diffrotate = current_L_R_diffrotate;
 		  while (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE * 2 < last_L_R_diffrotate)
 		  {
@@ -1305,7 +1306,7 @@ void THUNDER::Line_Tracing(void)
 			{
 			  break;
 			}
-			current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+			current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 			delay(5);
 		  }
 		  if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1329,9 +1330,9 @@ void THUNDER::Line_Tracing(void)
 		rotate_back_quantity = 0;
 		while (1)
 		{
-		  Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		  Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
-		  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+		  Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		  Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
+		  current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 		  last_L_R_diffrotate = current_L_R_diffrotate;
 		  while (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE - rotate_back_quantity < last_L_R_diffrotate)
 		  {
@@ -1340,7 +1341,7 @@ void THUNDER::Line_Tracing(void)
 			{
 			  break;
 			}
-			current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+			current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 			delay(5);
 		  }
 		  if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1348,9 +1349,9 @@ void THUNDER::Line_Tracing(void)
 			break;
 		  }
 
-		  Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);
-		  Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
-		  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+		  Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
+		  Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+		  current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 		  last_L_R_diffrotate = current_L_R_diffrotate;
 		  while (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE * 2 > last_L_R_diffrotate)
 		  {
@@ -1359,7 +1360,7 @@ void THUNDER::Line_Tracing(void)
 			{
 			  break;
 			}
-			current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+			current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 			delay(5);
 		  }
 		  if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1379,8 +1380,8 @@ void THUNDER::Line_Tracing(void)
 	  }
 	  else if (line_state == 1) //偏右的过程中出线，快速漂移打转(弯道转弯)
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
 		while (1)
 		{
 		  Line_last_time = millis(); // 不改变line_state，刷新时间
@@ -1395,8 +1396,8 @@ void THUNDER::Line_Tracing(void)
 	  }
 	  else if (line_state == 2) //偏左的过程中出线，快速漂移打转(弯道转弯)
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_B_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
 		while (1)
 		{
 		  Line_last_time = millis(); // 不改变line_state，刷新时间
@@ -1411,17 +1412,17 @@ void THUNDER::Line_Tracing(void)
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_B_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
 	  }
 	}
 	else if (IR_Data[0] == 0) //Serial.printf("SSSSSSSSSS 右转 SSSSSSSSSS\n");
 	{
 	  if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
 	  {
-		// Thunder_Motor.Set_L_Motor_Power(0);
-		Thunder_Motor.Motor_Brake(MOTOR_INDEX_LEFT);
-		Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+		// Motor_Thunder.Set_L_Motor_Power(0);
+		Motor_Thunder.Motor_Brake(MOTOR_INDEX_LEFT);
+		Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
 		Line_last_time = millis(); // 不改变运动状态
 		line_out_flag = 1;
 		continue; // 保持前运动状态继续运动
@@ -1430,13 +1431,13 @@ void THUNDER::Line_Tracing(void)
 
 	  if (R_last_time + MAYBE_STRAIGHT_DIRECTION < current_time)
 	  { // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
-		Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
+		Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
 	  }
 
 	  if (line_state == 2)
@@ -1451,17 +1452,17 @@ void THUNDER::Line_Tracing(void)
 	  else
 	  {
 		line_state = 4; // 偏左时间小于 50ms，急转偏右运动一小段时间
-		Thunder_Motor.Set_L_Motor_Power(Line_H_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_L_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_H_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
 	  }
 	}
 	else if (IR_Data[1] == 0) //Serial.printf("SSSSSSSSSS 左转 SSSSSSSSSS\n");
 	{
 	  if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		// Thunder_Motor.Set_R_Motor_Power(0);
-		Thunder_Motor.Motor_Brake(MOTOR_INDEX_RIGHT);
+		Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		// Motor_Thunder.Set_R_Motor_Power(0);
+		Motor_Thunder.Motor_Brake(MOTOR_INDEX_RIGHT);
 		Line_last_time = millis(); // 不改变运动状态
 		line_out_flag = 1;
 		continue; // 保持前运动状态继续运动
@@ -1470,13 +1471,13 @@ void THUNDER::Line_Tracing(void)
 
 	  if (L_last_time + MAYBE_STRAIGHT_DIRECTION < current_time)
 	  { // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
-		Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
-		Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
+		Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
 	  }
 
 	  if (line_state == 1)
@@ -1490,8 +1491,8 @@ void THUNDER::Line_Tracing(void)
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_L_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_H_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_H_Speed);
 		line_state = 3; // 偏右时间小于 50ms，急转偏右运动一小段时间
 	  }
 	}
@@ -1499,8 +1500,8 @@ void THUNDER::Line_Tracing(void)
 	{
 	  if (line_out_flag == 0)
 	  {
-		Thunder_Motor.Set_L_Motor_Power(Line_M_Speed);
-		Thunder_Motor.Set_R_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
+		Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
 		line_state = 0;
 	  }
 	  Line_last_time = millis();
@@ -1527,14 +1528,14 @@ void THUNDER::Line_Tracing(void)
 
 	if (((current_time - 19000) > Line_last_sound_time) & (current_time > 19000))
 	{
-	  // Speaker.Play_Song(139);
+	  // Speaker_Thunder.Play_Song(139);
 	  Line_last_sound_time = millis();
 	}
 	////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
   }
   Stop_All();
   line_tracing_running = false;
-  Speaker.Play_Song(130);
+  Speaker_Thunder.Play_Song(130);
 }
 
 /* 
@@ -1543,14 +1544,14 @@ void THUNDER::Line_Tracing(void)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Motor_Slow_Go()
+void BELL_THUNDER::Motor_Slow_Go()
 {
-  Thunder_Motor.Set_Car_Speed_Direction(0, 0);
+  Motor_Thunder.Set_Car_Speed_Direction(0, 0);
 
   do
   {
 	delay(1);
-  } while (Thunder_Motor.Get_L_Speed() > 15 || Thunder_Motor.Get_R_Speed() > 15);
+  } while (Motor_Thunder.Get_L_Speed() > 15 || Motor_Thunder.Get_R_Speed() > 15);
 }
 /* 
  * 车子左右晃动0.5s, IR传感器发现有黑线则返回
@@ -1559,15 +1560,15 @@ void THUNDER::Motor_Slow_Go()
  *    dir: 1为先左后右，-1为先右后左
  * @return: 0表示未发现两点黑线返回，1表示已发现两点黑线返回
  */
-int THUNDER::Car_Shake_Left_Right(int dir)
+int BELL_THUNDER::Car_Shake_Left_Right(int dir)
 {
   if (dir == 1)
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, -50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, -50);
   }
   else
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, 50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, 50);
   }
   Line_last_time = millis();
   current_time = millis();
@@ -1588,11 +1589,11 @@ int THUNDER::Car_Shake_Left_Right(int dir)
 
   if (dir == 1)
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, 50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, 50);
   }
   else
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, -50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, -50);
   }
   Line_last_time = millis();
   current_time = millis();
@@ -1621,20 +1622,20 @@ int THUNDER::Car_Shake_Left_Right(int dir)
  *    dir: 1为先左后右，-1为先右后左
  * @return: 0表示未发现两点黑线返回，1表示已发现两点黑线返回
  */
-int THUNDER::Car_Rotate_90_Left_Right(int dir)
+int BELL_THUNDER::Car_Rotate_90_Left_Right(int dir)
 {
   int last_L_R_diffrotate;
   int current_L_R_diffrotate;
 
   if (dir == 1)
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, -50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, -50);
   }
   else
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, 50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, 50);
   }
-  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+  current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
   last_L_R_diffrotate = current_L_R_diffrotate;
   while (dir == 1 ? (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE > last_L_R_diffrotate) : (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE < last_L_R_diffrotate))
   {
@@ -1643,7 +1644,7 @@ int THUNDER::Car_Rotate_90_Left_Right(int dir)
 	{
 	  break;
 	}
-	current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+	current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 	delay(5);
   }
   if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1653,13 +1654,13 @@ int THUNDER::Car_Rotate_90_Left_Right(int dir)
 
   if (dir == 1)
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, 50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, 50);
   }
   else
   {
-	Thunder_Motor.Set_Car_Speed_Direction(15, -50);
+	Motor_Thunder.Set_Car_Speed_Direction(15, -50);
   }
-  current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+  current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
   last_L_R_diffrotate = current_L_R_diffrotate;
   while (dir == 1 ? (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE < last_L_R_diffrotate) : (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE > last_L_R_diffrotate))
   {
@@ -1668,7 +1669,7 @@ int THUNDER::Car_Rotate_90_Left_Right(int dir)
 	{
 	  break;
 	}
-	current_L_R_diffrotate = Thunder_Motor.Get_L_RotateValue() - Thunder_Motor.Get_R_RotateValue();
+	current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
 	delay(5);
   }
   if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1679,7 +1680,7 @@ int THUNDER::Car_Rotate_90_Left_Right(int dir)
   return 0;
 }
 
-void THUNDER::Line_Tracing_Speed_Ctrl(void)
+void BELL_THUNDER::Line_Tracing_Speed_Ctrl(void)
 {
   uint32_t L_last_time; // 上次偏左的时间戳
   uint32_t R_last_time; // 上次偏右的时间戳
@@ -1692,7 +1693,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
   Line_last_sound_time = millis();
   LED_counter = 99;
 
-  Speaker.Play_Song(131);
+  Speaker_Thunder.Play_Song(131);
   while (1)
   {
 	delay(5);
@@ -1709,10 +1710,10 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 
 	if ((IR_Data[0] == 0) & (IR_Data[1] == 0)) //Serial.printf("* 没线 \n");
 	{
-	  // Speaker.Play_Song(7); //test用---------
+	  // Speaker_Thunder.Play_Song(7); //test用---------
 	  if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(15, 100);
+		Motor_Thunder.Set_Car_Speed_Direction(15, 100);
 		line_state = 5;
 	  }
 	  else if (line_state == 0) // 忽然从全黑变为全零过程中出线
@@ -1782,7 +1783,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  }
 	  else if (line_state == 1) //偏右的过程中出线，快速漂移打转(弯道转弯)
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(20, -40);
+		Motor_Thunder.Set_Car_Speed_Direction(20, -40);
 		while (1)
 		{
 		  Line_last_time = millis(); // 不改变line_state，刷新时间
@@ -1797,7 +1798,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  }
 	  else if (line_state == 2) //偏左的过程中出线，快速漂移打转(弯道转弯)
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(20, 40);
+		Motor_Thunder.Set_Car_Speed_Direction(20, 40);
 		while (1)
 		{
 		  Line_last_time = millis(); // 不改变line_state，刷新时间
@@ -1812,14 +1813,14 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(15, -100);
+		Motor_Thunder.Set_Car_Speed_Direction(15, -100);
 	  }
 	}
 	else if (IR_Data[0] == 0) //Serial.printf("* 偏左，右转 \n");
 	{
 	  if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(15, -50);
+		Motor_Thunder.Set_Car_Speed_Direction(15, -50);
 		Line_last_time = millis(); // 不改变运动状态
 		line_out_flag = 1;
 		continue; // 这种情况是越界的情况，保持前运动状态继续运动，直到状态回归
@@ -1828,11 +1829,11 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  // 如果上次偏右时间不够200ms，那可能这里是处于直线状态的，转弯幅度要小
 	  if (current_time < R_last_time + MAYBE_STRAIGHT_DIRECTION)
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(20, 10);
+		Motor_Thunder.Set_Car_Speed_Direction(20, 10);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(20, 20);
+		Motor_Thunder.Set_Car_Speed_Direction(20, 20);
 	  }
 
 	  if (line_state == 2)
@@ -1848,14 +1849,14 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  else
 	  {
 		line_state = 4; // 偏左时间小于 50ms，急转偏右运动一小段时间
-		Thunder_Motor.Set_Car_Speed_Direction(25, 30);
+		Motor_Thunder.Set_Car_Speed_Direction(25, 30);
 	  }
 	}
 	else if (IR_Data[1] == 0) //Serial.printf("* 偏右，左转 \n");
 	{
 	  if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(15, 50);
+		Motor_Thunder.Set_Car_Speed_Direction(15, 50);
 		Line_last_time = millis(); // 不改变运动状态
 		line_out_flag = 2;
 		continue; // 保持前运动状态继续运动
@@ -1864,11 +1865,11 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  // 如果上次偏右时间不够200ms，那可能这里是处于直线状态的，转弯幅度要小
 	  if (current_time < L_last_time + MAYBE_STRAIGHT_DIRECTION)
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(20, -10);
+		Motor_Thunder.Set_Car_Speed_Direction(20, -10);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(20, -20);
+		Motor_Thunder.Set_Car_Speed_Direction(20, -20);
 	  }
 
 	  if (line_state == 1)
@@ -1883,7 +1884,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(25, -30);
+		Motor_Thunder.Set_Car_Speed_Direction(25, -30);
 		line_state = 3; // 偏右时间小于 50ms，急转偏右运动一小段时间
 	  }
 	}
@@ -1891,7 +1892,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 	{
 	  if (line_out_flag == 0)
 	  {
-		Thunder_Motor.Set_Car_Speed_Direction(25, 0);
+		Motor_Thunder.Set_Car_Speed_Direction(25, 0);
 		line_state = 0;
 	  }
 	  Line_last_time = millis();
@@ -1918,13 +1919,13 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 
 	if (((current_time - 19000) > Line_last_sound_time) & (current_time > 19000))
 	{
-	  // Speaker.Play_Song(139);
+	  // Speaker_Thunder.Play_Song(139);
 	  Line_last_sound_time = millis();
 	}
 	////////////////////////////////// (end)巡线时LED画面、播放的声音 //////////////////////////////////
   }
   line_tracing_running = false;
-  Speaker.Play_Song(130);
+  Speaker_Thunder.Play_Song(130);
 }
 #else
 
@@ -1985,10 +1986,10 @@ void Wait_Line_Location()
 	{
 	  break;
 	}
-	// Speaker.Play_Song(103); // 播放声音：oh, no
+	// Speaker_Thunder.Play_Song(103); // 播放声音：oh, no
 	delay(2000);
   }
-  // Speaker.Play_Song(101); // 播放声音：lets go
+  // Speaker_Thunder.Play_Song(101); // 播放声音：lets go
   delay(2000);
 }
 
@@ -2036,7 +2037,7 @@ void Check_Line_When_Lost()
 	// 设置功率为 0 后，需要等待电机停止
 	left_power = 0;
 	right_power = 0;
-	while (Thunder_Motor.Get_L_Speed() != 0 || Thunder_Motor.Get_R_Speed() != 0)
+	while (Motor_Thunder.Get_L_Speed() != 0 || Motor_Thunder.Get_R_Speed() != 0)
 	  ;
 
 	if (currentIrData == 0x03)
@@ -2046,12 +2047,12 @@ void Check_Line_When_Lost()
 	  lost_recover = 0; // init bit0 and bit1
 
 	  search_line_status = 1;
-	  search_line_rotate = Thunder_Motor.Get_R_RotateValue();
+	  search_line_rotate = Motor_Thunder.Get_R_RotateValue();
 	}
 	break;
 
   case 1:
-	current_line_rotate = Thunder_Motor.Get_R_RotateValue();
+	current_line_rotate = Motor_Thunder.Get_R_RotateValue();
 	if (current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE)
 	{
 	  if (right_power > LINE_CHECK_MIN_POWER)
@@ -2072,12 +2073,12 @@ void Check_Line_When_Lost()
 	left_power = 0;
 	right_power = -LINE_CHECK_MAX_POWER;
 	search_line_status = 2;
-	search_line_rotate = Thunder_Motor.Get_R_RotateValue();
+	search_line_rotate = Motor_Thunder.Get_R_RotateValue();
 
 	break;
 
   case 2:
-	current_line_rotate = Thunder_Motor.Get_R_RotateValue();
+	current_line_rotate = Motor_Thunder.Get_R_RotateValue();
 	if (current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE)
 	{
 	  if (right_power < -LINE_CHECK_MIN_POWER)
@@ -2091,11 +2092,11 @@ void Check_Line_When_Lost()
 	right_power = 0;
 	lost_recover &= 0xFD; // init bit1
 	search_line_status = 3;
-	search_line_rotate = Thunder_Motor.Get_L_RotateValue();
+	search_line_rotate = Motor_Thunder.Get_L_RotateValue();
 	break;
 
   case 3:
-	current_line_rotate = Thunder_Motor.Get_L_RotateValue();
+	current_line_rotate = Motor_Thunder.Get_L_RotateValue();
 	if (current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE)
 	{
 	  if (left_power > LINE_CHECK_MIN_POWER)
@@ -2117,11 +2118,11 @@ void Check_Line_When_Lost()
 	left_power = -LINE_CHECK_MAX_POWER;
 	right_power = 0;
 	search_line_status = 4;
-	search_line_rotate = Thunder_Motor.Get_L_RotateValue();
+	search_line_rotate = Motor_Thunder.Get_L_RotateValue();
 	break;
 
   case 4:
-	current_line_rotate = Thunder_Motor.Get_L_RotateValue();
+	current_line_rotate = Motor_Thunder.Get_L_RotateValue();
 	if (current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE)
 	{
 	  if (left_power < -LINE_CHECK_MIN_POWER)
@@ -2148,7 +2149,7 @@ void Check_Line_When_Lost()
 	{
 	  left_power = 0;
 	  right_power = 0;
-	  while (Thunder_Motor.Get_L_Speed() != 0 || Thunder_Motor.Get_R_Speed() != 0)
+	  while (Motor_Thunder.Get_L_Speed() != 0 || Motor_Thunder.Get_R_Speed() != 0)
 		;
 	  search_line_status = 0;
 	  lost_recover = 0;
@@ -2297,8 +2298,8 @@ void Calculate_Motor_Power()
 	right_power_I[2] = 0;
 
 	Check_Line_When_Lost();
-	Thunder_Motor.Set_L_Motor_Power((int)left_power);
-	Thunder_Motor.Set_R_Motor_Power((int)right_power);
+	Motor_Thunder.Set_L_Motor_Power((int)left_power);
+	Motor_Thunder.Set_R_Motor_Power((int)right_power);
 	return;
 	break;
 
@@ -2317,8 +2318,8 @@ void Calculate_Motor_Power()
   //   left_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? right_power_I[1] : 0);
   //   right_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? tempValue : 0);
 
-  //   diffSpeed_left = Thunder_Motor.Get_L_Speed(); // 速度越大，减速效果越大
-  //   diffSpeed_right = Thunder_Motor.Get_R_Speed();
+  //   diffSpeed_left = Motor_Thunder.Get_L_Speed(); // 速度越大，减速效果越大
+  //   diffSpeed_right = Motor_Thunder.Get_R_Speed();
 
   //   // 减速的依据有 目前速度值 和 方向偏移量
   //   left_power_I[0] -= (left_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_left * abs(deviation[0]);
@@ -2354,8 +2355,8 @@ void Calculate_Motor_Power()
 
   /***********************************速度控制PID**************************************/
   // 计算 速度控制目标 与 速度编码器 的差值
-  diffSpeed_left = left_power_pre[2] - Thunder_Motor.Get_L_Speed();
-  diffSpeed_right = right_power_pre[2] - Thunder_Motor.Get_R_Speed();
+  diffSpeed_left = left_power_pre[2] - Motor_Thunder.Get_L_Speed();
+  diffSpeed_right = right_power_pre[2] - Motor_Thunder.Get_R_Speed();
 
   // 积分
   left_power_I[0] += (abs(left_power_I[0] + LINE_TRACE_ACCE_I * diffSpeed_left) > 255) ? 0 : LINE_TRACE_ACCE_I * diffSpeed_left;
@@ -2370,18 +2371,18 @@ void Calculate_Motor_Power()
 
   // if(left_power > left_max_power){
   //   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-  //   if(Thunder_Motor.Get_L_Speed() < LINE_TRACE_MAX_SPEED){
+  //   if(Motor_Thunder.Get_L_Speed() < LINE_TRACE_MAX_SPEED){
   //     left_max_power = (left_max_power<255-LINE_TRACE_ACCELERATION)?(left_max_power+LINE_TRACE_ACCELERATION):255;
-  //   }else if(Thunder_Motor.Get_L_Speed() > LINE_TRACE_MAX_SPEED + 3){
+  //   }else if(Motor_Thunder.Get_L_Speed() > LINE_TRACE_MAX_SPEED + 3){
   //     left_max_power -= LINE_TRACE_ACCELERATION;
   //   }
   //   left_power = left_max_power;
   // }
   // if(right_power > right_max_power){
   //   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-  //   if(Thunder_Motor.Get_R_Speed() < LINE_TRACE_MAX_SPEED){
+  //   if(Motor_Thunder.Get_R_Speed() < LINE_TRACE_MAX_SPEED){
   //     right_max_power = (right_max_power<255-LINE_TRACE_ACCELERATION)?(right_max_power+LINE_TRACE_ACCELERATION):255;
-  //   }else if(Thunder_Motor.Get_R_Speed() > LINE_TRACE_MAX_SPEED + 3){
+  //   }else if(Motor_Thunder.Get_R_Speed() > LINE_TRACE_MAX_SPEED + 3){
   //     right_max_power -= LINE_TRACE_ACCELERATION;
   //   }
   //   right_power = right_max_power;
@@ -2397,8 +2398,8 @@ void Calculate_Motor_Power()
   else if (right_power < -255)
 	right_power = -255;
 
-  Thunder_Motor.Set_L_Motor_Power((int)left_power);
-  Thunder_Motor.Set_R_Motor_Power((int)right_power);
+  Motor_Thunder.Set_L_Motor_Power((int)left_power);
+  Motor_Thunder.Set_R_Motor_Power((int)right_power);
 
 #ifdef DEBUG_LINE_TRACING
   // Serial.printf("*** Power L: %d   R: %d ***\n", (int)left_power, (int)right_power);
@@ -2422,7 +2423,7 @@ void Calculate_Motor_Power()
  * @parameters: 
  * @return: 
  */
-void THUNDER::Line_Tracing(void)
+void BELL_THUNDER::Line_Tracing(void)
 {
   history_data[0] = 0xFF;
   history_data[1] = 0xFF;
@@ -2462,7 +2463,7 @@ void THUNDER::Line_Tracing(void)
   Wait_Line_Location();
   line_state = LINE_STATE_START;
 
-  // Speaker.Play_Song(131);
+  // Speaker_Thunder.Play_Song(131);
   while (Rx_Data[1] == 1)
   {
 	Get_IR_Data(IR_Data); //更新IR数据 //0-->白; 1-->黑
@@ -2621,19 +2622,19 @@ void THUNDER::Line_Tracing(void)
 	////////////////////////////////// 巡线时播放的声音 //////////////////////////////////
 	/*    if (((current_time - 19000) > Line_last_sound_time) & (current_time > 19000))
 	{
-	  Speaker.Play_Song(139);
+	  Speaker_Thunder.Play_Song(139);
 	  Line_last_sound_time = millis();
 	} */
 
   }
-  Speaker.Play_Song(130);
+  Speaker_Thunder.Play_Song(130);
 }
 #endif
 
 // 开机动画/声效
-void THUNDER::Start_Show(void)
+void BELL_THUNDER::Start_Show(void)
 {
-  Speaker.Play_Song(79);                    //声音编号79
+  Speaker_Thunder.Play_Song(79);                    //声音编号79
 
   Display_Screen.Play_LED_HT16F35B_Show(1); //单色点阵图案
   delay(200);
@@ -2659,19 +2660,19 @@ void THUNDER::Start_Show(void)
  * @parameters: 
  * @return: 
  */
-void THUNDER::Set_Need_Communication(bool flag)
+void BELL_THUNDER::Set_Need_Communication(bool flag)
 {
   need_communication = flag;
 }
 
 // 等待蓝牙连接动画 (有串口数据也跳出)
-void THUNDER::Wait_Communication(void)
+void BELL_THUNDER::Wait_Communication(void)
 {
   uint32_t show_index = 6;
   while( (deviceConnected == false) && (Usart_Communication == 0) && (need_communication == true) )
   {
-	Task_Mesg.Remove_Flush_Task(FLUSH_MATRIX_LED);
-	Task_Mesg.Remove_Flush_Task(FLUSH_CHARACTER_ROLL);
+	System_Task.Remove_Flush_Task(FLUSH_MATRIX_LED);
+	System_Task.Remove_Flush_Task(FLUSH_CHARACTER_ROLL);
 	if (lowpower_flag == 0)
 	{
 	  Display_Screen.Play_LED_HT16F35B_Show(show_index); //单色点阵图案
@@ -2687,19 +2688,19 @@ void THUNDER::Wait_Communication(void)
 	  Usart_Communication = 1;
 	}
   }
-  Task_Mesg.Set_Flush_Task(FLUSH_MATRIX_LED);
-  Task_Mesg.Set_Flush_Task(FLUSH_CHARACTER_ROLL);
+  System_Task.Set_Flush_Task(FLUSH_MATRIX_LED);
+  System_Task.Set_Flush_Task(FLUSH_CHARACTER_ROLL);
 }
 
 // 设置将要播放的内置动画编号
-void THUNDER::Set_LED_Show_No(uint8_t Show_No)
+void BELL_THUNDER::Set_LED_Show_No(uint8_t Show_No)
 {
   Display_Screen.Play_LED_String("");
   LED_show_No = Show_No;
 }
 
 // 循环执行的内置动画控制程序
-void THUNDER::LED_Show(void)
+void BELL_THUNDER::LED_Show(void)
 {
   switch (LED_show_No)
   {
@@ -2955,7 +2956,7 @@ void THUNDER::LED_Show(void)
 }
 
 // 获取串口指令到 RX_Data
-void THUNDER::Get_Serial_Command()
+void BELL_THUNDER::Get_Serial_Command()
 {
   while (Serial.available())
   {
@@ -3003,9 +3004,9 @@ void THUNDER::Get_Serial_Command()
 		add_sum = Rx_Data[0];
 		for (i = 1; i < 19; i++)
 		{
-		  Thunder.Color_LED_BUFF1[i - 1] = Serial.read();
-		  add_sum += Thunder.Color_LED_BUFF1[i - 1];
-		  // Serial.printf(": %x \n",Thunder.Color_LED_BUFF1[i-1]);
+		  Thunder.LED_Color_BUFF1[i - 1] = Serial.read();
+		  add_sum += Thunder.LED_Color_BUFF1[i - 1];
+		  // Serial.printf(": %x \n",Thunder.LED_Color_BUFF1[i-1]);
 		}
 
 		if (add_sum != Serial.read())
@@ -3022,9 +3023,9 @@ void THUNDER::Get_Serial_Command()
 		add_sum = Rx_Data[0];
 		for (i = 1; i < 19; i++)
 		{
-		  Thunder.Color_LED_BUFF2[i - 1] = Serial.read();
-		  add_sum += Thunder.Color_LED_BUFF2[i - 1];
-		  // Serial.printf(": %x \n",Thunder.Color_LED_BUFF2[i-1]);
+		  Thunder.LED_Color_BUFF2[i - 1] = Serial.read();
+		  add_sum += Thunder.LED_Color_BUFF2[i - 1];
+		  // Serial.printf(": %x \n",Thunder.LED_Color_BUFF2[i-1]);
 		}
 
 		if (add_sum != Serial.read())
@@ -3214,7 +3215,7 @@ void THUNDER::Get_Serial_Command()
 }
 
 // 通信确认，蓝牙
-void THUNDER::Check_BLE_Communication(void)
+void BELL_THUNDER::Check_BLE_Communication(void)
 {
   // BLE已经过去到指令
   if (Rx_Data[0] != 0)
@@ -3223,7 +3224,7 @@ void THUNDER::Check_BLE_Communication(void)
 	if (Tx_Data[0] != 0)
 	{
 	  Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
-	  Thunder_BLE.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
+	  BLE_ThunderGo.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
 
 	  for (uint32_t i = 0; i < COMMUNICATION_FIXED_LENGTH_MAX; i++)
 	  {
@@ -3236,7 +3237,7 @@ void THUNDER::Check_BLE_Communication(void)
   }
 }
 // 通信确认，串口
-void THUNDER::Check_UART_Communication(void)
+void BELL_THUNDER::Check_UART_Communication(void)
 {
   // 检查并等待蓝牙连接
   Wait_Communication();
@@ -3268,7 +3269,7 @@ void THUNDER::Check_UART_Communication(void)
 }
 
 // 协议解析
-void THUNDER::Check_Protocol(void)
+void BELL_THUNDER::Check_Protocol(void)
 {
   float rev_motor_speed;
   switch (Rx_Data[0])
@@ -3288,7 +3289,7 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_US_SENSOR:                 // 获取US数据 16进制两个8位
-	US.Get_US_Data(US_Data); //更新US数据
+	Sensor_Ultrasonic.Get_US_Data(US_Data); //更新US数据
 	Tx_Data[0] = UART_GENERAL_US_SENSOR;
 	Tx_Data[1] = US_Data[0];
 	Tx_Data[2] = US_Data[1] >> 8;
@@ -3298,8 +3299,8 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_COLOR_SENSOR: // 获取颜色传感器数据 RGBC分4个8位传
-	Colour_Sensor.Get_RGBC_Data(RGBC);
-	Colour_Sensor.RGBtoHSV(RGBC, HSV); // 计算HSV
+	Sensor_Color.Get_RGBC_Data(RGBC);
+	Sensor_Color.RGBtoHSV(RGBC, HSV); // 计算HSV
 
 	Tx_Data[0] = UART_GENERAL_COLOR_SENSOR;
 	Tx_Data[1] = RGBC[0] >> 4; //R >> 8
@@ -3310,10 +3311,10 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_COLOR_CARD: // 获取颜色传感器数据 RGBC分4个8位传
-	Colour_Sensor.Get_RGBC_Data(RGBC);
+	Sensor_Color.Get_RGBC_Data(RGBC);
 	
 	Tx_Data[0] = UART_GENERAL_COLOR_CARD;
-	Tx_Data[1] = Colour_Sensor.Colour_Recognition(RGBC);
+	Tx_Data[1] = Sensor_Color.Colour_Recognition(RGBC);
 	break;
 
   case UART_GENERAL_BATTERY_SENSOR: //获取电池电压数据
@@ -3337,7 +3338,7 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_BLE_NAME:                                  //蓝牙命名
-	Thunder_BLE.Set_BLE_Name(); //从地址0开始写入命名的蓝牙
+	BLE_ThunderGo.Set_BLE_Name(); //从地址0开始写入命名的蓝牙
 	break;
 
   case UART_GENERAL_SERVO_CTRL:                            //控制舵机
@@ -3345,36 +3346,36 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_PLAY_VOICE:                       //控制声音播放
-	Speaker.Play_Song(Rx_Data[1]); //播放第编号段音频
-	Speaker.Set_Sound_Volume(Rx_Data[2]);
+	Speaker_Thunder.Play_Song(Rx_Data[1]); //播放第编号段音频
+	Speaker_Thunder.Set_Sound_Volume(Rx_Data[2]);
 	break;
 
   case UART_GENERAL_MOTOR_SINGLE:            //控制单个电机
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
 	Disable_En_Motor();
-	Thunder_Motor.Motor_Move(Rx_Data[1], Rx_Data[2], Rx_Data[3]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
+	Motor_Thunder.Motor_Move(Rx_Data[1], Rx_Data[2], Rx_Data[3]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
   #else
 	rev_motor_speed = (float)Rx_Data[2] * 0.39;
 	if (Rx_Data[1] == 1)
 	{
 	  if (Rx_Data[3] == 1)
 	  {
-		Thunder_Motor.Set_L_Target(rev_motor_speed);
+		Motor_Thunder.Set_L_Target(rev_motor_speed);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_L_Target((-1) * rev_motor_speed);
+		Motor_Thunder.Set_L_Target((-1) * rev_motor_speed);
 	  }
 	}
 	else
 	{
 	  if (Rx_Data[3] == 1)
 	  {
-		Thunder_Motor.Set_R_Target(rev_motor_speed);
+		Motor_Thunder.Set_R_Target(rev_motor_speed);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_R_Target((-1) * rev_motor_speed);
+		Motor_Thunder.Set_R_Target((-1) * rev_motor_speed);
 	  }
 	}
   #endif
@@ -3384,27 +3385,27 @@ void THUNDER::Check_Protocol(void)
   #if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
 	Disable_En_Motor();
    
-	Thunder_Motor.Motor_Move(1, Rx_Data[1], Rx_Data[2]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
-	Thunder_Motor.Motor_Move(2, Rx_Data[3], Rx_Data[4]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
+	Motor_Thunder.Motor_Move(1, Rx_Data[1], Rx_Data[2]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
+	Motor_Thunder.Motor_Move(2, Rx_Data[3], Rx_Data[4]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
   #else
 	rev_motor_speed = (float)Rx_Data[1] * 0.39;
 	if (Rx_Data[2] == 1)
 	{
-	  Thunder_Motor.Set_L_Target(rev_motor_speed);
+	  Motor_Thunder.Set_L_Target(rev_motor_speed);
 	}
 	else
 	{
-	  Thunder_Motor.Set_L_Target((-1) * rev_motor_speed);
+	  Motor_Thunder.Set_L_Target((-1) * rev_motor_speed);
 	}
 
 	rev_motor_speed = (float)Rx_Data[3] * 0.39;
 	if (Rx_Data[4] == 1)
 	{
-	  Thunder_Motor.Set_R_Target(rev_motor_speed);
+	  Motor_Thunder.Set_R_Target(rev_motor_speed);
 	}
 	else
 	{
-	  Thunder_Motor.Set_R_Target((-1) * rev_motor_speed);
+	  Motor_Thunder.Set_R_Target((-1) * rev_motor_speed);
 	}
   #endif
 	break;
@@ -3414,22 +3415,22 @@ void THUNDER::Check_Protocol(void)
 	{
 	  if (Rx_Data[3] == 1)
 	  {
-		Thunder_Motor.Set_L_Target(Rx_Data[2]);
+		Motor_Thunder.Set_L_Target(Rx_Data[2]);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_L_Target((-1) * Rx_Data[2]);
+		Motor_Thunder.Set_L_Target((-1) * Rx_Data[2]);
 	  }
 	}
 	else
 	{
 	  if (Rx_Data[3] == 1)
 	  {
-		Thunder_Motor.Set_R_Target(Rx_Data[2]);
+		Motor_Thunder.Set_R_Target(Rx_Data[2]);
 	  }
 	  else
 	  {
-		Thunder_Motor.Set_R_Target((-1) * Rx_Data[2]);
+		Motor_Thunder.Set_R_Target((-1) * Rx_Data[2]);
 	  }
 	}
 	break;
@@ -3437,26 +3438,26 @@ void THUNDER::Check_Protocol(void)
   case UART_GENERAL_MOTOR_DOUBLE_PID:           //控制两个闭环电机
 	if (Rx_Data[2] == 1)
 	{
-	  Thunder_Motor.Set_L_Target(Rx_Data[1]);
+	  Motor_Thunder.Set_L_Target(Rx_Data[1]);
 	}
 	else
 	{
-	  Thunder_Motor.Set_L_Target((-1) * Rx_Data[1]);
+	  Motor_Thunder.Set_L_Target((-1) * Rx_Data[1]);
 	}
 
 	if (Rx_Data[4] == 1)
 	{
-	  Thunder_Motor.Set_R_Target(Rx_Data[3]);
+	  Motor_Thunder.Set_R_Target(Rx_Data[3]);
 	}
 	else
 	{
-	  Thunder_Motor.Set_R_Target((-1) * Rx_Data[3]);
+	  Motor_Thunder.Set_R_Target((-1) * Rx_Data[3]);
 	}
 	break;
 
   case UART_GENERAL_GET_MOTOR_SPEED: //获取当前电机速度(编码器计数值)  需要在Enable_En_Motor()状态下
-	L_Speed = Thunder_Motor.Get_L_Speed();
-	R_Speed = Thunder_Motor.Get_R_Speed();
+	L_Speed = Motor_Thunder.Get_L_Speed();
+	R_Speed = Motor_Thunder.Get_R_Speed();
 
 	Tx_Data[0] = UART_GENERAL_GET_MOTOR_SPEED;
 	if (L_Speed >= 0)
@@ -3480,26 +3481,26 @@ void THUNDER::Check_Protocol(void)
 	  Tx_Data[3] = (-1) * R_Speed;
 	  Tx_Data[4] = 2;
 	}
-	// Serial.printf("L_Speed:%d; R_Speed:%d; \n",Thunder_Motor.Get_L_Speed(),Thunder_Motor.Get_R_Speed());
+	// Serial.printf("L_Speed:%d; R_Speed:%d; \n",Motor_Thunder.Get_L_Speed(),Motor_Thunder.Get_R_Speed());
 	break;
 
   case UART_GENERAL_SINGLE_RGBLED:                                                              //控制单个彩色灯颜色
-	Color_LED.Set_LED_Data(Rx_Data[1], Rx_Data[2], Rx_Data[3], Rx_Data[4]); //第几个灯(1开始)，R,G,B
-	Color_LED.LED_Updata();                                                 //按照现有数据刷新
+	LED_Color.Set_LED_Data(Rx_Data[1], Rx_Data[2], Rx_Data[3], Rx_Data[4]); //第几个灯(1开始)，R,G,B
+	LED_Color.LED_Updata();                                                 //按照现有数据刷新
 	break;
 
   case UART_GENERAL_LEFT_RGBLED:                                                        //控制左侧彩色灯颜色
-	Color_LED.Set_LEDs_Data(1, Color_LED_BUFF1, sizeof(Color_LED_BUFF1)); //写入多个寄存器数据
-	Color_LED.LED_Updata();                                           //按照现有数据刷新
+	LED_Color.Set_LEDs_Data(1, LED_Color_BUFF1, sizeof(LED_Color_BUFF1)); //写入多个寄存器数据
+	LED_Color.LED_Updata();                                           //按照现有数据刷新
 	break;
   case UART_GENERAL_RIGHT_RGBLED:                                                        //控制右侧彩色灯颜色
-	Color_LED.Set_LEDs_Data(7, Color_LED_BUFF2, sizeof(Color_LED_BUFF2)); //写入多个寄存器数据
-	Color_LED.LED_Updata();                                           //按照现有数据刷新
+	LED_Color.Set_LEDs_Data(7, LED_Color_BUFF2, sizeof(LED_Color_BUFF2)); //写入多个寄存器数据
+	LED_Color.LED_Updata();                                           //按照现有数据刷新
 	break;
 
   case UART_GENERAL_DEBUG_LED: //控制单色点阵灯开关
 	LED_BUFF_Dot[Rx_Data[1]] = Rx_Data[2];
-	HT16D35B.LED_Show(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
+	Display_Screen.Play_LEDs(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
 	break;
 
   case UART_GENERAL_PICTURE_LED: //显示预设的单色点阵灯图案
@@ -3507,10 +3508,10 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_DEBUG_PRE_LED: //单色点阵灯一次性刷新前半部分灯
-	HT16D35B.LED_Show(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
+	Display_Screen.Play_LEDs(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
 	break;
   case UART_GENERAL_DEBUG_SUF_LED: //单色点阵灯一次性刷新后半部分灯
-	HT16D35B.LED_Show(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
+	Display_Screen.Play_LEDs(LED_BUFF_Dot, sizeof(LED_BUFF_Dot));
 	break;
 
   case UART_GENERAL_ANIMATION_LED: //内置单色点阵图案动画显示命令
@@ -3572,19 +3573,19 @@ void THUNDER::Check_Protocol(void)
 	  power_left = map(power_left,-max_power,max_power,-255,255);
 	  power_right = map(power_right,-max_power,max_power,-255,255);
 
-	  Thunder_Motor.Set_L_Motor_Output(power_left);
-	  Thunder_Motor.Set_R_Motor_Output(power_right);
+	  Motor_Thunder.Set_L_Motor_Output(power_left);
+	  Motor_Thunder.Set_R_Motor_Output(power_right);
 	  
 	  static bool last_status = 0;
 	  if(Rx_Data[8] != last_status)
 	  {
-		Thunder_Barbette.Auto_Fire(Rx_Data[8]);
+		Barbette_Thunder.Auto_Fire(Rx_Data[8]);
 
 		last_status = Rx_Data[8];
 	  }
 	  if((Rx_Data[5] > 129) || (Rx_Data[5] < 125))
 	  {
-		Thunder_Barbette.Adjust_Pos(Rx_Data[5]); 
+		Barbette_Thunder.Adjust_Pos(Rx_Data[5]); 
 	  }
 	}
 	break;
@@ -3598,7 +3599,7 @@ void THUNDER::Check_Protocol(void)
 	  return_data[0] = 0xbd;
 	  return_data[1] = 0x01;
 	  return_data[2] = 0x02;
-	  get_bullet = Thunder_Barbette.Get_Bullet();
+	  get_bullet = Barbette_Thunder.Get_Bullet();
 	  return_data[3] = (get_bullet >> 8) & 0xff;
 	  return_data[4] = get_bullet & 0xff;
 	  compute_crc = crc16(return_data,5);
@@ -3612,7 +3613,7 @@ void THUNDER::Check_Protocol(void)
 	  return_data[0] = 0xbd;
 	  return_data[1] = 0x02;
 	  return_data[2] = 0x04;
-	  get_used_time = Thunder_Barbette.Get_Used_Time();
+	  get_used_time = Barbette_Thunder.Get_Used_Time();
 	  return_data[3] = (get_used_time >> 24) & 0xff;
 	  return_data[4] = (get_used_time >> 16) & 0xff;
 	  return_data[5] = (get_used_time >> 8) & 0xff;
@@ -3632,13 +3633,13 @@ void THUNDER::Check_Protocol(void)
 }
 
 // 清空接收数据
-void THUNDER::Reset_Rx_Data()
+void BELL_THUNDER::Reset_Rx_Data()
 {
   memset(Rx_Data, 0, COMMUNICATION_FIXED_LENGTH_MAX);
   ble_command_busy = false;
 }
 
-uint32_t THUNDER::Get_Virtual_Timer(uint32_t timer_index)
+uint32_t BELL_THUNDER::Get_Virtual_Timer(uint32_t timer_index)
 {
   uint32_t ret_value;
   if(timer_index == 0){
@@ -3656,7 +3657,7 @@ uint32_t THUNDER::Get_Virtual_Timer(uint32_t timer_index)
  * 
  * @param timer_index 计时器的序号，无符号类型，有效值为0~5，超出最大值的以 5 替代
  */
-void THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
+void BELL_THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
 {
   if(timer_index == 0){
 	timer_index = 1;
@@ -3673,14 +3674,14 @@ void THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
  * 调用 Open_Multi_Message() 打开多机通信，调用 Close_Multi_Message() 关闭多机通信，
  * 
  */
-void THUNDER::Open_Multi_Message()
+void BELL_THUNDER::Open_Multi_Message()
 {
-	if(Multi_Message != NULL){
+	if(Mult_Devices != NULL){
 		return;
 	}
 
-	Multi_Message = new MultiMessage();
-	Multi_Message->OpenCommunicate(&recv_int_message);
+	Mult_Devices = new MULT_DEVICES();
+	Mult_Devices->OpenCommunicate(&recv_int_message);
 }
 
 /**
@@ -3689,15 +3690,15 @@ void THUNDER::Open_Multi_Message()
  * 调用 Close_Multi_Message() 关闭多机通信，
  * 
  */
-void THUNDER::Close_Multi_Message()
+void BELL_THUNDER::Close_Multi_Message()
 {
-	if(Multi_Message == NULL){
+	if(Mult_Devices == NULL){
 		return;
 	}
 
-	Multi_Message->CloseCommunicate();
-	delete Multi_Message;
-	Multi_Message = NULL;
+	Mult_Devices->CloseCommunicate();
+	delete Mult_Devices;
+	Mult_Devices = NULL;
 }
 
 /**
@@ -3708,7 +3709,7 @@ void THUNDER::Close_Multi_Message()
  * @param name 传入被传输的变量名称字符串，
  * @param init_value 传入 int 变量数值
  */
-void THUNDER::InitNameVarInt(char *name, int init_value)
+void BELL_THUNDER::InitNameVarInt(char *name, int init_value)
 {
 	std::vector<struct_Int_Message>::iterator i;
 	for(i=recv_int_message.begin(); i!=recv_int_message.end(); i++){
@@ -3732,12 +3733,12 @@ void THUNDER::InitNameVarInt(char *name, int init_value)
  * @param var_value 传入 int 变量数值
  * @return int 返回错误码，正常发送返回0
  */
-int THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
+int BELL_THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
 {
-	if(Multi_Message == NULL){
+	if(Mult_Devices == NULL){
 		return -1;
 	}
-	return Multi_Message->SendNameVarInt(addr, name, var_value);
+	return Mult_Devices->SendNameVarInt(addr, name, var_value);
 }
 
 /**
@@ -3749,7 +3750,7 @@ int THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
  * @param name 传入被传输的变量名称字符串，
  * @return int 返回最新数值
  */
-int THUNDER::RecvNameVarInt(char *name)
+int BELL_THUNDER::RecvNameVarInt(char *name)
 {
 	std::vector<struct_Int_Message>::iterator i;
 	for(i=recv_int_message.begin(); i!=recv_int_message.end(); i++){

@@ -176,7 +176,7 @@ typedef struct {
     int value;
 } struct_Int_Message;
 
-class MultiMessage
+class MULT_DEVICES
 {
 private:
     int device_role = ROLE_TURNOFF;
@@ -249,8 +249,8 @@ private:
     int SendPackage(unsigned char addr, unsigned char func, unsigned char *payload, unsigned char payload_len);
 
 public:
-    MultiMessage();
-    ~MultiMessage();
+    MULT_DEVICES();
+    ~MULT_DEVICES();
     
     static void MasterRxTask(void *pvParameters);
     static void SlaverRxTask(void *pvParameters);
@@ -264,6 +264,6 @@ public:
     int SendNameVarInt(unsigned char addr, char *name, int var_value);
 };
 
-extern MultiMessage *Multi_Message;
+extern MULT_DEVICES *Mult_Devices;
 
 #endif

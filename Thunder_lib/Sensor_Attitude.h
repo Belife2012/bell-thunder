@@ -2,7 +2,7 @@
 #ifndef __SENSOR_ATTITUDE__
 #define __SENSOR_ATTITUDE__
 
-#include "Thunder_lib.h"
+#include "bell_thunder.h"
 #include "MPU9250.h"
 
 #define STABLE_COEFFICIENT_WAVE     (0.4) //稳定（相对静止）时波动系数在0.2左右

@@ -17,11 +17,8 @@
 #include <esp_bt_main.h>
 
 // 雷霆库
-#include <Thunder_Motor.h>
-#include <Thunder_Display.h>
-
-// 单色点阵
-#include <HT16D35B.h>
+#include <motor_thunder.h>
+#include <display_thunder.h>
 
 // 内存读取
 #define EEPROM_SIZE 64
@@ -58,7 +55,7 @@ typedef enum{
   BLE_CLIENT_SEMAPHORE_CONN
 } enum_Ble_Mesg;
 
-class THUNDER_BLE
+class BLE_THUNDERGO
 {
   private:
     // 蓝牙命名

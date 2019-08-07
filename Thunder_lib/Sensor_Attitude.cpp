@@ -1,4 +1,4 @@
-#include "Disk_Manager.h"
+#include "disk_manager.h"
 #include "common.h"
 #include "Sensor_Attitude.h"
 
@@ -31,12 +31,12 @@ void ATTITUDE::Open_Sensor()
  */
 bool ATTITUDE::Calibrate_Sensor()
 {
-    Speaker.Play_Song(95);// 开始校准
+    Speaker_Thunder.Play_Song(95);// 开始校准
     delay(1500);
     sensor_dev.calibrateAccelGyro();
-    Speaker.Play_Song(86);// 开始校准磁力计，需要旋转设备
+    Speaker_Thunder.Play_Song(86);// 开始校准磁力计，需要旋转设备
     sensor_dev.calibrateMag();
-    Speaker.Play_Song(97);// 校准完成
+    Speaker_Thunder.Play_Song(97);// 校准完成
     Save_CalibrateData();
     sensor_dev.printCalibration();
 
