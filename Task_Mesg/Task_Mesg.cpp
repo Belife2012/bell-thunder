@@ -49,7 +49,7 @@ void Driver_Flush(void *pvParameters)
     {
       if (current_time - character_roll_time > 150)
       {
-        Dot_Matrix_LED.Play_String_NextFrame();
+        Display_Screen.Play_String_NextFrame();
         character_roll_time = millis();
       }
     }
@@ -57,7 +57,7 @@ void Driver_Flush(void *pvParameters)
     if (Task_Mesg.Get_flush_Tasks() & (0x00000001 << FLUSH_COLOR_LED))
     {
       if(current_time - color_led_ctrl_time > 30){
-        I2C_LED.LED_Flush();
+        Color_LED.LED_Flush();
         color_led_ctrl_time = millis();
       }
     }
@@ -195,7 +195,7 @@ void Polling_Check(void *pvParameters)
 /************************************new app Thread*****************************************/
 void Programs_System(void)
 {
-  if(Thunder.program_change_to == PROGRAM_USER_1)
+  if(THUNDER::program_change_to == PROGRAM_USER_1)
   {
 #ifdef COMPETITION_FW_001
     if(thunder_system_parameter == 1){
@@ -208,27 +208,27 @@ void Programs_System(void)
 #else
     Program_1();
 #endif
-    Thunder.program_change_to = PROGRAM_RUNNING;
+    THUNDER::program_change_to = PROGRAM_RUNNING;
   }
-  else if(Thunder.program_change_to == PROGRAM_USER_2)
+  else if(THUNDER::program_change_to == PROGRAM_USER_2)
   {
     Program_2();
-    Thunder.program_change_to = PROGRAM_RUNNING;
+    THUNDER::program_change_to = PROGRAM_RUNNING;
   }
-  else if(Thunder.program_change_to == PROGRAM_USER_3)
+  else if(THUNDER::program_change_to == PROGRAM_USER_3)
   {
     Program_3();
-    Thunder.program_change_to = PROGRAM_RUNNING;
+    THUNDER::program_change_to = PROGRAM_RUNNING;
   }
-  else if(Thunder.program_change_to == PROGRAM_USER_4)
+  else if(THUNDER::program_change_to == PROGRAM_USER_4)
   {
     Program_4();
-    Thunder.program_change_to = PROGRAM_RUNNING;
+    THUNDER::program_change_to = PROGRAM_RUNNING;
   }
-  else if(Thunder.program_change_to == PROGRAM_THUNDER_GO)
+  else if(THUNDER::program_change_to == PROGRAM_THUNDER_GO)
   {
     Program_ThunderGo();
-    Thunder.program_change_to = PROGRAM_RUNNING;
+    THUNDER::program_change_to = PROGRAM_RUNNING;
   }
 }
 
@@ -260,7 +260,6 @@ TASK_MESG::TASK_MESG()
 
   vPortCPUInitializeMutex(&spinlockMUX);
 
-  former_Priority = 0;
   tasks_num = 0;
   flush_Tasks = 0;
   deamon_task_running = 0;
@@ -268,38 +267,6 @@ TASK_MESG::TASK_MESG()
 
 TASK_MESG::~TASK_MESG()
 {
-}
-
-/* 
- * 用于硬件驱动(如 语音芯片时序控制)，提升当前task 的优先级别Priority为所有应用线程的最高级别，
- * clear 前不能使用delay，不然其他低级别的线程会占用CPU，干扰到硬件操作的完整性
- * 
- * @parameters:
- * @return
- */
-
-void TASK_MESG::Set_Current_Task_Supreme()
-{
-  former_Priority = uxTaskPriorityGet(NULL);
-
-  // highese Priority in the AppTasks
-  vTaskPrioritySet(NULL, APP_TASK_PRIORITY_MAX);
-}
-/* 
- * 用于硬件驱动，恢复当前线程的Priority
- * 
- * @parameters:
- * @return
- */
-void TASK_MESG::Clear_Current_Task_Supreme()
-{
-  // No suspend any one, then no resume
-  if (former_Priority == 0)
-  {
-    return;
-  }
-
-  vTaskPrioritySet(NULL, former_Priority);
 }
 
 /* 
@@ -382,8 +349,8 @@ void TASK_MESG::Toggle_Competition_Status(int status_index)
   if(status_index == 1){
     byte colorData[36] = {40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0,
                           40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0, 40, 25, 0};
-    I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
-    I2C_LED.LED_Updata();
+    Color_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+    Color_LED.LED_Updata();
 
     Speaker.Play_Song(99);
   }else if(status_index == 2){
@@ -391,8 +358,8 @@ void TASK_MESG::Toggle_Competition_Status(int status_index)
 
     byte colorData[36] = {50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0,
                           50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0, 50, 0, 0};
-    I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
-    I2C_LED.LED_Updata();
+    Color_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+    Color_LED.LED_Updata();
 
     Speaker.Play_Song(104);
   }else if(status_index == 3){
@@ -402,8 +369,8 @@ void TASK_MESG::Toggle_Competition_Status(int status_index)
 
     byte colorData[36] = {0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0,
                           0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0};
-    I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
-    I2C_LED.LED_Updata();
+    Color_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+    Color_LED.LED_Updata();
 
     Speaker.Play_Song(101);
   }

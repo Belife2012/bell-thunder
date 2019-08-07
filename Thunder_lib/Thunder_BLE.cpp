@@ -68,7 +68,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 19; i++)
       {
-        Thunder.I2C_LED_BUFF1[i-1] = recv_data[i];
+        Thunder.Color_LED_BUFF1[i-1] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -86,7 +86,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 19; i++)
       {
-        Thunder.I2C_LED_BUFF2[i-1] = recv_data[i];
+        Thunder.Color_LED_BUFF2[i-1] = recv_data[i];
         SUM += recv_data[i];
       }
 

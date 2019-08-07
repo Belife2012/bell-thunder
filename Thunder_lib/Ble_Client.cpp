@@ -262,7 +262,6 @@ void BLE_CLIENT::Setup_Ble_Client()
   // BLEDevice::init("");
   Serial.printf("BLE Client Addr: %s\n", BLEDevice::getAddress().toString().c_str());
 
-  Serial.println("Starting BLE Client application...");
   if(pBLEScan == NULL){
     // Retrieve a Scanner and set the callback we want to use to be informed when we
     // have detected a new device. 

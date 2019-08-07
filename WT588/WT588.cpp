@@ -29,7 +29,7 @@
 
 #include "WT588.h"
 #include <Arduino.h>
-#include <Task_Mesg.h>
+#include "os_function.h"
 
 // #include "freertos/FreeRTOS.h"
 // #include "freertos/task.h"
@@ -99,6 +99,9 @@ void WT588::send_data(int data)
 {
   uint32_t currentTime;
   uint32_t lastTime;
+  TASK_SUPREME this_supreme;
+
+  semaphorePlay.take(std::string("send"));
 
   digitalWrite(Data_pin, HIGH);
   //delay(6);
@@ -138,7 +141,7 @@ void WT588::send_data(int data)
 #if ENABLE_WT588_SPINLOCK
   //enter critical
   //taskENTER_CRITICAL(&spinlockMUX_WT588);
-  Task_Mesg.Set_Current_Task_Supreme();
+  this_supreme.Set_Current_Task_Supreme();
 #endif
   for (int i = 0; i < 16; i++)
   {
@@ -149,7 +152,7 @@ void WT588::send_data(int data)
 #if ENABLE_WT588_SPINLOCK
       //exit critical
       //taskEXIT_CRITICAL(&spinlockMUX_WT588);
-      Task_Mesg.Clear_Current_Task_Supreme();
+      this_supreme.Clear_Current_Task_Supreme();
 #endif
       //delay(2);
       lastTime = millis();
@@ -172,7 +175,7 @@ void WT588::send_data(int data)
 #if ENABLE_WT588_SPINLOCK
       //enter critical
       //taskENTER_CRITICAL(&spinlockMUX_WT588);
-      Task_Mesg.Set_Current_Task_Supreme();
+      this_supreme.Set_Current_Task_Supreme();
 #endif
     }
 
@@ -197,7 +200,8 @@ void WT588::send_data(int data)
 #if ENABLE_WT588_SPINLOCK
   //exit critical
   // taskEXIT_CRITICAL(&spinlockMUX_WT588);
-  Task_Mesg.Clear_Current_Task_Supreme();
+  this_supreme.Clear_Current_Task_Supreme();
 #endif
-  //Serial.println("unlock");
+  
+  semaphorePlay.give();
 }

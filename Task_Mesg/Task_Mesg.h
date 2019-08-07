@@ -73,8 +73,6 @@ public:
 
   UBaseType_t Get_flush_Tasks();
   
-  void Set_Current_Task_Supreme();
-  void Clear_Current_Task_Supreme();
   void Enter_Task_Critical();
   void Exit_Task_Critical();
   
@@ -83,7 +81,6 @@ public:
 private:
   TaskHandle_t Task_Apps[MAX_APPS_TASK_COUNTER];
   struct_Apps_Param *task_param[MAX_APPS_TASK_COUNTER];
-  UBaseType_t former_Priority;
   portMUX_TYPE spinlockMUX;
 
   UBaseType_t flush_Tasks;

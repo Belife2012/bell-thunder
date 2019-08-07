@@ -14,7 +14,7 @@ void setup() {
   Thunder_Motor.Setup_Motor_PID();
 
   // 初始化单色LED驱动IC配置，才有LED点阵显示
-  Dot_Matrix_LED.Setup();   // 初始化单色LED驱动IC配置
+  Display_Screen.Setup();   // 初始化单色LED驱动IC配置
 
   // 新建 loop 后 函数setup_1() loop_1()才有效
   Task_Mesg.Create_New_Loop();

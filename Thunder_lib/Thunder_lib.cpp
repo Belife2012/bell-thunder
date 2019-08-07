@@ -5,6 +5,8 @@
 #include "common.h"
 
 THUNDER Thunder;
+enum_Program_Index THUNDER::program_change_to = PROGRAM_RUNNING;
+
 THUNDER_BLE Thunder_BLE;
 BLE_CLIENT Ble_Client;
 THUNDER_MOTOR Thunder_Motor;
@@ -28,9 +30,9 @@ MOTOR_FAN Fan_Motor(FAN_IIC_ADDR);
 // 颜色识别（IIC address：0x38）
 BH1745NUC Colour_Sensor(ADD_I2C_COLOUR); //I2C从机地址
 // 彩色LED（IIC address：0x11）
-XT1511_I2C I2C_LED(CLOOUR_LED_DEVICE);
+XT1511_I2C Color_LED(CLOOUR_LED_DEVICE);
 // 单色色LED（IIC address：0x69）
-DOT_MATRIX_LED Dot_Matrix_LED;
+DOT_MATRIX_LED Display_Screen;
 // 触碰传感器（IIC address：0x10）
 TOUCH_I2C Touch_Sensor(TOUCH_ADDR_DEVICE);
 // 光电传感器（IIC address：0x52）
@@ -105,13 +107,13 @@ void THUNDER::Setup_All(void)
 
   Colour_Sensor.Setup();           // 配置颜色传感器
 
-  Dot_Matrix_LED.Setup(); // 初始化单色LED驱动IC配置
+  Display_Screen.Setup(); // 初始化单色LED驱动IC配置
 
   Thunder_Motor.Setup_Motor();     // 配置电机
   Thunder_Motor.Setup_Motor_PID(); // 配置左右两个电机编码器
   Stop_All();               // 
 
-  I2C_LED.LED_OFF(); // 彩灯全关，立即刷新
+  Color_LED.LED_OFF(); // 彩灯全关，立即刷新
 	
 	// 九轴传感器初始化
 	// Attitude_Sensor.Init_Sensor();
@@ -145,7 +147,7 @@ void THUNDER::Setup_All(void)
 void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 {
   if( (ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER) ){
-	Serial.println("ble type: server");
+	Serial.println("BLE type: server");
 	THUNDER_BLE::SetBleConnectType(BLE_SERVER_CONNECTED);
 	if(ble_type == BLE_TYPE_CLIENT){
 		Ble_Client.Disconnect_Ble_Server();
@@ -156,7 +158,7 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 
 	ble_type = BLE_TYPE_SERVER;
   }else if( (ble_type != BLE_TYPE_CLIENT) && (new_type == BLE_TYPE_CLIENT) ){
-	Serial.println("ble type: client");
+	Serial.println("BLE type: client");
 	THUNDER_BLE::SetBleConnectType(BLE_CLIENT_DISCONNECT); // 允许启动 client scan
 	if(ble_type == BLE_TYPE_SERVER) {
 		Thunder_BLE.Delete_Ble_Server_Service(); // 其实函数里没有设置Server断开BLE连接后
@@ -165,8 +167,9 @@ void THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
 	Ble_Client.Setup_Ble_Client();        // 配置 BLE Client
 
 	ble_type = BLE_TYPE_CLIENT;
+	Serial.println("Starting BLE Client application...");
   }else if( (ble_type != BLE_TYPE_NONE) && (new_type == BLE_TYPE_NONE) ) {
-	Serial.println("ble turn off");
+	Serial.println("BLE turn off");
 	THUNDER_BLE::SetBleConnectType(BLE_NOT_OPEN);
 	if(ble_type == BLE_TYPE_CLIENT){
 		Ble_Client.Disconnect_Ble_Server();
@@ -189,8 +192,8 @@ void THUNDER::Reset_All_Components()
   Set_Need_Communication(false);
   delay(50);
   
-  Dot_Matrix_LED.Setup();
-  I2C_LED.LED_OFF();
+  Display_Screen.Setup();
+  Color_LED.LED_OFF();
 
 }
 
@@ -345,7 +348,7 @@ void THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
   {
 	lowpower_flag = 1;
 
-	Dot_Matrix_LED.Play_LED_HT16F35B_Show(101);
+	Display_Screen.Play_LED_HT16F35B_Show(101);
 
 	Speaker.Play_Song(79);
 	delay(300);
@@ -1516,7 +1519,7 @@ void THUNDER::Line_Tracing(void)
 		Line_last_sound_time = millis();
 	  }
 
-	  Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+	  Display_Screen.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
 	  LED_counter++;
 
 	  Line_last_led_time = millis();
@@ -1907,7 +1910,7 @@ void THUNDER::Line_Tracing_Speed_Ctrl(void)
 		Line_last_sound_time = millis();
 	  }
 
-	  Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+	  Display_Screen.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
 	  LED_counter++;
 
 	  Line_last_led_time = millis();
@@ -2609,7 +2612,7 @@ void THUNDER::Line_Tracing(void)
 		Line_last_sound_time = millis();
 	  }
 
-	  Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+	  Display_Screen.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
 	  LED_counter++;
 
 	  Line_last_led_time = millis();
@@ -2632,21 +2635,21 @@ void THUNDER::Start_Show(void)
 {
   Speaker.Play_Song(79);                    //声音编号79
 
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(1); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(1); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(2); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(2); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(3); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(3); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(4); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(4); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(5); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(5); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(4); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(4); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(5); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(5); //单色点阵图案
   delay(200);
-  Dot_Matrix_LED.Play_LED_HT16F35B_Show(4); //单色点阵图案
+  Display_Screen.Play_LED_HT16F35B_Show(4); //单色点阵图案
   delay(200);
 }
 
@@ -2671,7 +2674,7 @@ void THUNDER::Wait_Communication(void)
 	Task_Mesg.Remove_Flush_Task(FLUSH_CHARACTER_ROLL);
 	if (lowpower_flag == 0)
 	{
-	  Dot_Matrix_LED.Play_LED_HT16F35B_Show(show_index); //单色点阵图案
+	  Display_Screen.Play_LED_HT16F35B_Show(show_index); //单色点阵图案
 	  if(show_index == 13){
 		show_index = 6;
 	  }else{
@@ -2691,7 +2694,7 @@ void THUNDER::Wait_Communication(void)
 // 设置将要播放的内置动画编号
 void THUNDER::Set_LED_Show_No(uint8_t Show_No)
 {
-  Dot_Matrix_LED.Play_LED_String("");
+  Display_Screen.Play_LED_String("");
   LED_show_No = Show_No;
 }
 
@@ -2712,7 +2715,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_3[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_3[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2732,7 +2735,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_4[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_4[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2751,7 +2754,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_5[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_5[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_delay_time = LED_time_5[LED_counter];
 		LED_counter++;
@@ -2772,7 +2775,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_6[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_6[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2786,7 +2789,7 @@ void THUNDER::LED_Show(void)
 	}
 	break;
   case 7:                                      //刹车
-	Dot_Matrix_LED.Play_LED_HT16F35B_Show(29); //单色点阵图案
+	Display_Screen.Play_LED_HT16F35B_Show(29); //单色点阵图案
 	break;
   case 8: //流汗  3帧
 	if (LED_counter < 3)
@@ -2794,7 +2797,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_8[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_8[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_delay_time = LED_time_8[LED_counter];
 		LED_counter++;
@@ -2815,7 +2818,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_9[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_9[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2835,7 +2838,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_10[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_10[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2855,7 +2858,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_11[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_11[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2875,7 +2878,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_12[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_12[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2895,7 +2898,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_13[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_13[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2915,7 +2918,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_14[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_14[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -2935,7 +2938,7 @@ void THUNDER::LED_Show(void)
 	  current_time = millis();
 	  if ((current_time - last_led_time) > LED_delay_time)
 	  {
-		Dot_Matrix_LED.Play_LED_HT16F35B_Show(LED_show_15[LED_counter]); //单色点阵图案
+		Display_Screen.Play_LED_HT16F35B_Show(LED_show_15[LED_counter]); //单色点阵图案
 		last_led_time = millis();
 		LED_counter++;
 	  }
@@ -3000,9 +3003,9 @@ void THUNDER::Get_Serial_Command()
 		add_sum = Rx_Data[0];
 		for (i = 1; i < 19; i++)
 		{
-		  Thunder.I2C_LED_BUFF1[i - 1] = Serial.read();
-		  add_sum += Thunder.I2C_LED_BUFF1[i - 1];
-		  // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF1[i-1]);
+		  Thunder.Color_LED_BUFF1[i - 1] = Serial.read();
+		  add_sum += Thunder.Color_LED_BUFF1[i - 1];
+		  // Serial.printf(": %x \n",Thunder.Color_LED_BUFF1[i-1]);
 		}
 
 		if (add_sum != Serial.read())
@@ -3019,9 +3022,9 @@ void THUNDER::Get_Serial_Command()
 		add_sum = Rx_Data[0];
 		for (i = 1; i < 19; i++)
 		{
-		  Thunder.I2C_LED_BUFF2[i - 1] = Serial.read();
-		  add_sum += Thunder.I2C_LED_BUFF2[i - 1];
-		  // Serial.printf(": %x \n",Thunder.I2C_LED_BUFF2[i-1]);
+		  Thunder.Color_LED_BUFF2[i - 1] = Serial.read();
+		  add_sum += Thunder.Color_LED_BUFF2[i - 1];
+		  // Serial.printf(": %x \n",Thunder.Color_LED_BUFF2[i-1]);
 		}
 
 		if (add_sum != Serial.read())
@@ -3481,17 +3484,17 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_SINGLE_RGBLED:                                                              //控制单个彩色灯颜色
-	I2C_LED.Set_LED_Data(Rx_Data[1], Rx_Data[2], Rx_Data[3], Rx_Data[4]); //第几个灯(1开始)，R,G,B
-	I2C_LED.LED_Updata();                                                 //按照现有数据刷新
+	Color_LED.Set_LED_Data(Rx_Data[1], Rx_Data[2], Rx_Data[3], Rx_Data[4]); //第几个灯(1开始)，R,G,B
+	Color_LED.LED_Updata();                                                 //按照现有数据刷新
 	break;
 
   case UART_GENERAL_LEFT_RGBLED:                                                        //控制左侧彩色灯颜色
-	I2C_LED.Set_LEDs_Data(1, I2C_LED_BUFF1, sizeof(I2C_LED_BUFF1)); //写入多个寄存器数据
-	I2C_LED.LED_Updata();                                           //按照现有数据刷新
+	Color_LED.Set_LEDs_Data(1, Color_LED_BUFF1, sizeof(Color_LED_BUFF1)); //写入多个寄存器数据
+	Color_LED.LED_Updata();                                           //按照现有数据刷新
 	break;
   case UART_GENERAL_RIGHT_RGBLED:                                                        //控制右侧彩色灯颜色
-	I2C_LED.Set_LEDs_Data(7, I2C_LED_BUFF2, sizeof(I2C_LED_BUFF2)); //写入多个寄存器数据
-	I2C_LED.LED_Updata();                                           //按照现有数据刷新
+	Color_LED.Set_LEDs_Data(7, Color_LED_BUFF2, sizeof(Color_LED_BUFF2)); //写入多个寄存器数据
+	Color_LED.LED_Updata();                                           //按照现有数据刷新
 	break;
 
   case UART_GENERAL_DEBUG_LED: //控制单色点阵灯开关
@@ -3500,7 +3503,7 @@ void THUNDER::Check_Protocol(void)
 	break;
 
   case UART_GENERAL_PICTURE_LED: //显示预设的单色点阵灯图案
-	Dot_Matrix_LED.Play_LED_HT16F35B_Show(Rx_Data[1]);
+	Display_Screen.Play_LED_HT16F35B_Show(Rx_Data[1]);
 	break;
 
   case UART_GENERAL_DEBUG_PRE_LED: //单色点阵灯一次性刷新前半部分灯

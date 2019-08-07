@@ -81,7 +81,7 @@ void loop_AutoCtrl_1()
 {
   /* 滚动显示字符串 */
   char alphabet_B[] = "AutoCtrl";
-  Dot_Matrix_LED.Play_LED_String(alphabet_B);
+  Display_Screen.Play_LED_String(alphabet_B);
   delay(10000);
 }
 
@@ -94,7 +94,7 @@ void loop_1_1()
 {
   /* 滚动显示字符串 */
   char alphabet_B[] = "1bell";
-  Dot_Matrix_LED.Play_LED_String(alphabet_B);
+  Display_Screen.Play_LED_String(alphabet_B);
   delay(10000);
 }
 
@@ -106,7 +106,7 @@ void loop_2_1()
 {
   /* 滚动显示字符串 */
   char alphabet_B[] = "2bellbell";
-  Dot_Matrix_LED.Play_LED_String(alphabet_B);
+  Display_Screen.Play_LED_String(alphabet_B);
   delay(10000);
 }
 
@@ -118,7 +118,7 @@ void loop_3_1()
 {
   /* 滚动显示字符串 */
   char alphabet_C[] = "abcdefghijklmnopqrstuvwxyz0123456789";
-  Dot_Matrix_LED.Play_LED_String(alphabet_C);
+  Display_Screen.Play_LED_String(alphabet_C);
   delay(40000);
 }
 
@@ -126,8 +126,8 @@ void setup_4_1()
 {
   byte colorData[36] = {182, 180, 245, 132, 129, 239, 90, 86, 235, 44, 39, 228, 29, 24, 205, 22, 19, 155,
                         182, 180, 245, 132, 129, 239, 90, 86, 235, 44, 39, 228, 29, 24, 205, 22, 19, 155};
-  I2C_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
-  I2C_LED.Set_LED_Dynamic(COLOR_MODE_ROLL);
+  Color_LED.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
+  Color_LED.Set_LED_Dynamic(COLOR_MODE_ROLL);
 }
 void loop_4_1()
 {

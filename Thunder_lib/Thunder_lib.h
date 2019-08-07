@@ -190,13 +190,13 @@ extern SENSOR_INFRARED Infrared_Sensor;
 // 颜色识别
 extern BH1745NUC Colour_Sensor;
 // 彩色LED
-extern XT1511_I2C I2C_LED;
+extern XT1511_I2C Color_LED;
 // 触碰传感器
 extern TOUCH_I2C Touch_Sensor;
 // 光电传感器
 extern LIGHTDETECT_I2C Light_Sensor;
 // 单色LED
-extern DOT_MATRIX_LED Dot_Matrix_LED;
+extern DOT_MATRIX_LED Display_Screen;
 extern HT16D35B HT16D35B;// IIC Address: 0x69
 // 遥控器
 extern REMOTER Ble_Remoter;
@@ -331,8 +331,8 @@ class THUNDER
     };
 
     // 彩色灯图案
-    uint8_t I2C_LED_BUFF1[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    uint8_t I2C_LED_BUFF2[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    uint8_t Color_LED_BUFF1[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    uint8_t Color_LED_BUFF2[18] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     uint8_t line_state = 0;  // 直->0; 左->1; 右->2; 假左->3; 假右->4; 未开始/停止->5;
   // bit0~bit7每一个bit代表一次记录值，总共记录8次，[0]是左边数据，[1]是右边数据
@@ -369,7 +369,7 @@ class THUNDER
     void Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount);
 
     /* 程序切换 */
-    enum_Program_Index program_change_to = PROGRAM_RUNNING;
+    static enum_Program_Index program_change_to;
 
     // 编码电机  闭环计算
     void En_Motor(void);          // 编码电机  闭环计算

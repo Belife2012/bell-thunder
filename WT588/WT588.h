@@ -31,6 +31,7 @@
 #define _WT588_H_
 
 #include "Arduino.h"
+#include <FreeRTOS.h>
 
 class WT588
 {
@@ -44,6 +45,7 @@ public:
 private:
   int Data_pin;
   int Busy_pin;
+  FreeRTOS::Semaphore semaphorePlay = FreeRTOS::Semaphore("play");
 
   void send_data(int data); // 类内部使用，按WT588一线串口时序图发送数据
 };
