@@ -1076,7 +1076,7 @@ void THUNDER::Setup_Servo(void)
 // 舵机角度控制
 // 参数1 --> 舵机编号；1-->A口；2-->B口
 // 参数2 --> 角度[°]；范围为0-180
-void BELL_THUNDER::Servo_Turn(int servo, float angle)
+void THUNDER::Servo_Turn(int servo, float angle)
 {
   CHECK_SERVO_INDEX(servo);
   if (angle > 180)
@@ -1102,7 +1102,7 @@ void BELL_THUNDER::Servo_Turn(int servo, float angle)
   }
 }
 
-void BELL_THUNDER::Servo_Percent_Setting(int servo_index, 
+void THUNDER::Servo_Percent_Setting(int servo_index, 
 			float max_value, float min_value, float zero_value, int direction)
 {
   CHECK_SERVO_INDEX(servo_index);
@@ -1116,7 +1116,7 @@ void BELL_THUNDER::Servo_Percent_Setting(int servo_index,
 	servo_percent_min[servo_index - 1] = min_value;
   }
 }
-void BELL_THUNDER::Servo_Turn_Percent(int servo, float percent)
+void THUNDER::Servo_Turn_Percent(int servo, float percent)
 {
   CHECK_SERVO_INDEX(servo);
   if (percent > 100)
