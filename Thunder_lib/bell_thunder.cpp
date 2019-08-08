@@ -1054,12 +1054,13 @@ void BELL_THUNDER::Setup_Servo(void)
   ledcAttachPin(SERVO_A, SERVO_CHANNEL_0);
   ledcAttachPin(SERVO_B, SERVO_CHANNEL_1);
 }
-
+#define CHECK_SERVO_INDEX(index) do{ if(index!=1 && index!=2) return; }while(0)
 // 舵机角度控制
 // 参数1 --> 舵机编号；1-->A口；2-->B口
 // 参数2 --> 角度[°]；范围为0-180
-void BELL_THUNDER::Servo_Turn(int servo, int angle)
+void BELL_THUNDER::Servo_Turn(int servo, float angle)
 {
+  CHECK_SERVO_INDEX(servo);
   if (angle > 180)
   {
 	angle = 180;
@@ -1077,14 +1078,12 @@ void BELL_THUNDER::Servo_Turn(int servo, int angle)
   {
 	ledcWrite(SERVO_CHANNEL_1, Servo_MIN + Servo_Range * angle / 180);
   }
-  else
-  {
-	Serial.printf("### No needed Servo\n");
-  }
 }
+
 void BELL_THUNDER::Servo_Percent_Setting(int servo_index, 
-			int max_value, int min_value, int zero_value, int direction)
+			float max_value, float min_value, float zero_value, int direction)
 {
+  CHECK_SERVO_INDEX(servo_index);
   if(direction < 0){
 	servo_percent_zero[servo_index - 1] = zero_value;
 	servo_percent_max[servo_index - 1] = min_value;
@@ -1095,8 +1094,9 @@ void BELL_THUNDER::Servo_Percent_Setting(int servo_index,
 	servo_percent_min[servo_index - 1] = min_value;
   }
 }
-void BELL_THUNDER::Servo_Turn_Percent(int servo, int percent)
+void BELL_THUNDER::Servo_Turn_Percent(int servo, float percent)
 {
+  CHECK_SERVO_INDEX(servo);
   if (percent > 100)
   {
 	percent = 100;
@@ -1120,10 +1120,6 @@ void BELL_THUNDER::Servo_Turn_Percent(int servo, int percent)
   else if (servo == 2) //B口
   {
 	ledcWrite(SERVO_CHANNEL_1, Servo_MIN + Servo_Range * (percent+100) / 200);
-  }
-  else
-  {
-	Serial.printf("### No needed Servo\n");
   }
 }
 
