@@ -182,11 +182,11 @@ class THUNDER
   private:
     // 舵机 PWM频率50Hz，0度时 脉宽最小500us，180度时 脉宽最大2500us，开机舵机居中为 90度
     // 20000[us] * 计数值 / 8191 = 输出[us]
-    int Servo_MIN = 205;
-    int Servo_Range = 819; 
-    int servo_percent_max[2] = {100, 100};
-    int servo_percent_min[2] = {-100, -100};
-    int servo_percent_zero[2] = {0, 0};
+    float Servo_MIN = 205;
+    float Servo_Range = 819; 
+    float servo_percent_max[2] = {100, 100};
+    float servo_percent_min[2] = {-100, -100};
+    float servo_percent_zero[2] = {0, 0};
 
     // 编码电机
     volatile uint8_t En_Motor_Flag = 0;
@@ -360,10 +360,10 @@ class THUNDER
 
     // 舵机
     void Setup_Servo(void);                 // 舵机初始化配置
-    void Servo_Turn(int servo, int angle);  // 舵机角度控制
-    void Servo_Turn_Percent(int servo, int percent); // 设置舵机范围 -100~100
+    void Servo_Turn(int servo, float angle);  // 舵机角度控制
+    void Servo_Turn_Percent(int servo, float percent); // 设置舵机范围 -100~100
     void Servo_Percent_Setting(int servo_index, 
-            int max_value, int min_value, int zero_value, int direction);
+            float max_value, float min_value, float zero_value, int direction);
 
     // 巡线IR
     void Setup_IR(void);                // 巡线IR传感器初始化配置
