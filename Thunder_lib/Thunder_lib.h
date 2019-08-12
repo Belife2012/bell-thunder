@@ -180,10 +180,11 @@ extern uint32_t thunder_system_parameter;
 class THUNDER
 {
   private:
+    FreeRTOS::Semaphore motor_semaphore = FreeRTOS::Semaphore("motor");
     // 舵机 PWM频率50Hz，0度时 脉宽最小500us，180度时 脉宽最大2500us，开机舵机居中为 90度
     // 20000[us] * 计数值 / 8191 = 输出[us]
-    float Servo_MIN = 205;
-    float Servo_Range = 819; 
+    float Servo_MIN = 185;//205;//185
+    float Servo_Range = 900;//819; //900
     float servo_percent_max[2] = {100, 100};
     float servo_percent_min[2] = {-100, -100};
     float servo_percent_zero[2] = {0, 0};

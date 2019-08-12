@@ -741,6 +741,9 @@ void THUNDER_MOTOR::Motor_Position_Control(MotorPosition_Struct *position_ctrl)
   pid_result += POSITION_Ki * position_ctrl->delta;
   pid_result += POSITION_Kd * (position_ctrl->delta - 2*position_ctrl->pre_delta + position_ctrl->pre2_delta);
 
+  #ifdef PRINT_DEBUG_INFO
+  Serial.printf("pid: %f  ", pid_result);
+  #endif
   position_ctrl->PID_output += pid_result;
   position_ctrl->Pre_output = pid_result;
 
@@ -767,6 +770,12 @@ void THUNDER_MOTOR::Clear_Position_Control()
 {
   Position_Ctrl_L.enable_ctrl = false;
   Position_Ctrl_R.enable_ctrl = false;
+  Position_Ctrl_L.PID_output = 0;
+  Position_Ctrl_R.PID_output = 0;
+  Position_Ctrl_L.pre_delta = 0;
+  Position_Ctrl_R.pre_delta = 0;
+  Position_Ctrl_L.pre2_delta = 0;
+  Position_Ctrl_R.pre2_delta = 0;
 }
 
 void THUNDER_MOTOR::Position_Control()
@@ -774,11 +783,19 @@ void THUNDER_MOTOR::Position_Control()
   if(Position_Ctrl_L.enable_ctrl == true){
     Position_Ctrl_L.variant = Get_L_RotateValue();
     Motor_Position_Control(&Position_Ctrl_L);
+    
+    #ifdef PRINT_DEBUG_INFO
+    Serial.printf("LO:%f LD:%d\n", Position_Ctrl_L.PID_output,Position_Ctrl_L.delta);
+    #endif
     Set_L_Motor_Output(Position_Ctrl_L.PID_output);
   }
   if(Position_Ctrl_R.enable_ctrl == true){
     Position_Ctrl_R.variant = Get_R_RotateValue();
     Motor_Position_Control(&Position_Ctrl_R);
+    
+    #ifdef PRINT_DEBUG_INFO
+    Serial.printf("RO:%f RD:%d\n", Position_Ctrl_R.PID_output,Position_Ctrl_R.delta);
+    #endif
     Set_R_Motor_Output(Position_Ctrl_R.PID_output);
   }
 }

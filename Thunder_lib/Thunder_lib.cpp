@@ -1005,6 +1005,7 @@ void THUNDER::En_Motor(void)
 {
   Thunder_Motor.Update_Encoder_Value();
 
+  motor_semaphore.take(std::string("control"));
   if (En_Motor_Flag == 2)
   {
 	Thunder_Motor.Drive_Car_Control();
@@ -1020,36 +1021,44 @@ void THUNDER::En_Motor(void)
   {
 	Thunder_Motor.Position_Control();
   }
+  motor_semaphore.give();
 }
 
 // 开启 Drive_Car_Control 功能
 void THUNDER::Enable_Drive_Car(void)
 {
+  motor_semaphore.take(std::string("setMode"));
   if(En_Motor_Flag != 2){
 	En_Motor_Flag = 2;
   }
+  motor_semaphore.give();
 }
 
 // 开启 电机PID 功能
 void THUNDER::Enable_En_Motor(void)
 {
+  motor_semaphore.take(std::string("setMode"));
   if(En_Motor_Flag != 1){
 	En_Motor_Flag = 1;
   }
+  motor_semaphore.give();
 }
 
 // 开启 电机位置 控制
 void THUNDER::Enable_Motor_Position(void)
 {
+  motor_semaphore.take(std::string("setMode"));
   if(En_Motor_Flag != 3){
 	Thunder_Motor.Clear_Position_Control();
 	En_Motor_Flag = 3;
   }
+  motor_semaphore.give();
 }
 
 // 关闭编码电机计算
 void THUNDER::Disable_En_Motor(void)
 {
+  motor_semaphore.take(std::string("setMode"));
   if( En_Motor_Flag != 0 ){
 	// 清除PID控制的变量
 	// Thunder_Motor.Set_L_Target(0);
@@ -1060,6 +1069,7 @@ void THUNDER::Disable_En_Motor(void)
 	Thunder_Motor.All_PID_Init();
 	delay(1); //等待电机PID控制稳定
   }
+  motor_semaphore.give();
 }
 
 // 舵机初始化配置
