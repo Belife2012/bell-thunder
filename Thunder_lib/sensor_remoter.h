@@ -93,11 +93,13 @@ public:
 
     void Analyze_Raw_Data(const uint8_t* raw_data, const uint8_t length);
     void Clear_All_keys();
+    void Enable_Remote(bool);
+    bool Check_Key_Action(enum_Remoter_Key key_index, enum_Key_Action key_action);
+
+    /*--------------Thunder IDE APIs: -------------*/
     int Get_Control_Value(enum_Remoter_Value key_index);
-    bool Get_Key_Value(enum_Remoter_Key key_index);
-    bool Get_Key_Action(enum_Remoter_Key key_index, enum_Key_Action key_action);
-    void Disable_Remote(void);
-    void Enable_Remote(void);
+    bool Check_Key(enum_Remoter_Key key_index);
+    void Turnon_Remote(bool);
 };
 
 

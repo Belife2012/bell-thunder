@@ -33,38 +33,6 @@ SPEAKER_WT588::SPEAKER_WT588(int DP, int BP)
 #endif
 }
 
-// 音量调节 范围0~15
-// 参数 --> 声音音量，范围0-15，0为静音
-void SPEAKER_WT588::Set_Sound_Volume(int data)
-{
-  if (data > 15)
-  {
-    data = 15;
-  }
-  else if (data < 0)
-  {
-    data = 0;
-  }
-
-  send_data(0xFFE0 + data);
-}
-
-// 播放声音
-// 参数 --> 歌曲的地址编号
-void SPEAKER_WT588::Play_Song(int data)
-{
-  send_data(data);
-}
-
-// 获取播放状态
-// 返回 --> 音频播放状态，即读取BUSY脚的状态
-int SPEAKER_WT588::WT588_Busy_Check()
-{
-  int busy_flag;
-  busy_flag = digitalRead(Busy_pin);
-  return busy_flag;
-}
-
 // 类内部使用，按WT588一线串口时序图发送数据
 void SPEAKER_WT588::send_data(int data)
 {
@@ -175,4 +143,44 @@ void SPEAKER_WT588::send_data(int data)
 #endif
   
   semaphorePlay.give();
+}
+
+// 获取播放状态
+// 返回 --> 音频播放状态，即读取BUSY脚的状态
+int SPEAKER_WT588::WT588_Busy_Check()
+{
+  int busy_flag;
+  busy_flag = digitalRead(Busy_pin);
+  return busy_flag;
+}
+
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief 物理上音量有15档，此函数输入有效范围 0~100 
+ * 
+ * @param data：最大音量的百分比
+ */
+void SPEAKER_WT588::Set_Sound_Volume(int data)
+{
+  if (data > 100){
+    data = 15;
+  }
+  else if (data < 0){
+    data = 0;
+  }
+  else {
+    data = data * 15 / 100;
+  }
+
+  send_data(0xFFE0 + data);
+}
+
+// 播放声音
+// 参数 --> 歌曲的地址编号
+void SPEAKER_WT588::Play_Song(int data)
+{
+  send_data(data);
 }

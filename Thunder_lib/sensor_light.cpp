@@ -14,45 +14,46 @@ byte SENSOR_LIGHT::Set_Led_Brightness(byte bright_level,unsigned char channel)
   return ret;
 }
 
-/* 
- * 设置光电传感器的模式
- * 
- * @parameters: 
- *      LED亮灯可设置等级为 0 ~ 100，可以设置对应的LED亮度等级，用于不同模式
- * @return: 
- *      0 写数据正常
- *      非0 写数据出错
- */
-byte SENSOR_LIGHT::Set_Operate_Mode(byte optMode,unsigned char channel)
-{
-  byte ret;
-  ret = write(0x01, &optMode, 1, channel);
-
-  return ret;
-}
-
 void SENSOR_LIGHT::Set_Dark_Value(float new_value,unsigned char channel)
 {
+  CHECK_RANGE(new_value, 0, 100);
   dark_value[channel] = new_value;
 }
 
 void SENSOR_LIGHT::Set_Bright_Value(float new_value,unsigned char channel)
 {
+  CHECK_RANGE(new_value, 0, 100);
   bright_value[channel] = new_value;
 }
 
-void SENSOR_LIGHT::Reset_All_Value(unsigned char channel )
+byte SENSOR_LIGHT::Get_Light_Value_original(float *readValue, unsigned char channel)
 {
-  dark_value[channel] = 0;
-  bright_value[channel] = 100;
+  unsigned short retValue;
+  byte getValue[2], bakCode;
+
+  bakCode = read(0x02, getValue, 2, channel);
+  if(bakCode != 0){
+    *readValue = 0;
+    return bakCode;
+  }
+
+  retValue = (unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8);
+  // 百分比 = 100 * ADC_value/2400, 设置2400为最大值
+  retValue = retValue > 2400 ? 2400 : retValue ;
+  *readValue = ( (float)retValue ) / 24;
+
+  return 0;
 }
-/* 
- * 获取光电传感器的值
+
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief: 获取光电传感器相对数值（0~100）
  * 
- * @parameters: 获取光亮程度的百分比数值
- * @return: 
- *      0 获取数据正常
- *      非0 获取数据出错
+ * @param channel: 传感器接口编号
+ * @return float : 返回值
  */
 float SENSOR_LIGHT::Get_Light_Value(unsigned char channel )
 {
@@ -83,46 +84,47 @@ float SENSOR_LIGHT::Get_Light_Value(unsigned char channel )
 
   return readValue;
 }
-byte SENSOR_LIGHT::Get_Light_Value_original(float *readValue, unsigned char channel)
-{
-  unsigned short retValue;
-  byte getValue[2], bakCode;
 
-  bakCode = read(0x02, getValue, 2, channel);
-  if(bakCode != 0){
-    *readValue = 0;
-    return bakCode;
-  }
-
-  retValue = (unsigned short)getValue[0] + ((unsigned short)getValue[1] << 8);
-  // 百分比 = 100 * ADC_value/2400, 设置2400为最大值
-  retValue = retValue > 2400 ? 2400 : retValue ;
-  *readValue = ( (float)retValue ) / 24;
-
-  return 0;
-}
-
-int SENSOR_LIGHT::Thunder_Get_Light_Data(uint8_t sensorChannel)
-{
-  float lightValue;
-  lightValue = Get_Light_Value(sensorChannel);
-  return lightValue;
-}
-
-void SENSOR_LIGHT::Thunder_Set_Light_Mode(uint8_t sensorChannel, byte mode)
-{
-  Set_Operate_Mode(mode, sensorChannel);
-}
-
-void SENSOR_LIGHT::Thunder_Set_Light_Extremum(uint8_t sensorChannel, int mode, float value)
+/**
+ * @brief: 设置光电传感器的最大值或最小值
+ * 
+ * @param sensorChannel: 传感器接口编号
+ * @param mode: 0 设置值为最大值，1 设置值为最小值
+ * @param value: 新设置的数值（0~100）
+ */
+void SENSOR_LIGHT::Set_Extremum(int mode, float value, uint8_t sensorChannel)
 {
   if(mode == 0) {
-    Set_Bright_Value(sensorChannel, value);
+    Set_Bright_Value(value, sensorChannel);
   } else if(mode == 1) {
-    Set_Dark_Value(sensorChannel, value);
+    Set_Dark_Value(value, sensorChannel);
   }
 }
-void SENSOR_LIGHT::Thunder_Set_Light_Reset(uint8_t sensorChannel)
+
+/**
+ * @brief: 复位光电传感器的设置
+ * 
+ * @param channel:传感器接口编号 
+ */
+void SENSOR_LIGHT::Reset(unsigned char channel )
 {
-  Reset_All_Value(sensorChannel);
+  dark_value[channel] = 0;
+  bright_value[channel] = 100;
+}
+
+/* 
+ * 设置光电传感器的模式
+ * 
+ * @parameters: 
+ *      LED亮灯可设置等级为 0 ~ 100，可以设置对应的LED亮度等级，用于不同模式
+ * @return: 
+ *      0 写数据正常
+ *      非0 写数据出错
+ */
+byte SENSOR_LIGHT::Set_Operate_Mode(byte optMode,unsigned char channel)
+{
+  byte ret;
+  ret = write(0x01, &optMode, 1, channel);
+
+  return ret;
 }

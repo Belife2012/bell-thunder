@@ -7,6 +7,11 @@
 
 class BELL_BARBETTE
 {
+private:
+    uint8_t compute_crc(uint8_t *buf,uint8_t num);
+    uint8_t send_data(uint8_t *data);
+    void receive_data(uint8_t *data,uint8_t num);
+    
 public:
     BELL_BARBETTE();
     void Begin();
@@ -26,10 +31,6 @@ public:
 
     uint16_t Thunder_Battery_Get(uint8_t sensorChannel);
 
-private:
-    uint8_t compute_crc(uint8_t *buf,uint8_t num);
-    uint8_t send_data(uint8_t *data);
-    void receive_data(uint8_t *data,uint8_t num);
 };
 
 

@@ -5,66 +5,8 @@
 #include "driver/pcnt.h"
 
 // #define PRINT_DEBUG_INFO
-// #define ENABLE_ENCODER_TIMER
 
 /***********************************************************/
-#ifdef ENABLE_ENCODER_INT
-// 编码器
-volatile uint16_t Encoder_Counter_A = 0x7FFF; //计数器A
-volatile uint16_t Encoder_Counter_B = 0x7FFF; //计数器B
-
-// 左轮编码器中断
-void ISR_Encoder_L(void)
-{
-  if(digitalRead(EN_L_B) != 1)
-  {
-    Encoder_Counter_A++;
-  }
-  else
-  {
-    Encoder_Counter_A--;
-  }
-}
-
-// 右轮编码器中断
-void ISR_Encoder_R(void)
-{
-  if(digitalRead(EN_R_B) == 1)
-  {
-    Encoder_Counter_B++;
-  }
-  else
-  {
-    Encoder_Counter_B--;
-  }
-}
-
-// 左轮编码器中断2
-void ISR_Encoder_L2(void)
-{
-  if(digitalRead(EN_L_A) != 1)
-  {
-    Encoder_Counter_A--;
-  }
-  else
-  {
-    Encoder_Counter_A++;
-  }
-}
-
-// 右轮编码器中断2
-void ISR_Encoder_R2(void)
-{
-  if(digitalRead(EN_R_A) == 1)
-  {
-    Encoder_Counter_B--;
-  }
-  else
-  {
-    Encoder_Counter_B++;
-  }
-}
-#else
 
 void Encoder_Counter_Clear(void);
 
@@ -86,38 +28,15 @@ volatile int32_t rotate_RawValue_Right = 0;
 
 volatile uint32_t PID_Timer_Enable = 0;
 
-#ifdef ENABLE_ENCODER_TIMER
-// timer中断
-void IRAM_ATTR PID_Timer_Handle()
-{
-  if(PID_Timer_Enable == 1){
-    Get_Encoder_Value();
-    Update_Rotate_Value();
-    xSemaphoreGiveFromISR(Timer_PID_Flag, NULL);
-  }
-}
-
-#else
 void MOTOR_THUNDER::Update_Encoder_Value()
 {
   Get_Encoder_Value();
   Update_Rotate_Value();
 }
 
-#endif
-
-
 // 配置PID定时器
 void MOTOR_THUNDER::Setup_PID_Timer()
 {
-  #ifdef ENABLE_ENCODER_TIMER
-  Timer_PID_Flag = xSemaphoreCreateBinary();
-  PID_Timer = timerBegin(3, 80, true);      // 使用定时器3,80预分频
-  timerAttachInterrupt(PID_Timer, &PID_Timer_Handle, true);  //Attach中断Handle
-  timerAlarmWrite(PID_Timer, PID_dt * 1000, true);  // 50ms 中断
-  timerAlarmEnable(PID_Timer);  // 使能
-  PID_Timer_Enable = 1;
-  #endif
 }
 
 // 移除PID定时器(会影响其它用到此定时器的功能)
@@ -207,7 +126,7 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 
 void MOTOR_THUNDER::Motor_Brake(int motor)
 {
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
   if(motor == 1){
     digitalWrite(MOTOR_L_IN1, HIGH);
     digitalWrite(MOTOR_L_IN2, HIGH);
@@ -222,7 +141,7 @@ void MOTOR_THUNDER::Motor_Brake(int motor)
 // 参数1-->电机编号；1或者2
 void MOTOR_THUNDER::Motor_Free(int motor)
 {
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
   if(motor == 1)
   {
     digitalWrite(MOTOR_L_IN1, LOW);
@@ -358,7 +277,7 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 void MOTOR_THUNDER::Motor_Brake(int motor)
 {
   #if 0
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
 
   if(motor == 1)
   {
@@ -390,7 +309,7 @@ void MOTOR_THUNDER::Motor_Brake(int motor)
 // 参数1-->电机编号；1或者2
 void MOTOR_THUNDER::Motor_Free(int motor)
 {
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
 
   if(motor == 1)
   {
@@ -423,10 +342,10 @@ void MOTOR_THUNDER::Set_R_Motor_Output( int M_output ){
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
 void MOTOR_THUNDER::Set_L_Motor_Power( int Lpower ){
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
   float M_power;
   M_power = Lpower;
-  M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Thunder.Get_Battery_Value() ) * ( M_power / 100 );
+  M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Bell_Thunder.Get_Battery_Value() ) * ( M_power / 100 );
 
   if( M_power >= 0 ){
     Motor_Move(1, M_power, 1);
@@ -436,10 +355,10 @@ void MOTOR_THUNDER::Set_L_Motor_Power( int Lpower ){
 }
 // 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
 void MOTOR_THUNDER::Set_R_Motor_Power( int Rpower ){
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
   float M_power;
   M_power = Rpower;
-  M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Thunder.Get_Battery_Value() ) * ( M_power / 100 );
+  M_power = (float)MAX_DRIVE_OUTPUT * ( (float)BATTERY_LOW_VALUE / Bell_Thunder.Get_Battery_Value() ) * ( M_power / 100 );
 
   if( M_power >= 0 ){
     Motor_Move(2, (int)M_power, 1);
@@ -707,12 +626,12 @@ void MOTOR_THUNDER::Set_Motor_Position(int motor, int position_target)
   if(motor == 1){
     Position_Ctrl_L.target = position_target;
 
-    Thunder.Enable_Motor_Position();
+    Bell_Thunder.Enable_Motor_Position();
     Position_Ctrl_L.enable_ctrl = true;
   }else if(motor == 2){
     Position_Ctrl_R.target = position_target;
 
-    Thunder.Enable_Motor_Position();
+    Bell_Thunder.Enable_Motor_Position();
     Position_Ctrl_R.enable_ctrl = true;
   }
 }
@@ -758,7 +677,7 @@ void MOTOR_THUNDER::Position_Control()
  */
 void MOTOR_THUNDER::Control_Motor_Running(MotorRunning_Struct &running_data)
 {
-  Thunder.Disable_En_Motor();
+  Bell_Thunder.Disable_En_Motor();
   
   if( running_data.left_motor_speed > 100.0 ){
     running_data.left_motor_speed = 100.0;
@@ -1126,7 +1045,7 @@ void MOTOR_THUNDER::Set_Car_Speed_Direction(float speed, float direction)
 
   // Serial.printf("Left target:%f, Right target:%f \n", drive_car_pid.left_speed_target, drive_car_pid.right_speed_target);
   
-  Thunder.Enable_Drive_Car();
+  Bell_Thunder.Enable_Drive_Car();
 }
 
 /* 
@@ -1151,7 +1070,7 @@ void MOTOR_THUNDER::Set_L_Target(float target)
     Motor_L_Speed_PID.Ref = target_encoder_num;
   }
 
-  Thunder.Enable_En_Motor();
+  Bell_Thunder.Enable_En_Motor();
 }
 void MOTOR_THUNDER::Set_R_Target(float target)
 {
@@ -1164,7 +1083,7 @@ void MOTOR_THUNDER::Set_R_Target(float target)
     Motor_R_Speed_PID.Ref = target_encoder_num;
   }
 
-  Thunder.Enable_En_Motor();
+  Bell_Thunder.Enable_En_Motor();
 }
 
 /*

@@ -18,7 +18,7 @@ void loop()
 {
   byte rc;
   unsigned short US_Data[4] = {1,2,3,4};
-  rc = SENSOR_US.Get_US_Data(US_Data);
+  rc = SENSOR_US.Get_Data(US_Data);
   L_Distance = US_Data[0];
   M_Distance = US_Data[1];
   Distance = L_Distance + M_Distance;

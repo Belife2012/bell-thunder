@@ -10,7 +10,8 @@ private:
     
 public:
     MOTOR_FAN(int slave_address) : SENSOR_IIC(slave_address) {};
-
-    void Set_Fan_Speed(unsigned char speed, unsigned char channel=0);
     unsigned char Get_Fan_Speed(unsigned char channel=0);
+
+    /*--------------Thunder IDE APIs: -------------*/
+    void Set_Fan_Speed(unsigned char speed, unsigned char channel=0);
 };

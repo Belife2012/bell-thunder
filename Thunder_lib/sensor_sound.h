@@ -14,6 +14,7 @@ private:
 public:
     SENSOR_SOUND(int slave_address):SENSOR_IIC(slave_address) {};
 
+    /*--------------Thunder IDE APIs: -------------*/
     unsigned char GetSoundDB(unsigned char sensorChannel=0);
     void SetDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel=0);
 };

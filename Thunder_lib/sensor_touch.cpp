@@ -29,7 +29,7 @@ byte SENSOR_TOUCH::Get_Status(byte *readValue, unsigned char channel)
 
   ret = read(TOUCH_ADDRESS_VALUE, readValue, 1, channel);
   if(*readValue == 0){
-    if(Check_Touch_Event(TOUCH_EVENT_TOUCH, channel) == true){
+    if(Check_Event(TOUCH_EVENT_TOUCH, channel) == true){
       *readValue = 2;
     }
   }
@@ -54,13 +54,16 @@ byte SENSOR_TOUCH::Reset_Mode(unsigned char channel)
   return ret;
 }
 
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
 /* 
  * 检查触碰按键的相关按键事件是否有发生
  * 
  * @parameters: 
  * @return: true是有发生过，false是未发生过
  */
-bool SENSOR_TOUCH::Check_Touch_Event(enum_touch_event check_event, unsigned char channel)
+bool SENSOR_TOUCH::Check_Event(enum_touch_event check_event, unsigned char channel)
 {
   byte ret;
   byte readValue = 0;
@@ -104,25 +107,18 @@ byte SENSOR_TOUCH::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueVal
   return ret;
 }
 
-int SENSOR_TOUCH::Thunder_Get_Touch_Data(uint8_t sensorChannel)
+/* 
+ * 获取触碰传感器事件，0为未按下状态，1为按下状态，其他的过程值 可以通过连续获取状态做判断触碰过程
+ * 
+ * @parameters: 
+ * @return: 
+ *      0 未按下状态
+ *      1 按下状态
+ *      2 按下后释放（触碰）
+ */
+int SENSOR_TOUCH::Get_Event(uint8_t sensorChannel)
 {
     byte statusValue1;
     Get_Status( &statusValue1, sensorChannel);
     return statusValue1;
-}
-
-void SENSOR_TOUCH::Thunder_Set_Touch_Value(uint8_t sensorChannel, byte RedValue, byte GreenValue, byte BlueValue)
-{
-  Set_LED_RGBvalue(RedValue, GreenValue, BlueValue, sensorChannel);
-}
-
-bool SENSOR_TOUCH::Thunder_Get_Touch_Status(uint8_t sensorChannel, int status) 
-{
-  if(status == 0) {
-    return Check_Touch_Event(TOUCH_EVENT_RELEASE, sensorChannel);
-  } else if(status == 1) {
-    return Check_Touch_Event(TOUCH_EVENT_PRESS, sensorChannel);
-  } else if(status == 2) {
-    return Check_Touch_Event(TOUCH_EVENT_TOUCH, sensorChannel);
-  }
 }

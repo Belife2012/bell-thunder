@@ -3,17 +3,25 @@
 SENSOR_HT::SENSOR_HT(int slave_address) : SENSOR_IIC(slave_address)
 { }
 
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief: 获取温湿度传感器检测到的湿度相对值
+ * 
+ * @param sensorChannel:传感器接口编号
+ * @return float : 湿度相对值（0~100）
+ */
 float SENSOR_HT::GetHumidity(uint8_t sensorChannel)
 {
     uint8_t read_data[3] = {0x0,0x0,0x0};
     uint32_t read_value = 0;
     float ret_value;
-    uint8_t ret,times;
+    uint8_t ret;
 
-    for(times=0; times < 5; times++) {
-        ret = read(HT_IIC_REG_HUM_ADDR, read_data, 3, sensorChannel);
-        if(ret == 0) break;
-    }
+    ret = read(HT_IIC_REG_HUM_ADDR, read_data, 3, sensorChannel);
+    CHECK_IIC_RETURN(ret);
     
 	read_value = (read_value | read_data[0]) << 8;
 	read_value = (read_value | read_data[1]) << 8;
@@ -30,17 +38,21 @@ float SENSOR_HT::GetHumidity(uint8_t sensorChannel)
     return ret_value;
 }
 
+/**
+ * @brief: 获取温湿度传感器检测到的温度
+ * 
+ * @param sensorChannel:传感器接口编号
+ * @return float :温度（摄氏度℃）
+ */
 float SENSOR_HT::GetTemperature(uint8_t sensorChannel)
 {
     uint8_t read_data[3] = {0x0,0x0,0x0};
     uint32_t read_value = 0;
     float ret_value;
-    uint8_t ret,times;
+    uint8_t ret;
 
-    for(times=0; times < 5; times++) {
-        ret = read(HT_IIC_REG_TEMP_ADDR, read_data, 3, sensorChannel);
-        if(ret == 0) break;
-    }
+    ret = read(HT_IIC_REG_TEMP_ADDR, read_data, 3, sensorChannel);
+    CHECK_IIC_RETURN(ret);
 
 	read_value = (read_value | read_data[0]) << 8;
 	read_value = (read_value | read_data[1]) << 8;

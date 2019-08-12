@@ -12,6 +12,7 @@ private:
 public:
     SENSOR_HUMAN(int slave_address) : SENSOR_IIC(slave_address) { };
 
+    /*--------------Thunder IDE APIs: -------------*/
     unsigned char GetStatus(uint8_t sensorChannel=0);
 };
 

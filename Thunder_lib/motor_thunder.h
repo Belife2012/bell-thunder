@@ -169,6 +169,37 @@ struct MotorTurnning_Struct{
 
 class MOTOR_THUNDER
 {
+  private:
+    // 电机
+    boolean inPin1 = LOW;
+    boolean inPin2 = HIGH;
+    uint8_t valueMax = 255;
+
+    struct PID_Struct_t Motor_L_Speed_PID;
+    struct PID_Struct_t Motor_R_Speed_PID;
+
+    struct MotorPosition_Struct Position_Ctrl_L;
+    struct MotorPosition_Struct Position_Ctrl_R;
+
+    int32_t rotate_Record_Origin_Left = 0;
+    int32_t rotate_Record_Origin_Right = 0;
+
+    // drive car 
+    struct DriveCarPid_Struct drive_car_pid;
+    float drive_speed = 0;
+    float drive_direction = 0;
+
+    // timer中断
+    hw_timer_t * PID_Timer = NULL;
+
+    // Mutex
+    volatile SemaphoreHandle_t motor_drive_mux; 
+
+    void set_speed(uint8_t motor_channel,uint32_t speed);
+    float motor_PID(struct PID_Struct_t *pid);      // PID计算
+    void Calculate_Left_Control();
+    void Calculate_Right_Control();
+
   public:
     // 定时器
     void Setup_PID_Timer(void);         // 配置PID用定时器
@@ -220,38 +251,6 @@ class MOTOR_THUNDER
     int32_t Get_R_RotateValue(void); // 获取右轮旋转量（这个值是累积的，调用清零接口时才会清零）
     void Clear_L_RotateValue(void); // 清零左轮旋转量
     void Clear_R_RotateValue(void); // 清零右轮旋转量
-  
-  private:
-    // 电机
-    boolean inPin1 = LOW;
-    boolean inPin2 = HIGH;
-    uint8_t valueMax = 255;
-
-    struct PID_Struct_t Motor_L_Speed_PID;
-    struct PID_Struct_t Motor_R_Speed_PID;
-
-    struct MotorPosition_Struct Position_Ctrl_L;
-    struct MotorPosition_Struct Position_Ctrl_R;
-
-    int32_t rotate_Record_Origin_Left = 0;
-    int32_t rotate_Record_Origin_Right = 0;
-
-    // drive car 
-    struct DriveCarPid_Struct drive_car_pid;
-    float drive_speed = 0;
-    float drive_direction = 0;
-
-    // timer中断
-    hw_timer_t * PID_Timer = NULL;
-
-    // Mutex
-    volatile SemaphoreHandle_t motor_drive_mux; 
-
-    void set_speed(uint8_t motor_channel,uint32_t speed);
-    float motor_PID(struct PID_Struct_t *pid);      // PID计算
-    void Calculate_Left_Control();
-    void Calculate_Right_Control();
-
 };
 
 #endif

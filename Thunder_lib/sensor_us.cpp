@@ -17,7 +17,7 @@ SENSOR_US::SENSOR_US(int slave_address) : SENSOR_IIC(slave_address)
  * 如果返回 0 ，   代表获取了传感器的原始数据
  * 如果返回 非0 ， 则代表无法获取数据，数据无效
  */
-byte SENSOR_US::Get_US_Data(unsigned short *data, unsigned char channel)
+byte SENSOR_US::Get_Data(unsigned short *data, unsigned char channel)
 {
   byte rc;
   unsigned char val[2];
@@ -35,14 +35,31 @@ byte SENSOR_US::Get_US_Data(unsigned short *data, unsigned char channel)
   return (0);
 }
 
-// 获取超声波数据，0.1[cm]
-// 高8位，低8位数据相加
+// 类内部使用，I2C通讯，读取超声波数据
+byte SENSOR_US::get_rawval(unsigned char *data, unsigned char channel)
+{
+  byte rc;
+
+  rc = read(0x01, data, 2, channel);
+
+  // if (rc != 0) {
+  //   Serial.println(F("### 无法获取超声波数据 ###"));
+  // }
+
+  return (rc);
+}
+
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
 /**
+ * 获取超声波数据[cm]
+ * 
  * 量程, 最小3.0,  最大255.0，有效返回值为：3.0~255.0
  * 如果返回300.0， 代表超出量程；可能超出最大，可能超出最小
  * 如果返回 0 ，   则代表无法获取数据，数据无效
  */
-float SENSOR_US::Get_US_cm(unsigned char channel)
+float SENSOR_US::Get_Distance(unsigned char channel)
 {
   byte rc;
   unsigned char val[2];
@@ -73,36 +90,18 @@ float SENSOR_US::Get_US_cm(unsigned char channel)
   return (float)data / 10;
 }
 
-// 类内部使用，I2C通讯，读取超声波数据
-byte SENSOR_US::get_rawval(unsigned char *data, unsigned char channel)
-{
-  byte rc;
-
-  rc = read(0x01, data, 2, channel);
-
-  // if (rc != 0) {
-  //   Serial.println(F("### 无法获取超声波数据 ###"));
-  // }
-
-  return (rc);
-}
-
-int SENSOR_US::Thunder_Get_US_Data(uint8_t sensorChannel)
+/**
+ * 检测是否存在障碍物（距离 < 20cm）
+ * 
+ * @return：0 没有障碍物， 1 检测到障碍物
+ */
+int SENSOR_US::Detect_Obstacle(uint8_t sensorChannel)
 {
   float US_Data_cm = 0;
-  US_Data_cm = Get_US_cm(sensorChannel);
-  return (int) US_Data_cm;
-}
-
-int SENSOR_US::Thunder_Detect_Obstacle(uint8_t sensorChannel)
-{
-  float US_Data_cm = 0;
-  US_Data_cm = Get_US_cm(sensorChannel);
+  US_Data_cm = Get_Distance(sensorChannel);
   if(US_Data_cm == 0.0) {
       return 0;
-  } else if(US_Data_cm == 300.0) {
-      return 0;
-  } else if(US_Data_cm < 20) {
+  } else if(US_Data_cm < 20.0) {
       // 小于20cm认定为遇到障碍物
       return 1;
   } else {

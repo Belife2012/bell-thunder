@@ -35,14 +35,14 @@ void Driver_Flush(void *pvParameters)
     /* if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
       if(current_time - communications_time > 50){
-        Thunder.Check_UART_Communication();
+        Bell_Thunder.Check_UART_Communication();
         communications_time = millis();
       }
     } */
     // 
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
     {
-      Thunder.LED_Show();
+      Bell_Thunder.LED_Show();
     }
     // 
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))
@@ -66,7 +66,7 @@ void Driver_Flush(void *pvParameters)
     {
       if (current_time - battery_measure_time > 300)
       {
-        Thunder.Get_Battery_Data();
+        Bell_Thunder.Get_Battery_Data();
         battery_measure_time = millis();
       }
     }
@@ -81,9 +81,9 @@ void Deamon_Motor(void *pvParameters)
   {
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_MOTOR_PID_CTRL))
     {
-      Thunder.En_Motor();
+      Bell_Thunder.En_Motor();
     }
-    if(Thunder.line_tracing_running == true){
+    if(Bell_Thunder.line_tracing_running == true){
       vTaskDelay(pdMS_TO_TICKS(MOTOR_CONTROL_PERIOD));
     }else{
       vTaskDelay(pdMS_TO_TICKS(MOTOR_CONTROL_PERIOD));
@@ -102,14 +102,14 @@ void Proc_Ble_Command(void *pvParameters)
     {
       // 只有标志了 FLUSH_COMMUNICATIONS，才解析 BLE数据
       if(ble_mesg_type == BLE_SERVER_SEMAPHORE_RX){ // 作为Server，接收到client的信息
-        Thunder.Check_BLE_Communication();
+        Bell_Thunder.Check_BLE_Communication();
       }else if(ble_mesg_type == BLE_CLIENT_SEMAPHORE_CONN){
         // if(BLE_THUNDERGO::GetBleConnectType() == BLE_CLIENT_DISCONNECT)
         { // 搜索到BLE Server，进行连接动作
           BLE_Client.Connect_Ble_Server();
         }
         // else if(BLE_THUNDERGO::GetBleConnectType() == BLE_CLIENT_CONNECTED){ // 接收到Server的信息
-        //   Thunder.Check_BLE_Communication();
+        //   Bell_Thunder.Check_BLE_Communication();
         // }
       }
     }
@@ -121,7 +121,7 @@ void Proc_Uart_Command(void *pvParameters)
   {
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_COMMUNICATIONS))
     {
-      Thunder.Check_UART_Communication();
+      Bell_Thunder.Check_UART_Communication();
     }
     vTaskDelay(pdMS_TO_TICKS(5));
   }
@@ -130,9 +130,9 @@ void Operator_Mode_Deamon(void *pvParameters)
 {
   for(;;)
   {
-    if(Thunder.line_tracing_running == true){
-      Thunder.Line_Tracing();
-      // Thunder.Line_Tracing_Speed_Ctrl();
+    if(Bell_Thunder.line_tracing_running == true){
+      Bell_Thunder.Line_Tracing();
+      // Bell_Thunder.Line_Tracing_Speed_Ctrl();
     }
     // 作为辅线程搜索BLE Server
     if(BLE_THUNDERGO::GetBleConnectType() == BLE_CLIENT_DISCONNECT){
@@ -160,9 +160,9 @@ void Polling_Check(void *pvParameters)
   for(;;)
   {
     /* 指示灯LED轮询，模拟PWM */
-    Thunder.Update_Function_Timer();
-    Thunder.Update_Led_Indication_Status(led_indication_counter);
-    Thunder.Check_Function_Button_Value();
+    Bell_Thunder.Update_Function_Timer();
+    Bell_Thunder.Update_Led_Indication_Status(led_indication_counter);
+    Bell_Thunder.Check_Function_Button_Value();
 
     vTaskDelay(pdMS_TO_TICKS(POLLING_CHECK_PERIOD));
     led_indication_counter += POLLING_CHECK_PERIOD;
@@ -199,7 +199,7 @@ void Programs_System(void)
   {
 #ifdef COMPETITION_FW_001
     if(thunder_system_parameter == 1){
-      BLE_Remoter.Disable_Remote();
+      BLE_Remoter.Enable_Remote(false);
       System_Task.Toggle_Competition_Status(2);
       Program_AutoCtrl();
     }else{
@@ -365,7 +365,7 @@ void SYSTEM_TASK::Toggle_Competition_Status(int status_index)
   }else if(status_index == 3){
     competition_action_status = 2;
 
-    Thunder.Toggle_Led_mode(1000, 100, 100, 2);
+    Bell_Thunder.Toggle_Led_mode(1000, 100, 100, 2);
 
     byte colorData[36] = {0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0,
                           0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0, 0, 25, 0};
@@ -398,8 +398,8 @@ void SYSTEM_TASK::Clear_All_Loops()
   SENSOR_IIC::Give_Semaphore_IIC();
 
   tasks_num = 0;
-  Thunder.Reset_All_Components();
-  Thunder.Set_Ble_Type(BLE_TYPE_CLIENT); // 每次等待启动时，都是处于 BLE Client
+  Bell_Thunder.Reset_All_Components();
+  Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT); // 每次等待启动时，都是处于 BLE Client
 }
 
 #ifdef COMPETITION_FW_001
@@ -422,11 +422,11 @@ void Clear_All_Loops_AutoCtrl()
   SENSOR_IIC::Give_Semaphore_IIC();
 
   tasks_num_AutoCtrl = 0;
-  Thunder.Stop_All();
+  Bell_Thunder.Stop_All();
 
   // 创建遥控阶段的线程
   Program_1();
-  BLE_Remoter.Enable_Remote();
+  BLE_Remoter.Enable_Remote(true);
   System_Task.Toggle_Competition_Status(3);
 }
 #endif

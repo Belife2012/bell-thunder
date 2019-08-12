@@ -10,14 +10,15 @@
  */
 void TASK_SUPREME::Set_Current_Task_Supreme()
 {
-  if(former_Priority != 0) {
-      return ;
-  }
+	if (former_Priority != 0)
+	{
+		return;
+	}
 
-  // highese Priority in the AppTasks
-  vTaskPrioritySet(NULL, APP_TASK_PRIORITY_MAX);
-  
-  former_Priority = uxTaskPriorityGet(NULL);
+	// highese Priority in the AppTasks
+	vTaskPrioritySet(NULL, APP_TASK_PRIORITY_MAX);
+
+	former_Priority = uxTaskPriorityGet(NULL);
 }
 /* 
  * 用于硬件驱动，恢复当前线程的Priority
@@ -27,13 +28,12 @@ void TASK_SUPREME::Set_Current_Task_Supreme()
  */
 void TASK_SUPREME::Clear_Current_Task_Supreme()
 {
-  // No suspend any one, then no resume
-  if (former_Priority == 0)
-  {
-    return;
-  }
+	// No suspend any one, then no resume
+	if (former_Priority == 0)
+	{
+		return;
+	}
 
-  vTaskPrioritySet(NULL, former_Priority);
-  former_Priority = 0;
+	vTaskPrioritySet(NULL, former_Priority);
+	former_Priority = 0;
 }
-

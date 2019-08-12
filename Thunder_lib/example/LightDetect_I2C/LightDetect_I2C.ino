@@ -2,11 +2,11 @@
 
 void setup() {
   // initial thunder-car all hareware resource
-  Thunder.Setup_All();
+  Bell_Thunder.Setup_All();
 
   // 舵机位置初始化
-  Thunder.Servo_Turn(1, 90);  //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Thunder.Servo_Turn(2, 90);  //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Bell_Thunder.Servo_Turn(1, 90);  //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Bell_Thunder.Servo_Turn(2, 90);  //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 
   // 开启一个新的 loop, 新的loop 使用 setup_1 和 loop_1
   System_Task.Create_New_Loop();

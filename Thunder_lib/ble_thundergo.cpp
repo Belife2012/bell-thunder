@@ -24,7 +24,7 @@ class MyServerCallbacks: public BLEServerCallbacks
     {
       deviceConnected = false;
       Serial.printf("# BLE server DisConnect\n");
-      Thunder.Stop_All();
+      Bell_Thunder.Stop_All();
       Speaker_Thunder.Play_Song(45);   // 断开声音
 
       pServer->getAdvertising()->start();
@@ -58,7 +58,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       {
         Rx_Data[0] = 0;
         Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
-        Thunder.Reset_Rx_Data();
+        Bell_Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -68,7 +68,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 19; i++)
       {
-        Thunder.LED_Color_BUFF1[i-1] = recv_data[i];
+        Bell_Thunder.LED_Color_BUFF1[i-1] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -76,7 +76,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       {
         Rx_Data[0] = 0;
         Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
-        Thunder.Reset_Rx_Data();
+        Bell_Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -86,7 +86,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 19; i++)
       {
-        Thunder.LED_Color_BUFF2[i-1] = recv_data[i];
+        Bell_Thunder.LED_Color_BUFF2[i-1] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -94,7 +94,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       {
         Rx_Data[0] = 0;
         Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
-        Thunder.Reset_Rx_Data();
+        Bell_Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -104,7 +104,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 15; i++)
       {
-        Thunder.LED_BUFF_Dot[i] = recv_data[i];
+        Bell_Thunder.LED_BUFF_Dot[i] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -112,7 +112,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       {
         Rx_Data[0] = 0;
         Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
-        Thunder.Reset_Rx_Data();
+        Bell_Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -122,7 +122,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       Rx_Data[0] = recv_data[0];
       for (i = 1; i < 15; i++)
       {
-        Thunder.LED_BUFF_Dot[i+14] = recv_data[i];
+        Bell_Thunder.LED_BUFF_Dot[i+14] = recv_data[i];
         SUM += recv_data[i];
       }
 
@@ -130,7 +130,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       {
         Rx_Data[0] = 0;
         Serial.printf(" # %x SUM error: %x #\n", recv_data[0], SUM);
-        Thunder.Reset_Rx_Data();
+        Bell_Thunder.Reset_Rx_Data();
       }
       break;
     }
@@ -148,7 +148,7 @@ void Analyze_BLE_Data(std::string &recv_data)
         }
         if(SUM != recv_data[last_index]){
           Serial.printf("* F1 SUM: %x *\n", SUM);
-          Thunder.Reset_Rx_Data();
+          Bell_Thunder.Reset_Rx_Data();
         }else{
           Rx_Data[last_index] = recv_data[last_index];
         }
@@ -166,7 +166,7 @@ void Analyze_BLE_Data(std::string &recv_data)
       if(Rx_Data[5] != (uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]))
       {
         Serial.printf(" # SUM error: Rx_Data[5]=%x calSum=%x #\n",Rx_Data[5],(uint8_t)(Rx_Data[0] + Rx_Data[1] + Rx_Data[2] + Rx_Data[3] + Rx_Data[4]));
-        Thunder.Reset_Rx_Data();
+        Bell_Thunder.Reset_Rx_Data();
       }
 
       break;

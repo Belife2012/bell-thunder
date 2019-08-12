@@ -165,23 +165,27 @@ typedef enum{
 
 class SENSOR_COLOR : public SENSOR_IIC
 {
-  public:
-    float env_backlight_c;
-    
-    SENSOR_COLOR(int slave_address);                     // 配置I2C地址
-    
-    byte Setup(unsigned char channel=0);                                 // 初始化设置
-    byte Get_RGBC_Data(unsigned short *data, unsigned char channel=0);         // 获取RGBC
-    void RGBtoHSV(unsigned short *RGBC, float *HSV);  // 计算HSV
-
-    uint8_t Colour_Recognition(unsigned short *RGBC); // 识别颜色 (预留)
-    uint8_t Thunder_Get_Color_Sensor_Data(uint8_t sensorChannel);
-
   private:
-    byte device_detected;// 0为未插入设备，!0为已插入设备
+    byte device_detected[6] = {0,0,0,0,0,0};// 0为未插入设备，!0为已插入设备
+    float env_backlight_c;
 
     void Env_Backlight_Filter(unsigned short new_data);
     byte get_rawval(unsigned char *data, unsigned char channel=0);
+
+  public:
+    SENSOR_COLOR(int slave_address);                     // 配置I2C地址
+    
+    void RGBtoHSV(unsigned short *RGBC, float *HSV);  // 计算HSV
+    uint8_t Colour_Recognition(unsigned short *RGBC); // 识别颜色 (预留)
+    byte Setup(unsigned char channel=0);                                 // 初始化设置
+    byte Get_RGBC_Data(unsigned short *data, unsigned char channel=0);         // 获取RGBC
+    uint16_t Get_Red(uint8_t channel=0);
+    uint16_t Get_Green(uint8_t channel=0);
+    uint16_t Get_Blue(uint8_t channel=0);
+    uint16_t Get_Clear(uint8_t channel=0);
+
+    /*--------------Thunder IDE APIs: -------------*/
+    uint8_t Get_Color_Result(uint8_t sensorChannel=0);
 };
 
 #endif // _BH1745NUC_H_

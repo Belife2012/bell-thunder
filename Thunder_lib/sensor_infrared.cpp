@@ -1,68 +1,134 @@
 #include "sensor_infrared.h"
 
+uint8_t SENSOR_INFRARED::Check_Out_IRdata(uint16_t data)
+{
+    uint8_t result = 0x0f;
+
+    if( 0x0000 == (data & 0x0f00) ) // 信标模式
+    {
+        result ^= (uint8_t)(data >> 4);
+        result ^= (uint8_t)(data >> 8);
+        result ^= (uint8_t)(data >> 12);
+
+        result <<= 1;
+        if( (result & 0x0f) != ((uint8_t)data & 0x0f) ){
+            return 0;
+        }
+    }else {
+        result ^= (uint8_t)(data >> 4);
+        result ^= (uint8_t)(data >> 8);
+        result ^= (uint8_t)(data >> 12);
+
+        if( (result & 0x0f) != ((uint8_t)data & 0x0f) ){
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief: 设置红外传感器的工作频道
+ * 
+ * @param sys_channel:工作频道（1~4）
+ * @param sensorChannel:传感器接口编号
+ */
 void SENSOR_INFRARED::SetSysChannel(unsigned char sys_channel, uint8_t sensorChannel)
 {
+    CHECK_RANGE(sys_channel, 1, 4);
+    sys_channel -= 1;
+
     write(INFRARED_IIC_REG_SYSCHANNEL, &sys_channel, 1, sensorChannel);
 }
+
+/**
+ * @brief: 设置红外传感器的工作模式
+ * 
+ * @param sys_mode: 工作模式 0/1/2
+ * @param sensorChannel: 传感器接口编号
+ */
 void SENSOR_INFRARED::SetSysMode(unsigned char sys_mode, uint8_t sensorChannel)
 {
+    CHECK_RANGE(sys_mode, 0 ,2);
     write(INFRARED_IIC_REG_SYSMODE, &sys_mode, 1, sensorChannel);
 }
 
+/**
+ * @brief: 获取红外传感器检测到的障碍物距离
+ * 
+ * @param sensorChannel:传感器接口编号
+ * @return unsigned char :障碍物距离（相对距离）
+ */
 unsigned char SENSOR_INFRARED::GetDistance(uint8_t sensorChannel)
 {
     uint8_t read_data[2] = {0x0,0x0};
-    uint8_t ret,times;
+    uint8_t ret;
 
-    for(times=0; times < 5; times++) {
-        ret = read(INFRARED_IIC_REG_DISTANCE, read_data, 2, sensorChannel);
-        if(ret == 0) break;
-    }
+    ret = read(INFRARED_IIC_REG_DISTANCE, read_data, 2, sensorChannel);
+    CHECK_IIC_RETURN(ret);
     
     return read_data[0];
 }
 
+/**
+ * @brief: 获取检测到的信标方向
+ * 
+ * @param sensorChannel:传感器接口编号
+ * @return unsigned char : 信标方向
+ */
 unsigned char SENSOR_INFRARED::GetBeaconDire(uint8_t sensorChannel)
 {
     uint8_t read_data[2] = {0x0,0x0};
     uint8_t ret_value = 0;
-    uint8_t ret,times;
+    uint8_t ret;
 
-    for(times=0; times < 5; times++) {
-        ret = read(INFRARED_IIC_REG_BEACON, read_data, 2, sensorChannel);
-        if(ret == 0) break;
-    }
+    ret = read(INFRARED_IIC_REG_BEACON, read_data, 2, sensorChannel);
+    CHECK_IIC_RETURN(ret);
 
 	ret_value = read_data[0];
 
     return ret_value;
 }
+
+/**
+ * @brief: 获取检测到的信标距离
+ * 
+ * @param sensorChannel: 传感器接口编号
+ * @return unsigned char : 信标距离
+ */
 unsigned char SENSOR_INFRARED::GetBeaconDist(uint8_t sensorChannel)
 {
     uint8_t read_data[2] = {0x0,0x0};
     uint8_t ret_value = 0;
-    uint8_t ret,times;
+    uint8_t ret;
 
-    for(times=0; times < 5; times++) {
-        ret = read(INFRARED_IIC_REG_BEACON, read_data, 2, sensorChannel);
-        if(ret == 0) break;
-    }
+    ret = read(INFRARED_IIC_REG_BEACON, read_data, 2, sensorChannel);
+    CHECK_IIC_RETURN(ret);
 
 	ret_value = read_data[1];
 
     return ret_value;
 }
+
+/**
+ * @brief: 获取检测到的信标遥控数据
+ * 
+ * @param sensorChannel: 传感器接口编号
+ * @return unsigned char : 遥控数据
+ */
 unsigned char SENSOR_INFRARED::GetRemoteInfo(uint8_t sensorChannel)
 {
     uint8_t read_data[2] = {0x0,0x0};
     uint16_t remote_data;
     uint8_t ret_value = 0;
-    uint8_t ret,times;
+    uint8_t ret;
 
-    for(times=0; times < 5; times++) {
-        ret = read(INFRARED_IIC_REG_REMOTE, read_data, 2, sensorChannel);
-        if(ret == 0) break;
-    }
+    ret = read(INFRARED_IIC_REG_REMOTE, read_data, 2, sensorChannel);
+    CHECK_IIC_RETURN(ret);
 
     remote_data = read_data[1];
     remote_data <<= 8;
@@ -99,31 +165,4 @@ unsigned char SENSOR_INFRARED::GetRemoteInfo(uint8_t sensorChannel)
     }
 
     return ret_value;
-}
-
-uint8_t SENSOR_INFRARED::Check_Out_IRdata(uint16_t data)
-{
-    uint8_t result = 0x0f;
-
-    if( 0x0000 == (data & 0x0f00) ) // 信标模式
-    {
-        result ^= (uint8_t)(data >> 4);
-        result ^= (uint8_t)(data >> 8);
-        result ^= (uint8_t)(data >> 12);
-
-        result <<= 1;
-        if( (result & 0x0f) != ((uint8_t)data & 0x0f) ){
-            return 0;
-        }
-    }else {
-        result ^= (uint8_t)(data >> 4);
-        result ^= (uint8_t)(data >> 8);
-        result ^= (uint8_t)(data >> 12);
-
-        if( (result & 0x0f) != ((uint8_t)data & 0x0f) ){
-            return 0;
-        }
-    }
-
-    return 1;
 }

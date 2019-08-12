@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <bell_thunder.h>
+#include "sensor_remoter.h"
 
 SENSOR_REMOTER::SENSOR_REMOTER(/* args */)
 {
@@ -92,14 +93,14 @@ void SENSOR_REMOTER::Analyze_Raw_Data(const uint8_t* raw_data, const uint8_t len
     }
 }
 
-void SENSOR_REMOTER::Enable_Remote()
+void SENSOR_REMOTER::Enable_Remote(bool enable)
 {
-    enable_remote = true;
-}
-void SENSOR_REMOTER::Disable_Remote()
-{
-    enable_remote = false;
-    Clear_All_keys();
+    if(enable == true){
+        enable_remote = true;
+    } else {
+        enable_remote = false;
+        Clear_All_keys();
+    }
 }
 
 void SENSOR_REMOTER::Clear_All_keys()
@@ -110,17 +111,15 @@ void SENSOR_REMOTER::Clear_All_keys()
     keys_releasing = 0;
 }
 
-int SENSOR_REMOTER::Get_Control_Value(enum_Remoter_Value key_index)
-{
-    return control_value[key_index];
-}
-
-bool SENSOR_REMOTER::Get_Key_Value(enum_Remoter_Key key_index)
-{
-    return (keys_value & (0x00000001 << key_index)) == 0 ? false : true;
-}
-
-bool SENSOR_REMOTER::Get_Key_Action(enum_Remoter_Key key_index, enum_Key_Action key_action)
+/**
+ * @brief 检测是否发生了按下动作（每次按下只能读到一次true）或释放动作（每次释放只能读到一次true）
+ * 
+ * @param key_index 按键标识
+ * @param key_action 检测的动作
+ * @return true 检测的动作有发生
+ * @return false 检测的动作没有发生
+ */
+bool SENSOR_REMOTER::Check_Key_Action(enum_Remoter_Key key_index, enum_Key_Action key_action)
 {
     bool ret;
 
@@ -141,4 +140,46 @@ bool SENSOR_REMOTER::Get_Key_Action(enum_Remoter_Key key_index, enum_Key_Action 
     }
 
     return ret;
+}
+
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief 打开/关闭蓝牙遥控器功能，默认是打开蓝牙遥控器功能的，但是蓝牙遥控器功能会占用
+ * 系统资源，如果不需要蓝牙遥控器功能，可以使用此函数关闭
+ * 
+ * @param enable true打开蓝牙遥控器功能， false关闭蓝牙遥控器功能
+ */
+void SENSOR_REMOTER::Turnon_Remote(bool enable)
+{
+    if(enable == true){
+        Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
+    } else {
+        Bell_Thunder.Set_Ble_Type(BLE_TYPE_NONE);
+    }
+}
+
+/**
+ * @brief 获取摇杆或按键的数值
+ * 
+ * @param key_index 摇杆、按键标识
+ * @return int 摇杆、按键的模拟数值
+ */
+int SENSOR_REMOTER::Get_Control_Value(enum_Remoter_Value key_index)
+{
+    return control_value[key_index];
+}
+
+/**
+ * @brief 判断按键状态
+ * 
+ * @param key_index 按键标识
+ * @return true 按键状态为按下
+ * @return false 按键状态为释放
+ */
+bool SENSOR_REMOTER::Check_Key(enum_Remoter_Key key_index)
+{
+    return (keys_value & (0x00000001 << key_index)) == 0 ? false : true;
 }

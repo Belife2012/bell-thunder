@@ -22,9 +22,9 @@ private:
 public:
     SENSOR_INFRARED(int slave_address) : SENSOR_IIC(slave_address) {};
 
+    /*--------------Thunder IDE APIs: -------------*/
     void SetSysMode(unsigned char sys_mode, uint8_t sensorChannel=0);
     void SetSysChannel(unsigned char sys_channel, uint8_t sensorChannel=0);
-
     unsigned char GetDistance(uint8_t sensorChannel=0);
     unsigned char GetBeaconDist(uint8_t sensorChannel=0);
     unsigned char GetBeaconDire(uint8_t sensorChannel=0);

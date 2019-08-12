@@ -8,6 +8,17 @@
 
 #define MAX_CHANNEL_INDEX     (3)
 
+#define CHECK_RANGE(value, min, max) do{if(value > max) { \
+                                          value = max; \
+                                        } else if (value < min) { \
+                                          value = min; \
+                                        } \
+                                      } while(0)
+#define CHECK_IIC_RETURN(ret) do{ if(ret != 0) { \
+                                    log_e("%s IIC error", __FUNCTION__);\
+                                  } \
+                                }while(0)
+
 class SENSOR_IIC
 {
 private:

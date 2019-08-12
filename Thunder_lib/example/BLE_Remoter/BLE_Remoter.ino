@@ -3,12 +3,12 @@
 void setup()
 {
   // initial thunder-car all hareware resource
-  Thunder.Setup_All();
-  Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
+  Bell_Thunder.Setup_All();
+  Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
 
   // 舵机位置初始化
-  Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Bell_Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Bell_Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 }
 void loop()
 {
@@ -47,8 +47,8 @@ void Program_4()
 }
 void Program_ThunderGo()
 {
-  Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
-  Thunder.Set_Need_Communication(true);
+  Bell_Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
+  Bell_Thunder.Set_Need_Communication(true);
 }
 /*******setup函数 loop函数********/
 void setup_1_1()
@@ -57,41 +57,41 @@ void setup_1_1()
 void loop_1_1()
 {
   /* 使用蓝牙手柄 */
-  if(BLE_Remoter.Get_Key_Action(KEY_Y, KEY_PRESSING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_Y, KEY_PRESSING)){
     Speaker_Thunder.Play_Song(1);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_Y, KEY_RELEASING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_Y, KEY_RELEASING)){
     Speaker_Thunder.Play_Song(6);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_X, KEY_PRESSING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_X, KEY_PRESSING)){
     Speaker_Thunder.Play_Song(95);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_X, KEY_RELEASING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_X, KEY_RELEASING)){
     Speaker_Thunder.Play_Song(96);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_A, KEY_PRESSING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_A, KEY_PRESSING)){
     Speaker_Thunder.Play_Song(98);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_A, KEY_RELEASING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_A, KEY_RELEASING)){
     Speaker_Thunder.Play_Song(99);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_B, KEY_PRESSING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_B, KEY_PRESSING)){
     Speaker_Thunder.Play_Song(101);
   }
-  if(BLE_Remoter.Get_Key_Action(KEY_B, KEY_RELEASING)){
+  if(BLE_Remoter.Check_Key_Action(KEY_B, KEY_RELEASING)){
     Speaker_Thunder.Play_Song(102);
   }
 
-  if( BLE_Remoter.Get_Key_Value(KEY_UP) ){
+  if( BLE_Remoter.Check_Key(KEY_UP) ){
     Motor_Thunder.Set_L_Target(20);
     Motor_Thunder.Set_R_Target(20);
-  }else if( BLE_Remoter.Get_Key_Value(KEY_DOWN) ){
+  }else if( BLE_Remoter.Check_Key(KEY_DOWN) ){
     Motor_Thunder.Set_L_Target(-20);
     Motor_Thunder.Set_R_Target(-20);
-  }else if( BLE_Remoter.Get_Key_Value(KEY_LEFT) ){
+  }else if( BLE_Remoter.Check_Key(KEY_LEFT) ){
     Motor_Thunder.Set_L_Target(-20);
     Motor_Thunder.Set_R_Target(20);
-  }else if( BLE_Remoter.Get_Key_Value(KEY_RIGHT) ){
+  }else if( BLE_Remoter.Check_Key(KEY_RIGHT) ){
     Motor_Thunder.Set_L_Target(20);
     Motor_Thunder.Set_R_Target(-20);
   }else{
@@ -99,16 +99,16 @@ void loop_1_1()
     Motor_Thunder.Set_R_Target(BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)+BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
   }
 
-  Thunder.Servo_Turn(2, 90+2*BLE_Remoter.Get_Control_Value(KEY_R2_ANALOG)/10);
+  Bell_Thunder.Servo_Turn(2, 90+2*BLE_Remoter.Get_Control_Value(KEY_R2_ANALOG)/10);
 
   /* 使用功能按键 */
-  if(Thunder.Check_Function_Button_Event(KEY_CLICK_ONE)){
+  if(Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_ONE)){
     Speaker_Thunder.Play_Song(112);
-  }else if(Thunder.Check_Function_Button_Event(KEY_CLICK_TWO)){
+  }else if(Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_TWO)){
     Speaker_Thunder.Play_Song(113);
-  }else if(Thunder.Check_Function_Button_Event(KEY_CLICK_THREE)){
+  }else if(Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_THREE)){
     Speaker_Thunder.Play_Song(114);
-  }else if(Thunder.Check_Function_Button_Event(KEY_CLICK_FOUR)){
+  }else if(Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_FOUR)){
     Speaker_Thunder.Play_Song(115);
   }
 }

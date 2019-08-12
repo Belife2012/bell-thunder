@@ -6,13 +6,12 @@
 SENSOR_COLOR::SENSOR_COLOR(int slave_address):
   SENSOR_IIC(slave_address),
   env_backlight_c(NO_COLOR_CARD_C)
-{
-  device_detected = 0;
-}
+{}
 
 // 初始化设置
 byte SENSOR_COLOR::Setup(unsigned char channel)
 {
+  CHECK_RANGE(channel, 1, 6);
   Serial.printf("\nstart Init Color Sensor...\n");
 
   byte rc;
@@ -77,7 +76,7 @@ byte SENSOR_COLOR::Setup(unsigned char channel)
   }
 
   Serial.printf("Color Sensor Init end\n\n");
-  device_detected = 1;
+  device_detected[channel - 1] = 1;
 
   return 0;
 }
@@ -85,26 +84,6 @@ byte SENSOR_COLOR::Setup(unsigned char channel)
 void SENSOR_COLOR::Env_Backlight_Filter(unsigned short new_data)
 {
   env_backlight_c += ( (float)(new_data - env_backlight_c) ) / 30;
-}
-
-// 获取RGBC，并将结果存入*data
-byte SENSOR_COLOR::Get_RGBC_Data(unsigned short *data, unsigned char channel)
-{
-  byte rc;
-  unsigned char val[8];
-
-  rc = get_rawval(val, channel);
-  if (rc != 0)
-  {
-    return (rc);
-  }
-
-  data[0] = ((unsigned short)val[1] << 8) | val[0];
-  data[1] = ((unsigned short)val[3] << 8) | val[2];
-  data[2] = ((unsigned short)val[5] << 8) | val[4];
-  data[3] = ((unsigned short)val[7] << 8) | val[6];
-
-  return (rc);
 }
 
 // 利用*RGBC 计算HSV值，并存入*HSV
@@ -164,11 +143,12 @@ void SENSOR_COLOR::RGBtoHSV(unsigned short *RGBC, float *HSV)
 uint8_t SENSOR_COLOR::Colour_Recognition(unsigned short *RGBC)
 {
   float m_min, m_max, HSV[3];
-  short compensation_c_high = 0, compensation_c_low = 0;
 
   m_min = min(RGBC[0], min(RGBC[1], RGBC[2]));
   m_max = max(RGBC[0], max(RGBC[1], RGBC[2]));
   
+  #if 0
+  short compensation_c_high = 0, compensation_c_low = 0;
   // 根据环境光 计算黑卡的 C值补偿
   if(env_backlight_c > NO_COLOR_CARD_C){
     // compensation_c_high = ( (unsigned short)env_backlight_c - NO_COLOR_CARD_C ) * 2;
@@ -184,6 +164,7 @@ uint8_t SENSOR_COLOR::Colour_Recognition(unsigned short *RGBC)
       compensation_c_high = (env_backlight_c - BLACK_CARD_MAX_C) - 2;
     }
   }
+  #endif
 
   //非特殊情况的颜色判别, 依据 颜色 H值
   RGBtoHSV(RGBC, HSV);
@@ -266,21 +247,104 @@ uint8_t SENSOR_COLOR::Colour_Recognition(unsigned short *RGBC)
 byte SENSOR_COLOR::get_rawval(unsigned char *data, unsigned char channel)
 {
   byte rc;
-
+  CHECK_RANGE(channel, 1, 6);
   rc = read(BH1745NUC_RED_DATA_LSB, data, 8, channel);
 
   // 如果读取数值失败，则标志设备未检测到，否则查看是否需要重新初始化设备
   if(rc != 0){
-    device_detected = 0;
-  }else if(device_detected == 0){
-    Setup();
+    device_detected[channel - 1] = 0;
+  }else if(device_detected[channel - 1] == 0){
+    Setup(channel);
     // 初始化完成后，不会重新读取，下一次的读取数值才是有效的
   }
 
   return (rc);
 }
 
-uint8_t SENSOR_COLOR::Thunder_Get_Color_Sensor_Data(uint8_t sensorChannel)
+// 获取RGBC，并将结果存入*data
+byte SENSOR_COLOR::Get_RGBC_Data(unsigned short *data, unsigned char channel)
+{
+  byte rc;
+  unsigned char val[8];
+
+  rc = get_rawval(val, channel);
+  if (rc != 0)
+  {
+    return (rc);
+  }
+
+  data[0] = ((unsigned short)val[1] << 8) | val[0];
+  data[1] = ((unsigned short)val[3] << 8) | val[2];
+  data[2] = ((unsigned short)val[5] << 8) | val[4];
+  data[3] = ((unsigned short)val[7] << 8) | val[6];
+
+  return (rc);
+}
+
+/**
+ * @brief: 获取颜色（红色）分量
+ * 
+ * @param channel: 传感器接口编号
+ * @return uint16_t : 颜色分量
+ */
+uint16_t SENSOR_COLOR::Get_Red(uint8_t channel) 
+{
+  uint16_t data[4];
+
+  Get_RGBC_Data(data, channel);
+  return data[0];
+}
+/**
+ * @brief: 获取颜色（绿色）分量
+ * 
+ * @param channel: 传感器接口编号
+ * @return uint16_t : 颜色分量
+ */
+uint16_t SENSOR_COLOR::Get_Green(uint8_t channel) 
+{
+  uint16_t data[4];
+
+  Get_RGBC_Data(data, channel);
+  return data[1];
+}
+/**
+ * @brief: 获取颜色（蓝牙）分量
+ * 
+ * @param channel: 传感器接口编号
+ * @return uint16_t : 颜色分量
+ */
+uint16_t SENSOR_COLOR::Get_Blue(uint8_t channel) 
+{
+  uint16_t data[4];
+
+  Get_RGBC_Data(data, channel);
+  return data[2];
+}
+/**
+ * @brief: 获取颜色（明亮）分量
+ * 
+ * @param channel: 传感器接口编号
+ * @return uint16_t : 颜色分量
+ */
+uint16_t SENSOR_COLOR::Get_Clear(uint8_t channel) 
+{
+  uint16_t data[4];
+
+  Get_RGBC_Data(data, channel);
+  return data[3];
+}
+
+/*---------------------------------------------------------------------------*/
+/*----------------------------- Thunder IDE API -----------------------------*/
+/*---------------------------------------------------------------------------*/
+
+/**
+ * @brief: 获取颜色传感器检测到的色卡颜色
+ * 
+ * @param sensorChannel:传感器接口编号
+ * @return uint8_t :色卡颜色编号
+ */
+uint8_t SENSOR_COLOR::Get_Color_Result(uint8_t sensorChannel)
 {    
   uint8_t Colour_Num = 0;
   unsigned short RGBC[4] = {

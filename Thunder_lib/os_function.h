@@ -2,7 +2,7 @@
 #define __OS_FUNCTION_H__
 #include <Arduino.h>
 
-#define APP_TASK_PRIORITY_MAX   5
+#define APP_TASK_PRIORITY_MAX   7
 
 class TASK_SUPREME
 {

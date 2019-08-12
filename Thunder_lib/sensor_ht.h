@@ -13,6 +13,7 @@ private:
 public:
     SENSOR_HT(int slave_address);
 
+    /*--------------Thunder IDE APIs: -------------*/
     float GetHumidity(uint8_t sensorChannel=0);
     float GetTemperature(uint8_t sensorChannel=0);
 };

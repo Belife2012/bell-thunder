@@ -13,6 +13,7 @@ private:
 public:
     SENSOR_TEMP(int slave_address) : SENSOR_IIC(slave_address) { };
 
+    /*--------------Thunder IDE APIs: -------------*/
     float GetTemperature(uint8_t sensorChannel=0);
 };
 

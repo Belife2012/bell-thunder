@@ -6,12 +6,12 @@ void setup()
   thunder_system_parameter = 1;
 
   // initial thunder-car all hareware resource
-  Thunder.Setup_All();
-  Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
+  Bell_Thunder.Setup_All();
+  Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
 
   // 舵机位置初始化
-  Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Bell_Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Bell_Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 }
 void loop()
 {
@@ -57,8 +57,8 @@ void Program_4()
 }
 void Program_ThunderGo()
 {
-  Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
-  Thunder.Set_Need_Communication(true);
+  Bell_Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
+  Bell_Thunder.Set_Need_Communication(true);
 }
 /*******setup函数 loop函数********/
 #ifdef COMPETITION_FW_001
@@ -66,15 +66,15 @@ void Program_ThunderGo()
 void setup_AutoCtrl_1()
 {
 
-  Serial.printf("timer1: %.3f\n",Thunder.Get_Virtual_Timer(1));
-  Thunder.Reset_Virtual_Timer(1);
+  Serial.printf("timer1: %.3f\n",Bell_Thunder.Get_Virtual_Timer(1));
+  Bell_Thunder.Reset_Virtual_Timer(1);
   Serial.printf("light1: %.3f\n",Sensor_Light.Get_Light_Value(0));
 
   delay(3000);
   Sensor_Light.Set_Dark_Value(0,50);
   
-  Serial.printf("timer1: %.3f\n",Thunder.Get_Virtual_Timer(1));
-  Serial.printf("timer4: %.3f\n\n",Thunder.Get_Virtual_Timer(4));
+  Serial.printf("timer1: %.3f\n",Bell_Thunder.Get_Virtual_Timer(1));
+  Serial.printf("timer4: %.3f\n\n",Bell_Thunder.Get_Virtual_Timer(4));
   Serial.printf("light2: %.3f\n",Sensor_Light.Get_Light_Value(0));
 }
 void loop_AutoCtrl_1()
@@ -88,7 +88,7 @@ void loop_AutoCtrl_1()
 #endif
 void setup_1_1()
 {
-  Serial.printf("timer1: %.3f\n",Thunder.Get_Virtual_Timer(1));
+  Serial.printf("timer1: %.3f\n",Bell_Thunder.Get_Virtual_Timer(1));
 }
 void loop_1_1()
 {

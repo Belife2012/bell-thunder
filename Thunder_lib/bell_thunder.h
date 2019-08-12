@@ -375,6 +375,6 @@ class BELL_THUNDER
     void InitNameVarInt(char *name, int init_value);
 };
 
-extern BELL_THUNDER Thunder;
+extern BELL_THUNDER Bell_Thunder;
 
 #endif
