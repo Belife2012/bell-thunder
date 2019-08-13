@@ -24,6 +24,7 @@ LED_COLOR LED_Color(CLOOUR_LED_DEVICE);
 DISPLAY_THUNDER Display_Screen;
 // 音频
 SPEAKER_WT588 Speaker_Thunder(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
+MOTOR_SERVO Motor_Servo;
 
 // 姿态传感器（IIC address: 0x68 0x0C）
 // 超声波（IIC address：0x01）
@@ -101,7 +102,7 @@ void BELL_THUNDER::Setup_All(void)
 
 	Disk_Manager.Disk_Manager_Initial();
 
-	Setup_Servo();			 // 舵机初始化配置
+	Motor_Servo.Setup_Servo();			 // 舵机初始化配置
 	Setup_IR();				 // 巡线IR传感器初始化配置
 	Setup_Battery();		 // 电池电压检测初始化配置
 	Setup_Led_Indication();  // 初始化指示灯LED
@@ -219,11 +220,8 @@ void BELL_THUNDER::Stop_All(void)
 	// Serial.printf("Stop Motor... \n");
 
 	Disable_En_Motor(); // 关闭编码电机计算
-	Motor_Thunder.Set_L_Motor_Output(0);
-	Motor_Thunder.Set_R_Motor_Output(0);
-
-	// Servo_Turn(1, 90);
-	// Servo_Turn(2, 90);
+	Motor_Thunder.Set_Motor_Output(1, 0);
+	Motor_Thunder.Set_Motor_Output(2, 0);
 }
 
 // 电池电压检测初始化配置
@@ -1006,6 +1004,7 @@ void BELL_THUNDER::En_Motor(void)
 {
 	Motor_Thunder.Update_Encoder_Value();
 
+	motor_semaphore.take(std::string("control"));
 	if (En_Motor_Flag == 2)
 	{
 		Motor_Thunder.Drive_Car_Control();
@@ -1021,50 +1020,59 @@ void BELL_THUNDER::En_Motor(void)
 	{
 		Motor_Thunder.Position_Control();
 	}
+	motor_semaphore.give();
 }
 
 // 开启 Drive_Car_Control 功能
 void BELL_THUNDER::Enable_Drive_Car(void)
 {
+	motor_semaphore.take(std::string("setMode"));
 	if (En_Motor_Flag != 2)
 	{
 		En_Motor_Flag = 2;
 	}
+	motor_semaphore.give();
 }
 
 // 开启 电机PID 功能
 void BELL_THUNDER::Enable_En_Motor(void)
 {
+	motor_semaphore.take(std::string("setMode"));
 	if (En_Motor_Flag != 1)
 	{
 		En_Motor_Flag = 1;
 	}
+	motor_semaphore.give();
 }
 
 // 开启 电机位置 控制
 void BELL_THUNDER::Enable_Motor_Position(void)
 {
+	motor_semaphore.take(std::string("setMode"));
 	if (En_Motor_Flag != 3)
 	{
 		Motor_Thunder.Clear_Position_Control();
 		En_Motor_Flag = 3;
 	}
+	motor_semaphore.give();
 }
 
 // 关闭编码电机计算
 void BELL_THUNDER::Disable_En_Motor(void)
 {
+	motor_semaphore.take(std::string("setMode"));
 	if (En_Motor_Flag != 0)
 	{
 		// 清除PID控制的变量
-		// Motor_Thunder.Set_L_Target(0);
-		// Motor_Thunder.Set_R_Target(0);
+		// Motor_Thunder.Set_Target(1, 0);
+		// Motor_Thunder.Set_Target(2, 0);
 
 		En_Motor_Flag = 0;
 		Motor_Thunder.PID_Reset();
 		Motor_Thunder.All_PID_Init();
 		delay(1); //等待电机PID控制稳定
 	}
+	motor_semaphore.give();
 }
 
 // 巡线IR传感器初始化配置
@@ -1087,15 +1095,15 @@ void BELL_THUNDER::Get_IR_Data(uint8_t data[])
 
 void BELL_THUNDER::Wait_For_Motor_Slow()
 {
-	// Motor_Thunder.Set_L_Motor_Power(0);
-	// Motor_Thunder.Set_R_Motor_Power(0);
+	// Motor_Thunder.Set_Motor_Power(1, 0);
+	// Motor_Thunder.Set_Motor_Power(2, 0);
 	Motor_Thunder.Motor_Brake(MOTOR_INDEX_LEFT);
 	Motor_Thunder.Motor_Brake(MOTOR_INDEX_RIGHT);
 
 	do
 	{
 		delay(1);
-	} while (Motor_Thunder.Get_L_Speed() > 15 || Motor_Thunder.Get_R_Speed() > 15);
+	} while (Motor_Thunder.Get_Speed(1) > 15 || Motor_Thunder.Get_Speed(2) > 15);
 }
 #if 1
 /* 
@@ -1157,8 +1165,8 @@ void BELL_THUNDER::Line_Tracing(void)
 			// Speaker_Thunder.Play_Song(7); //test用---------
 			if (((current_time - 5000) > Line_last_time) & (current_time > 19000)) //超时未找到线停止
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_B_Speed);
 				line_state = 5;
 			}
 			else if (line_state == 0) // 忽然从全黑变为全零过程中出线
@@ -1166,8 +1174,8 @@ void BELL_THUNDER::Line_Tracing(void)
 				// 左右扭头查找黑线
 				while (1)
 				{
-					Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
-					Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+					Motor_Thunder.Set_Motor_Power(1, Line_B_Speed);
+					Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
 					Line_last_time = millis();
 					current_time = millis();
 					while (current_time - 2000 < Line_last_time)
@@ -1184,8 +1192,8 @@ void BELL_THUNDER::Line_Tracing(void)
 					{
 						break;
 					}
-					Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-					Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
+					Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+					Motor_Thunder.Set_Motor_Power(2, Line_B_Speed);
 					Line_last_time = millis();
 					current_time = millis();
 					while (current_time - 2000 < Line_last_time)
@@ -1216,9 +1224,9 @@ void BELL_THUNDER::Line_Tracing(void)
 				rotate_back_quantity = 0;
 				while (1)
 				{
-					Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
-					Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
-					current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+					Motor_Thunder.Set_Motor_Power(1, Line_B_Speed);
+					Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
+					current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 					last_L_R_diffrotate = current_L_R_diffrotate;
 					while (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE + rotate_back_quantity > last_L_R_diffrotate)
 					{
@@ -1227,7 +1235,7 @@ void BELL_THUNDER::Line_Tracing(void)
 						{
 							break;
 						}
-						current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+						current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 						delay(5);
 					}
 					if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1235,9 +1243,9 @@ void BELL_THUNDER::Line_Tracing(void)
 						break;
 					}
 
-					Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-					Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
-					current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+					Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+					Motor_Thunder.Set_Motor_Power(2, Line_B_Speed);
+					current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 					last_L_R_diffrotate = current_L_R_diffrotate;
 					while (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE * 2 < last_L_R_diffrotate)
 					{
@@ -1246,7 +1254,7 @@ void BELL_THUNDER::Line_Tracing(void)
 						{
 							break;
 						}
-						current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+						current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 						delay(5);
 					}
 					if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1270,9 +1278,9 @@ void BELL_THUNDER::Line_Tracing(void)
 				rotate_back_quantity = 0;
 				while (1)
 				{
-					Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-					Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
-					current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+					Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+					Motor_Thunder.Set_Motor_Power(2, Line_B_Speed);
+					current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 					last_L_R_diffrotate = current_L_R_diffrotate;
 					while (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE - rotate_back_quantity < last_L_R_diffrotate)
 					{
@@ -1281,7 +1289,7 @@ void BELL_THUNDER::Line_Tracing(void)
 						{
 							break;
 						}
-						current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+						current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 						delay(5);
 					}
 					if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1289,9 +1297,9 @@ void BELL_THUNDER::Line_Tracing(void)
 						break;
 					}
 
-					Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
-					Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
-					current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+					Motor_Thunder.Set_Motor_Power(1, Line_B_Speed);
+					Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
+					current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 					last_L_R_diffrotate = current_L_R_diffrotate;
 					while (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE * 2 > last_L_R_diffrotate)
 					{
@@ -1300,7 +1308,7 @@ void BELL_THUNDER::Line_Tracing(void)
 						{
 							break;
 						}
-						current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+						current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 						delay(5);
 					}
 					if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1320,8 +1328,8 @@ void BELL_THUNDER::Line_Tracing(void)
 			}
 			else if (line_state == 1) //偏右的过程中出线，快速漂移打转(弯道转弯)
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_B_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_M_Speed);
 				while (1)
 				{
 					Line_last_time = millis(); // 不改变line_state，刷新时间
@@ -1336,8 +1344,8 @@ void BELL_THUNDER::Line_Tracing(void)
 			}
 			else if (line_state == 2) //偏左的过程中出线，快速漂移打转(弯道转弯)
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_B_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_B_Speed);
 				while (1)
 				{
 					Line_last_time = millis(); // 不改变line_state，刷新时间
@@ -1352,17 +1360,17 @@ void BELL_THUNDER::Line_Tracing(void)
 			}
 			else
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_B_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_B_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
 			}
 		}
 		else if (IR_Data[0] == 0) //Serial.printf("SSSSSSSSSS 右转 SSSSSSSSSS\n");
 		{
 			if ((line_state == 1) | (line_state == 3)) //从左转过来的需要更新时间
 			{
-				// Motor_Thunder.Set_L_Motor_Power(0);
+				// Motor_Thunder.Set_Motor_Power(1, 0);
 				Motor_Thunder.Motor_Brake(MOTOR_INDEX_LEFT);
-				Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
 				Line_last_time = millis(); // 不改变运动状态
 				line_out_flag = 1;
 				continue; // 保持前运动状态继续运动
@@ -1371,13 +1379,13 @@ void BELL_THUNDER::Line_Tracing(void)
 
 			if (R_last_time + MAYBE_STRAIGHT_DIRECTION < current_time)
 			{ // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
-				Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
 			}
 			else
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
+				Motor_Thunder.Set_Motor_Power(1, Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_M_Speed - LITTLE_L_R_POWER_DIFF);
 			}
 
 			if (line_state == 2)
@@ -1392,16 +1400,16 @@ void BELL_THUNDER::Line_Tracing(void)
 			else
 			{
 				line_state = 4; // 偏左时间小于 50ms，急转偏右运动一小段时间
-				Motor_Thunder.Set_L_Motor_Power(Line_H_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_H_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_L_Speed);
 			}
 		}
 		else if (IR_Data[1] == 0) //Serial.printf("SSSSSSSSSS 左转 SSSSSSSSSS\n");
 		{
 			if ((line_state == 2) | (line_state == 4)) //从右转过来的需要更新时间
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-				// Motor_Thunder.Set_R_Motor_Power(0);
+				Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+				// Motor_Thunder.Set_Motor_Power(2, 0);
 				Motor_Thunder.Motor_Brake(MOTOR_INDEX_RIGHT);
 				Line_last_time = millis(); // 不改变运动状态
 				line_out_flag = 1;
@@ -1411,13 +1419,13 @@ void BELL_THUNDER::Line_Tracing(void)
 
 			if (L_last_time + MAYBE_STRAIGHT_DIRECTION < current_time)
 			{ // 如果上次偏右时间已经超过200ms，那这次偏左需要偏向运动
-				Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_M_Speed);
 			}
 			else
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_M_Speed - LITTLE_L_R_POWER_DIFF);
-				Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_M_Speed - LITTLE_L_R_POWER_DIFF);
+				Motor_Thunder.Set_Motor_Power(2, Line_M_Speed);
 			}
 
 			if (line_state == 1)
@@ -1431,8 +1439,8 @@ void BELL_THUNDER::Line_Tracing(void)
 			}
 			else
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_L_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_H_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_L_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_H_Speed);
 				line_state = 3; // 偏右时间小于 50ms，急转偏右运动一小段时间
 			}
 		}
@@ -1440,8 +1448,8 @@ void BELL_THUNDER::Line_Tracing(void)
 		{
 			if (line_out_flag == 0)
 			{
-				Motor_Thunder.Set_L_Motor_Power(Line_M_Speed);
-				Motor_Thunder.Set_R_Motor_Power(Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(1, Line_M_Speed);
+				Motor_Thunder.Set_Motor_Power(2, Line_M_Speed);
 				line_state = 0;
 			}
 			Line_last_time = millis();
@@ -1491,7 +1499,7 @@ void BELL_THUNDER::Motor_Slow_Go()
 	do
 	{
 		delay(1);
-	} while (Motor_Thunder.Get_L_Speed() > 15 || Motor_Thunder.Get_R_Speed() > 15);
+	} while (Motor_Thunder.Get_Speed(1) > 15 || Motor_Thunder.Get_Speed(2) > 15);
 }
 /* 
  * 车子左右晃动0.5s, IR传感器发现有黑线则返回
@@ -1575,7 +1583,7 @@ int BELL_THUNDER::Car_Rotate_90_Left_Right(int dir)
 	{
 		Motor_Thunder.Set_Car_Speed_Direction(15, 50);
 	}
-	current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+	current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 	last_L_R_diffrotate = current_L_R_diffrotate;
 	while (dir == 1 ? (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE > last_L_R_diffrotate) : (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE < last_L_R_diffrotate))
 	{
@@ -1584,7 +1592,7 @@ int BELL_THUNDER::Car_Rotate_90_Left_Right(int dir)
 		{
 			break;
 		}
-		current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+		current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 		delay(5);
 	}
 	if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1600,7 +1608,7 @@ int BELL_THUNDER::Car_Rotate_90_Left_Right(int dir)
 	{
 		Motor_Thunder.Set_Car_Speed_Direction(15, -50);
 	}
-	current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+	current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 	last_L_R_diffrotate = current_L_R_diffrotate;
 	while (dir == 1 ? (current_L_R_diffrotate - SPIN_L_R_DIFF_ROTATEVALUE < last_L_R_diffrotate) : (current_L_R_diffrotate + SPIN_L_R_DIFF_ROTATEVALUE > last_L_R_diffrotate))
 	{
@@ -1609,7 +1617,7 @@ int BELL_THUNDER::Car_Rotate_90_Left_Right(int dir)
 		{
 			break;
 		}
-		current_L_R_diffrotate = Motor_Thunder.Get_L_RotateValue() - Motor_Thunder.Get_R_RotateValue();
+		current_L_R_diffrotate = Motor_Thunder.Get_RotateValue(1) - Motor_Thunder.Get_RotateValue(2);
 		delay(5);
 	}
 	if ((IR_Data[0] != 0) || (IR_Data[1] != 0))
@@ -1977,7 +1985,7 @@ void Check_Line_When_Lost()
 		// 设置功率为 0 后，需要等待电机停止
 		left_power = 0;
 		right_power = 0;
-		while (Motor_Thunder.Get_L_Speed() != 0 || Motor_Thunder.Get_R_Speed() != 0)
+		while (Motor_Thunder.Get_Speed(1) != 0 || Motor_Thunder.Get_Speed(2) != 0)
 			;
 
 		if (currentIrData == 0x03)
@@ -1987,12 +1995,12 @@ void Check_Line_When_Lost()
 			lost_recover = 0; // init bit0 and bit1
 
 			search_line_status = 1;
-			search_line_rotate = Motor_Thunder.Get_R_RotateValue();
+			search_line_rotate = Motor_Thunder.Get_RotateValue(2);
 		}
 		break;
 
 	case 1:
-		current_line_rotate = Motor_Thunder.Get_R_RotateValue();
+		current_line_rotate = Motor_Thunder.Get_RotateValue(2);
 		if (current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE)
 		{
 			if (right_power > LINE_CHECK_MIN_POWER)
@@ -2013,12 +2021,12 @@ void Check_Line_When_Lost()
 		left_power = 0;
 		right_power = -LINE_CHECK_MAX_POWER;
 		search_line_status = 2;
-		search_line_rotate = Motor_Thunder.Get_R_RotateValue();
+		search_line_rotate = Motor_Thunder.Get_RotateValue(2);
 
 		break;
 
 	case 2:
-		current_line_rotate = Motor_Thunder.Get_R_RotateValue();
+		current_line_rotate = Motor_Thunder.Get_RotateValue(2);
 		if (current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE)
 		{
 			if (right_power < -LINE_CHECK_MIN_POWER)
@@ -2032,11 +2040,11 @@ void Check_Line_When_Lost()
 		right_power = 0;
 		lost_recover &= 0xFD; // init bit1
 		search_line_status = 3;
-		search_line_rotate = Motor_Thunder.Get_L_RotateValue();
+		search_line_rotate = Motor_Thunder.Get_RotateValue(1);
 		break;
 
 	case 3:
-		current_line_rotate = Motor_Thunder.Get_L_RotateValue();
+		current_line_rotate = Motor_Thunder.Get_RotateValue(1);
 		if (current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE)
 		{
 			if (left_power > LINE_CHECK_MIN_POWER)
@@ -2058,11 +2066,11 @@ void Check_Line_When_Lost()
 		left_power = -LINE_CHECK_MAX_POWER;
 		right_power = 0;
 		search_line_status = 4;
-		search_line_rotate = Motor_Thunder.Get_L_RotateValue();
+		search_line_rotate = Motor_Thunder.Get_RotateValue(1);
 		break;
 
 	case 4:
-		current_line_rotate = Motor_Thunder.Get_L_RotateValue();
+		current_line_rotate = Motor_Thunder.Get_RotateValue(1);
 		if (current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE)
 		{
 			if (left_power < -LINE_CHECK_MIN_POWER)
@@ -2089,7 +2097,7 @@ void Check_Line_When_Lost()
 		{
 			left_power = 0;
 			right_power = 0;
-			while (Motor_Thunder.Get_L_Speed() != 0 || Motor_Thunder.Get_R_Speed() != 0)
+			while (Motor_Thunder.Get_Speed(1) != 0 || Motor_Thunder.Get_Speed(2) != 0)
 				;
 			search_line_status = 0;
 			lost_recover = 0;
@@ -2238,8 +2246,8 @@ void Calculate_Motor_Power()
 		right_power_I[2] = 0;
 
 		Check_Line_When_Lost();
-		Motor_Thunder.Set_L_Motor_Power((int)left_power);
-		Motor_Thunder.Set_R_Motor_Power((int)right_power);
+		Motor_Thunder.Set_Motor_Power(1, (int)left_power);
+		Motor_Thunder.Set_Motor_Power(2, (int)right_power);
 		return;
 		break;
 
@@ -2258,8 +2266,8 @@ void Calculate_Motor_Power()
 	//   left_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? right_power_I[1] : 0);
 	//   right_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? tempValue : 0);
 
-	//   diffSpeed_left = Motor_Thunder.Get_L_Speed(); // 速度越大，减速效果越大
-	//   diffSpeed_right = Motor_Thunder.Get_R_Speed();
+	//   diffSpeed_left = Motor_Thunder.Get_Speed(1); // 速度越大，减速效果越大
+	//   diffSpeed_right = Motor_Thunder.Get_Speed(2);
 
 	//   // 减速的依据有 目前速度值 和 方向偏移量
 	//   left_power_I[0] -= (left_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_left * abs(deviation[0]);
@@ -2295,8 +2303,8 @@ void Calculate_Motor_Power()
 
 	/***********************************速度控制PID**************************************/
 	// 计算 速度控制目标 与 速度编码器 的差值
-	diffSpeed_left = left_power_pre[2] - Motor_Thunder.Get_L_Speed();
-	diffSpeed_right = right_power_pre[2] - Motor_Thunder.Get_R_Speed();
+	diffSpeed_left = left_power_pre[2] - Motor_Thunder.Get_Speed(1);
+	diffSpeed_right = right_power_pre[2] - Motor_Thunder.Get_Speed(2);
 
 	// 积分
 	left_power_I[0] += (abs(left_power_I[0] + LINE_TRACE_ACCE_I * diffSpeed_left) > 255) ? 0 : LINE_TRACE_ACCE_I * diffSpeed_left;
@@ -2311,18 +2319,18 @@ void Calculate_Motor_Power()
 
 	// if(left_power > left_max_power){
 	//   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-	//   if(Motor_Thunder.Get_L_Speed() < LINE_TRACE_MAX_SPEED){
+	//   if(Motor_Thunder.Get_Speed(1) < LINE_TRACE_MAX_SPEED){
 	//     left_max_power = (left_max_power<255-LINE_TRACE_ACCELERATION)?(left_max_power+LINE_TRACE_ACCELERATION):255;
-	//   }else if(Motor_Thunder.Get_L_Speed() > LINE_TRACE_MAX_SPEED + 3){
+	//   }else if(Motor_Thunder.Get_Speed(1) > LINE_TRACE_MAX_SPEED + 3){
 	//     left_max_power -= LINE_TRACE_ACCELERATION;
 	//   }
 	//   left_power = left_max_power;
 	// }
 	// if(right_power > right_max_power){
 	//   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-	//   if(Motor_Thunder.Get_R_Speed() < LINE_TRACE_MAX_SPEED){
+	//   if(Motor_Thunder.Get_Speed(2) < LINE_TRACE_MAX_SPEED){
 	//     right_max_power = (right_max_power<255-LINE_TRACE_ACCELERATION)?(right_max_power+LINE_TRACE_ACCELERATION):255;
-	//   }else if(Motor_Thunder.Get_R_Speed() > LINE_TRACE_MAX_SPEED + 3){
+	//   }else if(Motor_Thunder.Get_Speed(2) > LINE_TRACE_MAX_SPEED + 3){
 	//     right_max_power -= LINE_TRACE_ACCELERATION;
 	//   }
 	//   right_power = right_max_power;
@@ -2338,8 +2346,8 @@ void Calculate_Motor_Power()
 	else if (right_power < -255)
 		right_power = -255;
 
-	Motor_Thunder.Set_L_Motor_Power((int)left_power);
-	Motor_Thunder.Set_R_Motor_Power((int)right_power);
+	Motor_Thunder.Set_Motor_Power(1, (int)left_power);
+	Motor_Thunder.Set_Motor_Power(2, (int)right_power);
 
 #ifdef DEBUG_LINE_TRACING
 	// Serial.printf("*** Power L: %d   R: %d ***\n", (int)left_power, (int)right_power);
@@ -3313,7 +3321,7 @@ void BELL_THUNDER::Check_Protocol(void)
 		break;
 
 	case UART_GENERAL_SERVO_CTRL:			//控制舵机
-		Servo_Turn(Rx_Data[1], Rx_Data[2]); //参数1：1-->机械臂，2-->机械爪；参数2：角度[%](0~100)
+		Motor_Servo.Servo_Turn(Rx_Data[1], Rx_Data[2]); //参数1：1-->机械臂，2-->机械爪；参数2：角度[%](0~100)
 		break;
 
 	case UART_GENERAL_PLAY_VOICE:			   //控制声音播放
@@ -3331,22 +3339,22 @@ void BELL_THUNDER::Check_Protocol(void)
 		{
 			if (Rx_Data[3] == 1)
 			{
-				Motor_Thunder.Set_L_Target(rev_motor_speed);
+				Motor_Thunder.Set_Target(1, rev_motor_speed);
 			}
 			else
 			{
-				Motor_Thunder.Set_L_Target((-1) * rev_motor_speed);
+				Motor_Thunder.Set_Target(1, (-1) * rev_motor_speed);
 			}
 		}
 		else
 		{
 			if (Rx_Data[3] == 1)
 			{
-				Motor_Thunder.Set_R_Target(rev_motor_speed);
+				Motor_Thunder.Set_Target(2, rev_motor_speed);
 			}
 			else
 			{
-				Motor_Thunder.Set_R_Target((-1) * rev_motor_speed);
+				Motor_Thunder.Set_Target(2, (-1) * rev_motor_speed);
 			}
 		}
 #endif
@@ -3362,21 +3370,21 @@ void BELL_THUNDER::Check_Protocol(void)
 		rev_motor_speed = (float)Rx_Data[1] * 0.39;
 		if (Rx_Data[2] == 1)
 		{
-			Motor_Thunder.Set_L_Target(rev_motor_speed);
+			Motor_Thunder.Set_Target(1, rev_motor_speed);
 		}
 		else
 		{
-			Motor_Thunder.Set_L_Target((-1) * rev_motor_speed);
+			Motor_Thunder.Set_Target(1, (-1) * rev_motor_speed);
 		}
 
 		rev_motor_speed = (float)Rx_Data[3] * 0.39;
 		if (Rx_Data[4] == 1)
 		{
-			Motor_Thunder.Set_R_Target(rev_motor_speed);
+			Motor_Thunder.Set_Target(2, rev_motor_speed);
 		}
 		else
 		{
-			Motor_Thunder.Set_R_Target((-1) * rev_motor_speed);
+			Motor_Thunder.Set_Target(2, (-1) * rev_motor_speed);
 		}
 #endif
 		break;
@@ -3386,22 +3394,22 @@ void BELL_THUNDER::Check_Protocol(void)
 		{
 			if (Rx_Data[3] == 1)
 			{
-				Motor_Thunder.Set_L_Target(Rx_Data[2]);
+				Motor_Thunder.Set_Target(1, Rx_Data[2]);
 			}
 			else
 			{
-				Motor_Thunder.Set_L_Target((-1) * Rx_Data[2]);
+				Motor_Thunder.Set_Target(1, (-1) * Rx_Data[2]);
 			}
 		}
 		else
 		{
 			if (Rx_Data[3] == 1)
 			{
-				Motor_Thunder.Set_R_Target(Rx_Data[2]);
+				Motor_Thunder.Set_Target(2, Rx_Data[2]);
 			}
 			else
 			{
-				Motor_Thunder.Set_R_Target((-1) * Rx_Data[2]);
+				Motor_Thunder.Set_Target(2, (-1) * Rx_Data[2]);
 			}
 		}
 		break;
@@ -3409,26 +3417,26 @@ void BELL_THUNDER::Check_Protocol(void)
 	case UART_GENERAL_MOTOR_DOUBLE_PID: //控制两个闭环电机
 		if (Rx_Data[2] == 1)
 		{
-			Motor_Thunder.Set_L_Target(Rx_Data[1]);
+			Motor_Thunder.Set_Target(1, Rx_Data[1]);
 		}
 		else
 		{
-			Motor_Thunder.Set_L_Target((-1) * Rx_Data[1]);
+			Motor_Thunder.Set_Target(1, (-1) * Rx_Data[1]);
 		}
 
 		if (Rx_Data[4] == 1)
 		{
-			Motor_Thunder.Set_R_Target(Rx_Data[3]);
+			Motor_Thunder.Set_Target(2, Rx_Data[3]);
 		}
 		else
 		{
-			Motor_Thunder.Set_R_Target((-1) * Rx_Data[3]);
+			Motor_Thunder.Set_Target(2, (-1) * Rx_Data[3]);
 		}
 		break;
 
 	case UART_GENERAL_GET_MOTOR_SPEED: //获取当前电机速度(编码器计数值)  需要在Enable_En_Motor()状态下
-		L_Speed = Motor_Thunder.Get_L_Speed();
-		R_Speed = Motor_Thunder.Get_R_Speed();
+		L_Speed = Motor_Thunder.Get_Speed(1);
+		R_Speed = Motor_Thunder.Get_Speed(2);
 
 		Tx_Data[0] = UART_GENERAL_GET_MOTOR_SPEED;
 		if (L_Speed >= 0)
@@ -3452,7 +3460,7 @@ void BELL_THUNDER::Check_Protocol(void)
 			Tx_Data[3] = (-1) * R_Speed;
 			Tx_Data[4] = 2;
 		}
-		// Serial.printf("L_Speed:%d; R_Speed:%d; \n",Motor_Thunder.Get_L_Speed(),Motor_Thunder.Get_R_Speed());
+		// Serial.printf("L_Speed:%d; R_Speed:%d; \n",Motor_Thunder.Get_Speed(1),Motor_Thunder.Get_Speed(2));
 		break;
 
 	case UART_GENERAL_SINGLE_RGBLED:											//控制单个彩色灯颜色
@@ -3547,8 +3555,8 @@ void BELL_THUNDER::Check_Protocol(void)
 			power_left = map(power_left, -max_power, max_power, -255, 255);
 			power_right = map(power_right, -max_power, max_power, -255, 255);
 
-			Motor_Thunder.Set_L_Motor_Output(power_left);
-			Motor_Thunder.Set_R_Motor_Output(power_right);
+			Motor_Thunder.Set_Motor_Output(1, power_left);
+			Motor_Thunder.Set_Motor_Output(2, power_right);
 
 			static bool last_status = 0;
 			if (Rx_Data[8] != last_status)

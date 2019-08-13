@@ -6,8 +6,8 @@ void setup()
   Bell_Thunder.Setup_All();
 
   // 舵机位置初始化
-  Bell_Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Bell_Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Motor_Servo.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Motor_Servo.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 }
 void loop()
 {

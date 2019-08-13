@@ -7,8 +7,8 @@ void setup()
   Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
 
   // 舵机位置初始化
-  Bell_Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Bell_Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Motor_Servo.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Motor_Servo.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 }
 void loop()
 {
@@ -83,23 +83,23 @@ void loop_1_1()
   }
 
   if( BLE_Remoter.Check_Key(KEY_UP) ){
-    Motor_Thunder.Set_L_Target(20);
-    Motor_Thunder.Set_R_Target(20);
+    Motor_Thunder.Set_Target(1, 20);
+    Motor_Thunder.Set_Target(2, 20);
   }else if( BLE_Remoter.Check_Key(KEY_DOWN) ){
-    Motor_Thunder.Set_L_Target(-20);
-    Motor_Thunder.Set_R_Target(-20);
+    Motor_Thunder.Set_Target(1, -20);
+    Motor_Thunder.Set_Target(2, -20);
   }else if( BLE_Remoter.Check_Key(KEY_LEFT) ){
-    Motor_Thunder.Set_L_Target(-20);
-    Motor_Thunder.Set_R_Target(20);
+    Motor_Thunder.Set_Target(1, -20);
+    Motor_Thunder.Set_Target(2, 20);
   }else if( BLE_Remoter.Check_Key(KEY_RIGHT) ){
-    Motor_Thunder.Set_L_Target(20);
-    Motor_Thunder.Set_R_Target(-20);
+    Motor_Thunder.Set_Target(1, 20);
+    Motor_Thunder.Set_Target(2, -20);
   }else{
-    Motor_Thunder.Set_L_Target(BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)-BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
-    Motor_Thunder.Set_R_Target(BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)+BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
+    Motor_Thunder.Set_Target(1, BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)-BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
+    Motor_Thunder.Set_Target(2, BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_Y)+BLE_Remoter.Get_Control_Value(KEY_ROCKER_L_X));
   }
 
-  Bell_Thunder.Servo_Turn(2, 90+2*BLE_Remoter.Get_Control_Value(KEY_R2_ANALOG)/10);
+  Motor_Servo.Servo_Turn(2, 90+2*BLE_Remoter.Get_Control_Value(KEY_R2_ANALOG)/10);
 
   /* 使用功能按键 */
   if(Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_ONE)){

@@ -68,6 +68,13 @@
 #define POSITION_Ki   (0.0)
 #define POSITION_Kd   (25.0)
 
+#define CHECK_MOTOR_INDEX(motor) do{if(motor > 2) { \
+                                      motor = 2; \
+                                    } else if (motor < 1) { \
+                                      motor = 1; \
+                                    } \
+                                  } while(0)
+
 // PID时间中断
 extern volatile SemaphoreHandle_t Timer_PID_Flag;
 
@@ -175,14 +182,10 @@ class MOTOR_THUNDER
     boolean inPin2 = HIGH;
     uint8_t valueMax = 255;
 
-    struct PID_Struct_t Motor_L_Speed_PID;
-    struct PID_Struct_t Motor_R_Speed_PID;
+    struct PID_Struct_t Motor_Speed_PID[2];
+    struct MotorPosition_Struct Position_Ctrl[2];
 
-    struct MotorPosition_Struct Position_Ctrl_L;
-    struct MotorPosition_Struct Position_Ctrl_R;
-
-    int32_t rotate_Record_Origin_Left = 0;
-    int32_t rotate_Record_Origin_Right = 0;
+    int32_t rotate_Record_Origin[2] = {0, 0};
 
     // drive car 
     struct DriveCarPid_Struct drive_car_pid;
@@ -209,12 +212,9 @@ class MOTOR_THUNDER
     // 开环电机
     void Setup_Motor(void);                                 // 配置电机
     void Motor_Move(int motor, int speed, int direction);   // 开环电机控制函数
-    void Motor_Brake(int motor);
     void Motor_Free(int motor);
-    void Set_L_Motor_Output( int M_output );
-    void Set_R_Motor_Output( int M_output );
-    void Set_L_Motor_Power( int Lpower );
-    void Set_R_Motor_Power( int Rpower );
+    void Set_Motor_Output(int motor,  int M_output );
+    void Set_Motor_Power(int motor,  int Lpower );
 
     // 闭环电机
     void PID_Reset(struct PID_Struct_t *pid);                               // 重置PID计算过程值
@@ -232,25 +232,20 @@ class MOTOR_THUNDER
     void Drive_Car_Control();
     void Set_Car_Speed_Direction(float speed, float direction);
 
-    void Set_L_Target(float target);  // 设定左轮目标速度(编码器计数值)
-    void Set_R_Target(float target);  // 设定右轮目标速度(编码器计数值)
+    void Set_Target(int motor, float target);  // 设定左轮目标速度(编码器计数值)
     void Control_Motor_Running(MotorRunning_Struct &running_data);
-    void Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed);
     void Control_Motor_Turnning(MotorTurnning_Struct &turnning_data);
-    void Control_Motor_Turnning(byte _mode, float _data, float _percent, float _speed);
 
     void Update_Encoder_Value();
+    int16_t Get_Speed(int motor);  // 获取速度(编码器计数值)
+    int16_t Get_Target(int motor);  // 获取目标(编码器计数值)
 
-    int16_t Get_L_Speed(void);  // 获取左轮速度(编码器计数值)
-    int16_t Get_R_Speed(void);  // 获取右轮速度(编码器计数值)
-
-    int16_t Get_L_Target(void);  // 获取左轮目标(编码器计数值)
-    int16_t Get_R_Target(void);  // 获取右轮目标(编码器计数值)
-
-    int32_t Get_L_RotateValue(void); // 获取左轮旋转量（这个值是累积的，调用清零接口时才会清零）
-    int32_t Get_R_RotateValue(void); // 获取右轮旋转量（这个值是累积的，调用清零接口时才会清零）
-    void Clear_L_RotateValue(void); // 清零左轮旋转量
-    void Clear_R_RotateValue(void); // 清零右轮旋转量
+    /*--------------Thunder IDE APIs: -------------*/
+    void Motor_Brake(int motor);
+    void Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed);
+    void Control_Motor_Turnning(byte _mode, float _data, float _percent, float _speed);
+    int32_t Get_RotateValue(int motor); // 获取旋转量（这个值是累积的，调用清零接口时才会清零）
+    void Clear_RotateValue(int motor); // 清零旋转量
 };
 
 #endif

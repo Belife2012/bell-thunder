@@ -7,8 +7,8 @@ void setup()
   Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT); // 选择蓝牙角色模式
 
   // 舵机位置初始化
-  Bell_Thunder.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Bell_Thunder.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Motor_Servo.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+  Motor_Servo.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 }
 void loop()
 {
