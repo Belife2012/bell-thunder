@@ -1,7 +1,7 @@
 #include "iic_thunder.h"
 
 #define SELECT_IIC_CHANNEL(channel) do{ Wire.beginTransmission(0x70); \
-                                      Wire.write( 0x38 | ( (channel&0x07)==0x07 ? 0x07 : (0x01 << (channel-1)) ) ); \
+                                      Wire.write( 0x20 | ( (channel&0x1f)==0x1f ? 0x1f : (0x01 << (channel-1)) ) ); \
                                       Wire.endTransmission(true); }while(0)
 
 

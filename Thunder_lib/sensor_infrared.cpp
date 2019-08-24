@@ -48,7 +48,7 @@ void SENSOR_INFRARED::SetSysChannel(unsigned char sys_channel, uint8_t sensorCha
 /**
  * @brief: 设置红外传感器的工作模式
  * 
- * @param sys_mode: 工作模式 0/1/2
+ * @param sys_mode: 工作模式 0(遥控模式)/1(信标模式)/2(反射模式)
  * @param sensorChannel: 传感器接口编号
  */
 void SENSOR_INFRARED::SetSysMode(unsigned char sys_mode, uint8_t sensorChannel)

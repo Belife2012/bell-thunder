@@ -3,6 +3,9 @@
 #ifndef _LIGHTDETECT_I2C_
 #define _LIGHTDETECT_I2C_
 
+#define LIGHT_IIC_REG_SETLIGHT     0x01
+#define LIGHT_IIC_REG_READLIGHT    0x02
+
 class SENSOR_LIGHT : public SENSOR_IIC
 {
 private:

@@ -9,7 +9,7 @@ SENSOR_LIGHT::SENSOR_LIGHT(int slave_address):
 byte SENSOR_LIGHT::Set_Led_Brightness(byte bright_level,unsigned char channel)
 {
   byte ret;
-  ret = write(0x01, &bright_level, 1, channel);
+  ret = write(LIGHT_IIC_REG_SETLIGHT, &bright_level, 1, channel);
 
   return ret;
 }
@@ -31,7 +31,7 @@ byte SENSOR_LIGHT::Get_Light_Value_original(float *readValue, unsigned char chan
   unsigned short retValue;
   byte getValue[2], bakCode;
 
-  bakCode = read(0x02, getValue, 2, channel);
+  bakCode = read(LIGHT_IIC_REG_READLIGHT, getValue, 2, channel);
   if(bakCode != 0){
     *readValue = 0;
     return bakCode;
@@ -61,7 +61,7 @@ float SENSOR_LIGHT::Get_Light_Value(unsigned char channel )
   unsigned short retValue;
   byte getValue[2], bakCode;
 
-  bakCode = read(0x02, getValue, 2, channel);
+  bakCode = read(LIGHT_IIC_REG_READLIGHT, getValue, 2, channel);
   if(bakCode != 0){
     return 0;
   }
