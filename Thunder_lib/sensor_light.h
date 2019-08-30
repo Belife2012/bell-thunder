@@ -3,6 +3,9 @@
 #ifndef _LIGHTDETECT_I2C_
 #define _LIGHTDETECT_I2C_
 
+// 光电模块
+#define LIGHT_IIC_ADDR 0x52 //光电模块I2C器件地址
+
 #define LIGHT_IIC_REG_SETLIGHT     0x01
 #define LIGHT_IIC_REG_READLIGHT    0x02
 

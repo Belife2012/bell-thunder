@@ -152,6 +152,9 @@
 
 #endif
 
+// 颜色识别模块
+#define COLOR_IIC_ADDR 0x38 //颜色识别模块I2C器件地址
+
 typedef enum{
   BLACK_CARD = 0,
   GREEN_CARD,

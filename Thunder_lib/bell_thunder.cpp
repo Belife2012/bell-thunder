@@ -28,13 +28,13 @@ MOTOR_SERVO Motor_Servo;
 
 // 姿态传感器（IIC address: 0x68 0x0C）
 // 超声波（IIC address：0x01）
-SENSOR_US Sensor_Ultrasonic(ADD_I2C_US);
+SENSOR_US Sensor_Ultrasonic(US_IIC_ADDR);
 // 颜色识别（IIC address：0x38）
-SENSOR_COLOR Sensor_Color(ADD_I2C_COLOUR); //I2C从机地址
+SENSOR_COLOR Sensor_Color(COLOR_IIC_ADDR); //I2C从机地址
 // 触碰传感器（IIC address：0x10）
-SENSOR_TOUCH Sensor_Touch(TOUCH_ADDR_DEVICE);
+SENSOR_TOUCH Sensor_Touch(TOUCH_IIC_ADDR);
 // 光电传感器（IIC address：0x52）
-SENSOR_LIGHT Sensor_Light(LIGHT_ADDR_DEVICE);
+SENSOR_LIGHT Sensor_Light(LIGHT_IIC_ADDR);
 // 火焰传感器（IIC address：0x02）
 SENSOR_FLAME Sensor_Flame(FLAME_IIC_ADDR);
 // 空气温湿度 （IIC address：0x05）
@@ -49,7 +49,7 @@ SENSOR_SOIL Sensor_Soil(SOIL_IIC_ADDR);
 SENSOR_SOUND Sensor_Sound(SOUND_IIC_ADDR);
 // 人体移动传感器（IIC address：0x0A）
 SENSOR_HUMAN Sensor_Human(HUMAN_IIC_ADDR);
-// 红外遥控器（IIC address：0x04）
+// 红外接收模块（IIC address：0x04）
 SENSOR_INFRARED Sensor_Infrared(INFRARED_IIC_ADDR);
 
 BLE_THUNDERGO BLE_ThunderGo;
@@ -96,10 +96,6 @@ void BELL_THUNDER::Setup_All(void)
 	delay(10);
 	Close_Multi_Message();
 
-	Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
-	SENSOR_IIC::CreateSemaphoreIIC();
-	SENSOR_IIC::Select_Sensor_AllChannel();
-
 	Disk_Manager.Disk_Manager_Initial();
 
 	Motor_Servo.Setup_Servo();			 // 舵机初始化配置
@@ -139,6 +135,7 @@ void BELL_THUNDER::Setup_All(void)
 	System_Task.Create_Deamon_Threads();			   // 创建并开始 守护线程
 
 	Serial.printf("\n*** Initial Completes, spend time:%d ***\n\n", millis());
+	SENSOR_IIC::Select_Sensor_AllChannel();
 
 #ifndef DISABLE_LAUNCH_DISPLAY
 	// 开机动画/声效
@@ -1085,6 +1082,7 @@ void BELL_THUNDER::Setup_IR()
 // 获取巡线IR数据
 void BELL_THUNDER::Get_IR_Data(uint8_t data[])
 {
+	SENSOR_IIC::Set_Port4_IIC(false);
 	data[0] = digitalRead(IR_1);
 	data[1] = digitalRead(IR_2);
 
@@ -3271,7 +3269,7 @@ void BELL_THUNDER::Check_Protocol(void)
 		Sensor_Ultrasonic.Get_Data(US_Data); //更新US数据
 		Tx_Data[0] = UART_GENERAL_US_SENSOR;
 		Tx_Data[1] = US_Data[0];
-		Tx_Data[2] = US_Data[1] >> 8;
+		Tx_Data[2] = US_Data[1];
 		Tx_Data[3] = 0x00;
 		Tx_Data[4] = 0x00;
 		// Serial.printf("SSSSSSSSSS ___ US_Data[0] : %x ___ US_Data[1] : %x ___ SSSSSSSSSS\n",US_Data[0],US_Data[1]);

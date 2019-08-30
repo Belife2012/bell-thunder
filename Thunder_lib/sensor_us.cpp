@@ -17,7 +17,7 @@ SENSOR_US::SENSOR_US(int slave_address) : SENSOR_IIC(slave_address)
  * 如果返回 0 ，   代表获取了传感器的原始数据
  * 如果返回 非0 ， 则代表无法获取数据，数据无效
  */
-byte SENSOR_US::Get_Data(unsigned short *data, unsigned char channel)
+byte SENSOR_US::Get_Data(uint8_t *data, unsigned char channel)
 {
   byte rc;
   unsigned char val[2];
@@ -30,7 +30,7 @@ byte SENSOR_US::Get_Data(unsigned short *data, unsigned char channel)
   }
 
   data[0] = (unsigned short)val[0];
-  data[1] = (unsigned short)val[1] << 8;
+  data[1] = (unsigned short)val[1];
 
   return (0);
 }
@@ -39,12 +39,12 @@ byte SENSOR_US::Get_Data(unsigned short *data, unsigned char channel)
 byte SENSOR_US::get_rawval(unsigned char *data, unsigned char channel)
 {
   byte rc;
+  byte counter=0;
 
-  rc = read(0x01, data, 2, channel);
-
-  // if (rc != 0) {
-  //   Serial.println(F("### 无法获取超声波数据 ###"));
-  // }
+  do{
+    counter++;
+    rc = read(0x01, data, 2, channel);
+  } while(rc != 0 && counter < 5);
 
   return (rc);
 }

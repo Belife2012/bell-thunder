@@ -1,199 +1,176 @@
 #include "iic_thunder.h"
 
-#define SELECT_IIC_CHANNEL(channel) do{ Wire.beginTransmission(0x70); \
-                                      Wire.write( 0x20 | ( (channel&0x1f)==0x1f ? 0x1f : (0x01 << (channel-1)) ) ); \
-                                      Wire.endTransmission(true); }while(0)
+#define IIC_PORTNONE   0x20 // 屏幕一直选通
+#define IIC_PORT1   0x21
+#define IIC_PORT2   0x22
+#define IIC_PORT3   0x24
+#define IIC_PORT4   0x60
+#define IIC_PORTB   0x28
+#define IIC_PORTA   0x30
+#define IIC_PORTALL 0x7f // 全部选通是不包括 port4
 
+#define IIC_SELECTOR_ADDR   0x70 // TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
 
 uint8_t SENSOR_IIC::i2c_channel = 0;
+bool SENSOR_IIC::i2c_enable = false;
 SemaphoreHandle_t SENSOR_IIC::xSemaphore_IIC;
 
 SENSOR_IIC::SENSOR_IIC(int slave_address)
 {
+  if(SENSOR_IIC::i2c_enable == false) {
+    Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
+    SENSOR_IIC::CreateSemaphoreIIC();
+    SENSOR_IIC::Select_Sensor_AllChannel();
+    i2c_enable = true;
+  }
   _device_address = (byte)slave_address;
 }
 
-// 类内部使用，I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功
+/**
+ * @brief: 如果channel=0xff,则选通 1/2/3/A/B，4没有选通；
+ * channel=0,仅仅选通屏幕，屏幕接口是一直选通的；
+ * 选通 1/2/3/4/A/B 时，只能选通一个接口；
+ * 
+ * @param channel:
+ */
+inline void SENSOR_IIC::SELECT_IIC_CHANNEL(uint8_t channel) 
+{
+  Wire.beginTransmission(IIC_SELECTOR_ADDR);
+  switch (channel)
+  {
+    case 0: Wire.write(IIC_PORTNONE);
+            break;
+    case 1: Wire.write(IIC_PORT1);
+            break;
+    case 2: Wire.write(IIC_PORT2);
+            break;
+    case 3: Wire.write(IIC_PORT3);
+            break;
+    case 4: Wire.write(IIC_PORT4);
+            break;
+    case 5: Wire.write(IIC_PORTA);
+            break;
+    case 6: Wire.write(IIC_PORTB);
+            break;
+    default:Wire.write(IIC_PORTALL & channel);
+            break;
+  }
+  Wire.endTransmission(true);
+
+  i2c_channel = channel;
+}
+
+/**
+ * @brief: I2C通讯，发送；返回 0 表示成功完成，非零表示没有成功
+ * 
+ * @param memory_address:
+ * @param data:
+ * @param size:
+ * @param channel:channel=0时，通道选择不发生改变，通道的开启依据Select_Sensor_Channel的设置
+ * @return byte :
+ */
 byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, unsigned char size, unsigned char channel)
 {
   byte rc;
+  TwoWire *p_iic;
 
   Take_Semaphore_IIC();
   if(channel > 0 && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
-    i2c_channel = channel;
   }
-  Wire.beginTransmission(_device_address);
-  Wire.write(memory_address);
+  p_iic = &Wire;
+
+  p_iic->beginTransmission(_device_address);
+  p_iic->write(memory_address);
   if(data != NULL && size != 0){
-    Wire.write(data, size);
+    p_iic->write(data, size);
   }
-  rc = Wire.endTransmission();
+  rc = p_iic->endTransmission();
   #ifdef COMPATIBILITY_OLD_ESP_LIB
   if (rc == I2C_ERROR_BUSY)
   {
-    Wire.reset();
+    p_iic->reset();
   }
   #endif
+
   Give_Semaphore_IIC();
+
   return (rc);
 }
 
-// 类内部使用，I2C通讯，发送并读取；返回值 非0 表示失败，其中0xFF表示没有读取到数据
 byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigned char size, unsigned char channel)
 {
   byte rc;
   unsigned char cnt = 0;
+  TwoWire *p_iic;
 
   Take_Semaphore_IIC();
   if(channel > 0 && i2c_channel != channel){
     SELECT_IIC_CHANNEL(channel);
-    i2c_channel = channel;
   }
-  Wire.beginTransmission(_device_address); // 开启发送
-  Wire.write(memory_address);
-  rc = Wire.endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
+  p_iic = &Wire;
+
+  p_iic->beginTransmission(_device_address); // 开启发送
+  p_iic->write(memory_address);
+  rc = p_iic->endTransmission(false); // 结束发送  无参数发停止信息，参数0发开始信息 //返回0：成功，1：溢出，2：NACK，3，发送中收到NACK
   if (!(rc == 0 || rc == 7))
   {
     #ifdef COMPATIBILITY_OLD_ESP_LIB
     if (rc == I2C_ERROR_BUSY){
-      Wire.reset();
+      p_iic->reset();
     }
     #endif
     Give_Semaphore_IIC();
     return rc;
   }
 
-  cnt = Wire.requestFrom(_device_address, size, (byte)true);
+  cnt = p_iic->requestFrom(_device_address, size, (byte)true);
   if( 0 != cnt ){
     cnt = 0;
-    while (Wire.available() && cnt < size)
+    while (p_iic->available() && cnt < size)
     {
-      data[cnt] = Wire.read();
+      data[cnt] = p_iic->read();
       cnt++;
     }
   }
+  
   Give_Semaphore_IIC();
 
   return (cnt != 0) ? 0 : 0xff;
 }
 
-/* 
- * I2C端口选通，变量channelData 相应位(每一bit代表一个通道) 为1 是 选通，可以多通道选通
- * 
- * @parameter: 
- * @return: 返回的是IIC 操作状态码，0 为成功， 非0 为其他状态
- */
-uint8_t SENSOR_IIC::Set_I2C_Chanel(uint8_t channelData)
-{
-  uint8_t ret;
-  uint8_t regValue;
-
-  // 保证初始值与channelData 不一致
-  regValue = (channelData == 0) ? 0xff : 0;
-  // 重复连接 IIC 扩展芯片
-  for (uint8_t i = 0; i < 2; i++)
-  {
-	// TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
-
-	Take_Semaphore_IIC();
-	Wire.beginTransmission(0x70);
-	Wire.write(channelData);
-	ret = Wire.endTransmission(true);
-#ifdef COMPATIBILITY_OLD_ESP_LIB
-	if (ret == I2C_ERROR_BUSY)
-	{
-	  Wire.reset();
-	}
-#endif
-	Give_Semaphore_IIC();
-	if (ret != 0)
-	{
-	  Serial.printf("### TCA9548 Write I2C Channel Error: %d \n", ret);
-	  // delay(100);
-	}
-#if 0 // 每次的传感器操作都需要调用，为了速度，不能进行读写比较
-	else
-	{
-	  // read TCA9548
-	  Take_Semaphore_IIC();
-	  if (0 != Wire.requestFrom((byte)0x70, (byte)1, (byte) true))
-	  {
-		while (Wire.available())
-		{
-		  regValue = Wire.read();
-		}
-	  }
-	  Give_Semaphore_IIC();
-
-	  if (regValue == channelData)
-	  {
-		break;
-	  }
-	  else
-	  {
-		Serial.println("### TCA9548 Read not equal Write");
-		// delay(200);
-	  }
-	}
-#endif
-  }
-
-  return ret;
-}
-
 /*
- * 选择传感器通道1/2/3，选择后只有当前通道可使用，可用多个相同模块
+ * 选择传感器通道1/2/3/4/5(A)/6(B)，选择后只有当前通道可使用，可用多个相同模块
+ * sensorChannel=0xff时，选通1/2/3/A/B
  * 
  * @parameter：需要使用的传感器接口号
  * @return: 设置成功返回0，发生错误返回非0 的错误码
- *          错误码1：没有相应的传感器端口号
- *          错误码2：硬件不支持选择传感器端口号
  */
 uint8_t SENSOR_IIC::Select_Sensor_Channel(uint8_t sensorChannel)
 {
-  uint8_t ret;
+  uint8_t ret = 0;
 
-  switch (sensorChannel)
+  if(i2c_channel != sensorChannel)
   {
-  case 0:
-    ret = Set_I2C_Chanel(0x3f);
-    break;
-  case 1:
-    ret = Set_I2C_Chanel(0x39);
-    break;
-  case 2:
-    ret = Set_I2C_Chanel(0x3a);
-    break;
-  case 3:
-    ret = Set_I2C_Chanel(0x3c);
-    break;
-  default:
-    Serial.printf("### No Sensor Channel! ###");
-    return 1;
-    break;
-  }
-
-  i2c_channel = sensorChannel;
-  if (ret != 0)
-  {
-	  return 2;
+    Take_Semaphore_IIC();
+    SELECT_IIC_CHANNEL(sensorChannel);
+    Give_Semaphore_IIC();
   }
 
   return 0;
 }
 
 /* 
- * 选通所有传感器通道，初始化时一定要调用后才能使用屏幕等等IIC接口的模块。
- *   调用后，不能使用多个相同模块。
+ * 选通所有传感器通道，
+ * 初始化时一定要调用后才能使用屏幕等等IIC接口的模块。
+ * 调用后，不能使用多个相同模块。
+ * 默认PORT4是作为巡线传感器， 而不是作为IIC接口的
  * 
  * @parameter:
  * @return: 0 表示操作成功， 1 为初始化 IIC 失败
  */
 uint8_t SENSOR_IIC::Select_Sensor_AllChannel()
 {
-  uint8_t ret;
-
   // reset
   pinMode(15, OUTPUT);
   digitalWrite(15, LOW);
@@ -201,13 +178,8 @@ uint8_t SENSOR_IIC::Select_Sensor_AllChannel()
   digitalWrite(15, HIGH);
   delay(5);
 
-  ret = Set_I2C_Chanel(0x3f); //全选通
-  i2c_channel = 0;
-
-  if (ret != 0)
-  {
-	  return 1;
-  }
+  // 
+  Select_Sensor_Channel(0x80 | 0x3f); // bit7置位，说明这个channel参数是多通道开启
 
   return 0;
 }
@@ -246,4 +218,18 @@ void SENSOR_IIC::Take_Semaphore_IIC()
 void SENSOR_IIC::Give_Semaphore_IIC()
 {
   xSemaphoreGive(xSemaphore_IIC);
+}
+
+void SENSOR_IIC::Set_Port4_IIC(bool setting)
+{
+  if(setting == true) {
+    Select_Sensor_Channel(4);
+    Serial.println("Enable port4 IIC");
+  } else {
+    // ir_init标志是否为巡线传感器的初始化，如果是巡线传感器的初始化过程，需要执行设置
+    if(i2c_channel == 4) {
+      Select_Sensor_Channel(0);
+      Serial.println("Disable port4 IIC");
+    }
+  }
 }

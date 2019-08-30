@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include "Esp.h"
-#include <Wire.h>
 #include "data_type.h"
 #include "generalFunc.h"
 
@@ -54,10 +53,6 @@
 /* 通用宏 */
 #define MOTOR_WITHOUT_CTRL_FOR_USER 1
 
-// I2C
-#define SDA_PIN 21 // SDA_PIN
-#define SCL_PIN 22 // SCL_PIN
-
 // 电池电压
 #if 1
 /* mV 干电池的设置 */
@@ -88,20 +83,8 @@
 #define COMMUNICATION_DATA_LOC_LENGTH (1) // 数据包长度信息所在位置
 #define COMMUNICATION_FIXED_LENGTH_MAX (6)
 
-// 超声波模块
-#define ADD_I2C_US 0x01 //超声波模块I2C器件地址
-
-// 颜色识别模块
-#define ADD_I2C_COLOUR 0x38 //颜色识别模块I2C器件地址
-
-// 触碰模块
-#define TOUCH_ADDR_DEVICE 0x10 //触碰模块I2C器件地址
-
 // 彩色灯条LED
 #define CLOOUR_LED_DEVICE 0x11 //彩色灯条IIC器件地址
-
-// 光电模块
-#define LIGHT_ADDR_DEVICE 0x52 //光电模块I2C器件地址
 
 // 按钮及LED指示
 #define BUTTON_START 12
@@ -247,7 +230,7 @@ private:
 	uint8_t LED_show_15[5] = {72, 73, 74, 75, 76};
 
 	// 超声波数据
-	unsigned short US_Data[2] = {0, 0};
+	uint8_t US_Data[2] = {0, 0};
 
 	// 颜色识别数据
 	unsigned short RGBC[4] = {0};

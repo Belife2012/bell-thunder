@@ -6,6 +6,13 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+// I2C
+#define SDA_PIN 21 // SDA_PIN
+#define SCL_PIN 22 // SCL_PIN
+// Port4 IIC
+#define PORT4_SDA_PIN 39
+#define PORT4_SCL_PIN 36
+
 #define MAX_CHANNEL_INDEX     (3)
 
 #define CHECK_RANGE(value, min, max) do{if(value > max) { \
@@ -24,9 +31,11 @@ class SENSOR_IIC
 private:
   unsigned char _device_address;
   static uint8_t i2c_channel;
+  static bool i2c_enable;
   static SemaphoreHandle_t xSemaphore_IIC;
 
   static uint8_t Set_I2C_Chanel(uint8_t channelData);
+  static inline void SELECT_IIC_CHANNEL(uint8_t channel);
 
 public:
   SENSOR_IIC(int slave_address);
@@ -35,6 +44,7 @@ public:
   static void CreateSemaphoreIIC();
   static void Take_Semaphore_IIC();
   static void Give_Semaphore_IIC();
+  static void Set_Port4_IIC(bool setting);
 
 protected:
   unsigned char write(unsigned char memory_address,const unsigned char *data, unsigned char size, unsigned char channel = 0);

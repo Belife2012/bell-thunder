@@ -2,6 +2,9 @@
 #define _TOUCH_I2C_
 #include "iic_thunder.h"
 
+// 触碰模块
+#define TOUCH_IIC_ADDR 0x10 //触碰模块I2C器件地址
+
 #define TOUCH_ADDRESS_RGB       (0x01)
 #define TOUCH_ADDRESS_VALUE     (0x02)
 #define TOUCH_ADDRESS_RELEASE   (0x03)

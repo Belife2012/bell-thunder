@@ -124,7 +124,7 @@ void SENSOR_LIGHT::Reset(unsigned char channel )
 byte SENSOR_LIGHT::Set_Operate_Mode(byte optMode,unsigned char channel)
 {
   byte ret;
-  ret = write(0x01, &optMode, 1, channel);
+  ret = write(LIGHT_IIC_REG_SETLIGHT, &optMode, 1, channel);
 
   return ret;
 }
