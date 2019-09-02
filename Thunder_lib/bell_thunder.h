@@ -53,6 +53,10 @@
 /* 通用宏 */
 #define MOTOR_WITHOUT_CTRL_FOR_USER 1
 
+// I2C
+#define SDA_PIN 21 // SDA_PIN
+#define SCL_PIN 22 // SCL_PIN
+
 // 电池电压
 #if 1
 /* mV 干电池的设置 */

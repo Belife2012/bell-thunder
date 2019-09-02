@@ -96,6 +96,8 @@ void BELL_THUNDER::Setup_All(void)
 	delay(10);
 	Close_Multi_Message();
 
+	SENSOR_IIC::IIC_Init();
+
 	Disk_Manager.Disk_Manager_Initial();
 
 	Motor_Servo.Setup_Servo();			 // 舵机初始化配置

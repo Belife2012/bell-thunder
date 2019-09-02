@@ -1,5 +1,6 @@
 #include <bell_thunder.h>
 
+
 /*************************************************************
  * @brief: thunder系统相关配置
  *************************************************************/
@@ -46,11 +47,11 @@ void setup_1_1()
 }
 void loop_1_1()
 {
-    uint16_t status;
-    status = Sensor_Touch.Get_Event(3);
+    uint16_t distance;
+    distance = Sensor_Ultrasonic.Get_Distance(4);
 
-    Serial.printf("Touch Status: %d\n", status);
-    Display_Screen.Play_LED_String(status);
+    Serial.printf("Ultrasonic: %d\n", distance);
+    Display_Screen.Play_LED_String(distance);
 
     delay(10);
 }

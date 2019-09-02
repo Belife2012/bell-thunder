@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <sensor_us.h>
 
-// #define DEBUG_US_IIC
+#define DEBUG_US_IIC
 
 // #define DELAY_BEFORE_READ_US
 
@@ -44,7 +44,7 @@ byte SENSOR_US::get_rawval(unsigned char *data, unsigned char channel)
   do{
     counter++;
     rc = read(0x01, data, 2, channel);
-  } while(rc != 0 && counter < 5);
+  } while(rc != 0 && counter < 5); // 超声波模块的IIC是模拟IIC，需要做错误处理
 
   return (rc);
 }

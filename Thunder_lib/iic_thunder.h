@@ -26,6 +26,11 @@
                                   } \
                                 }while(0)
 
+typedef enum {
+  DEFAULT_PORTS = 0,
+  ENABLE_PORT_4,
+} enum_AllChannel_Flag;
+
 class SENSOR_IIC
 {
 private:
@@ -39,8 +44,9 @@ private:
 
 public:
   SENSOR_IIC(int slave_address);
+  static void IIC_Init();
   static uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
-  static uint8_t Select_Sensor_AllChannel();
+  static uint8_t Select_Sensor_AllChannel(uint8_t flag=DEFAULT_PORTS);
   static void CreateSemaphoreIIC();
   static void Take_Semaphore_IIC();
   static void Give_Semaphore_IIC();

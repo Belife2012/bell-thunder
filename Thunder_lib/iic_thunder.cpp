@@ -17,13 +17,17 @@ SemaphoreHandle_t SENSOR_IIC::xSemaphore_IIC;
 
 SENSOR_IIC::SENSOR_IIC(int slave_address)
 {
+  _device_address = (byte)slave_address;
+}
+
+void SENSOR_IIC::IIC_Init()
+{
   if(SENSOR_IIC::i2c_enable == false) {
     Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
-    SENSOR_IIC::CreateSemaphoreIIC();
+  	SENSOR_IIC::CreateSemaphoreIIC();
     SENSOR_IIC::Select_Sensor_AllChannel();
-    i2c_enable = true;
+    SENSOR_IIC::i2c_enable = true;
   }
-  _device_address = (byte)slave_address;
 }
 
 /**
@@ -169,7 +173,7 @@ uint8_t SENSOR_IIC::Select_Sensor_Channel(uint8_t sensorChannel)
  * @parameter:
  * @return: 0 表示操作成功， 1 为初始化 IIC 失败
  */
-uint8_t SENSOR_IIC::Select_Sensor_AllChannel()
+uint8_t SENSOR_IIC::Select_Sensor_AllChannel(uint8_t flag)
 {
   // reset
   pinMode(15, OUTPUT);
@@ -179,7 +183,11 @@ uint8_t SENSOR_IIC::Select_Sensor_AllChannel()
   delay(5);
 
   // 
-  Select_Sensor_Channel(0x80 | 0x3f); // bit7置位，说明这个channel参数是多通道开启
+  if(flag == DEFAULT_PORTS) {
+    Select_Sensor_Channel(0x80 | 0x3f); // bit7置位，说明这个channel参数是多通道开启
+  } else if(flag == ENABLE_PORT_4) {
+    Select_Sensor_Channel(0x80 | 0x7f);
+  }
 
   return 0;
 }

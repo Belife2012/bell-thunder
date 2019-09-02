@@ -118,7 +118,7 @@ byte SENSOR_TOUCH::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueVal
  */
 int SENSOR_TOUCH::Get_Event(uint8_t sensorChannel)
 {
-    byte statusValue1;
+    byte statusValue1=0xff;
     Get_Status( &statusValue1, sensorChannel);
     return statusValue1;
 }
