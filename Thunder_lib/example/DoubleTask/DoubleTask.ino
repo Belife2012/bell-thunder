@@ -29,7 +29,7 @@ void loop() {
   Serial.printf("left rotate: %d\n", Motor_Thunder.Get_RotateValue(1));
   Serial.printf("Right rotate: %d\n\n", Motor_Thunder.Get_RotateValue(2));
 
-  Bell_Thunder.Set_LED_Show_No(5);
+  Display_Screen.Play_Animation(5);
 
   delay(3000);
 }

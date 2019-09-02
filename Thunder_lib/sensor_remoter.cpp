@@ -119,7 +119,7 @@ void SENSOR_REMOTER::Clear_All_keys()
  * @return true 检测的动作有发生
  * @return false 检测的动作没有发生
  */
-bool SENSOR_REMOTER::Check_Key_Action(enum_Remoter_Key key_index, enum_Key_Action key_action)
+bool SENSOR_REMOTER::Check_Key_Action(int key_index, int key_action)
 {
     bool ret;
 
@@ -167,7 +167,7 @@ void SENSOR_REMOTER::Turnon_Remote(bool enable)
  * @param key_index 摇杆、按键标识
  * @return int 摇杆、按键的模拟数值
  */
-int SENSOR_REMOTER::Get_Control_Value(enum_Remoter_Value key_index)
+int SENSOR_REMOTER::Get_Control_Value(int key_index)
 {
     return control_value[key_index];
 }
@@ -179,7 +179,7 @@ int SENSOR_REMOTER::Get_Control_Value(enum_Remoter_Value key_index)
  * @return true 按键状态为按下
  * @return false 按键状态为释放
  */
-bool SENSOR_REMOTER::Check_Key(enum_Remoter_Key key_index)
+bool SENSOR_REMOTER::Check_Key(int key_index)
 {
     return (keys_value & (0x00000001 << key_index)) == 0 ? false : true;
 }

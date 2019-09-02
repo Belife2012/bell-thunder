@@ -42,15 +42,15 @@ public:
     void Open_Sensor();
     bool Calibrate_Sensor();
     void ShowAttitude();
-    float GetAttitudeStatus(enum_Attitude_Axis axis);
-    double GetAttitudeAngle(enum_Attitude_Axis axis);
-    void ClearAttitudeAngle(enum_Attitude_Axis axis);
-    float GetAttitudeAngleV(enum_Attitude_Axis axis);
+    float GetAttitudeStatus(int axis);
+    double GetAttitudeAngle(int axis);
+    void ClearAttitudeAngle(int axis);
+    float GetAttitudeAngleV(int axis);
 
-    float GetAttitudeAccel(enum_Attitude_Axis axis);
+    float GetAttitudeAccel(int axis);
 
-    void CalcCoefficientWave(enum_Attitude_Axis axis, float new_data);
-    float GetCoefficientWave(enum_Attitude_Axis axis);
+    void CalcCoefficientWave(int axis, float new_data);
+    float GetCoefficientWave(int axis);
 
     void SetShakeThreshold(float new_value);
     bool CheckShakeStatus(void);

@@ -71,7 +71,7 @@ class BLE_THUNDERGO
     BLEServer *pServer = NULL;
 
     static QueueHandle_t Queue_Semaphore_BLE;
-    static enum_Ble_Status ble_connect_type;
+    static int ble_connect_type;
 
     void Setup_Ble_Security();
 
@@ -91,8 +91,8 @@ class BLE_THUNDERGO
     static int Take_Semaphore_BLE();
     static void Give_Semaphore_BLE(int ble_mesg_type);
 
-    static void SetBleConnectType(enum_Ble_Status new_status);
-    static enum_Ble_Status GetBleConnectType(); 
+    static void SetBleConnectType(int new_status);
+    static int GetBleConnectType(); 
 };
 
 #endif

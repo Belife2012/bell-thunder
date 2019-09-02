@@ -63,7 +63,7 @@ byte SENSOR_TOUCH::Reset_Mode(unsigned char channel)
  * @parameters: 
  * @return: true是有发生过，false是未发生过
  */
-bool SENSOR_TOUCH::Check_Event(enum_touch_event check_event, unsigned char channel)
+bool SENSOR_TOUCH::Check_Event(int check_event, unsigned char channel)
 {
   byte ret;
   byte readValue = 0;

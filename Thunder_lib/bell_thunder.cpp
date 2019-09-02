@@ -5,7 +5,7 @@
 #include "common.h"
 
 BELL_THUNDER Bell_Thunder;
-enum_Program_Index BELL_THUNDER::program_change_to = PROGRAM_RUNNING;
+int BELL_THUNDER::program_change_to = PROGRAM_RUNNING;
 
 //ADC 校准使用
 esp_adc_cal_characteristics_t adc_chars;
@@ -152,7 +152,7 @@ void BELL_THUNDER::Setup_All(void)
 	}
 }
 
-void BELL_THUNDER::Set_Ble_Type(enum_Ble_Type new_type)
+void BELL_THUNDER::Set_Ble_Type(int new_type)
 {
 	if ((ble_type != BLE_TYPE_SERVER) && (new_type == BLE_TYPE_SERVER))
 	{
@@ -362,7 +362,7 @@ void BELL_THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 	{
 		lowpower_flag = 1;
 
-		Display_Screen.Play_LED_HT16F35B_Show(101);
+		Display_Screen.Play_Thunder_Picture(101);
 
 		Speaker_Thunder.Play_Song(79);
 		delay(300);
@@ -423,7 +423,7 @@ void BELL_THUNDER::Setup_Led_Indication()
 	else
 	{
 		// 检查Disk 里面是否存有正确的 program_user
-		enum_Process_Status store_program_mode;
+		int store_program_mode;
 		store_program_mode = Disk_Manager.Read_Program_Mode();
 		if ((uint8_t)store_program_mode >= (uint8_t)PROCESS_THUNDER_GO)
 		{
@@ -587,9 +587,9 @@ uint8_t BELL_THUNDER::Get_Function_Button_Status()
  * @parameters: 
  * @return: 
  */
-enum_Key_Value BELL_THUNDER::Check_Function_Button_Value()
+int BELL_THUNDER::Check_Function_Button_Value()
 {
-	enum_Key_Value button_value = KEY_NONE;
+	int button_value = KEY_NONE;
 
 	if (Get_Function_Button_Status() == 1)
 	{
@@ -662,7 +662,7 @@ enum_Key_Value BELL_THUNDER::Check_Function_Button_Value()
 	return button_value;
 }
 
-bool BELL_THUNDER::Check_Function_Button_Event(enum_Key_Value key_event)
+bool BELL_THUNDER::Check_Function_Button_Event(int key_event)
 {
 	bool ret = false;
 
@@ -681,7 +681,7 @@ bool BELL_THUNDER::Check_Function_Button_Event(enum_Key_Value key_event)
  * @parameters: 
  * @return: 
  */
-void BELL_THUNDER::Set_Process_Status(enum_Process_Status new_status)
+void BELL_THUNDER::Set_Process_Status(int new_status)
 {
 	led_indication_param.wait_led_timer = 700;
 	led_indication_param.led_indication_once_flag = 0;
@@ -765,7 +765,7 @@ void BELL_THUNDER::Set_Process_Status(enum_Process_Status new_status)
  * @parameters: 
  * @return: 
  */
-void BELL_THUNDER::Update_Process_Status(enum_Key_Value button_event)
+void BELL_THUNDER::Update_Process_Status(int button_event)
 {
 	if (thunder_system_parameter == 1)
 	{
@@ -940,7 +940,7 @@ void BELL_THUNDER::Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t o
 	Set_Led_Indication_param();
 }
 
-void BELL_THUNDER::Set_Program_User(enum_Process_Status new_program_user)
+void BELL_THUNDER::Set_Program_User(int new_program_user)
 {
 	program_user = new_program_user;
 
@@ -956,7 +956,7 @@ void BELL_THUNDER::Set_Program_User(enum_Process_Status new_program_user)
 	process_status = PROCESS_STOP;
 }
 
-void BELL_THUNDER::Set_Program_Run_Index(enum_Process_Status new_program)
+void BELL_THUNDER::Set_Program_Run_Index(int new_program)
 {
 	switch (new_program)
 	{
@@ -1136,6 +1136,7 @@ void BELL_THUNDER::Line_Tracing(void)
 	int current_L_R_diffrotate;
 	int rotate_back_quantity;
 	int line_out_flag = 0;
+	int LED_counter = 99;
 
 	uint32_t L_last_time; // 上次偏左的时间戳
 	uint32_t R_last_time; // 上次偏右的时间戳
@@ -1143,7 +1144,6 @@ void BELL_THUNDER::Line_Tracing(void)
 	Line_last_time = millis();
 	Line_last_led_time = millis();
 	Line_last_sound_time = millis();
-	LED_counter = 99;
 
 	Speaker_Thunder.Play_Song(131);
 	while (1)
@@ -1468,7 +1468,7 @@ void BELL_THUNDER::Line_Tracing(void)
 				Line_last_sound_time = millis();
 			}
 
-			Display_Screen.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+			Display_Screen.Play_Thunder_Picture(LED_counter); //单色点阵图案
 			LED_counter++;
 
 			Line_last_led_time = millis();
@@ -1633,13 +1633,13 @@ void BELL_THUNDER::Line_Tracing_Speed_Ctrl(void)
 	uint32_t L_last_time; // 上次偏左的时间戳
 	uint32_t R_last_time; // 上次偏右的时间戳
 	int line_out_flag = 0;
+	int LED_counter = 99;
 
 	Bell_Thunder.Enable_Drive_Car();
 
 	Line_last_time = millis();
 	Line_last_led_time = millis();
 	Line_last_sound_time = millis();
-	LED_counter = 99;
 
 	Speaker_Thunder.Play_Song(131);
 	while (1)
@@ -1859,7 +1859,7 @@ void BELL_THUNDER::Line_Tracing_Speed_Ctrl(void)
 				Line_last_sound_time = millis();
 			}
 
-			Display_Screen.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+			Display_Screen.Play_Thunder_Picture(LED_counter); //单色点阵图案
 			LED_counter++;
 
 			Line_last_led_time = millis();
@@ -1876,488 +1876,6 @@ void BELL_THUNDER::Line_Tracing_Speed_Ctrl(void)
 	Speaker_Thunder.Play_Song(130);
 }
 #else
-
-#define LINE_TRACE_PERIOD_MS 5
-#define LINE_TRACE_ACCELERATION 1
-
-#define LINE_TRACE_ACCE_P 2			 //5
-#define LINE_DEVIATION_ACCE_P 2		 //5
-#define LINE_DEVIATION_DEEP_ACCE_P 2 //5
-#define LINE_OUTSIDE_ACCE_P 2		 //7
-
-#define LINE_INITIAL_MAX_POWER 140 // 初始化时最大的功率，如果最大功率达不到最大速度，会提高最大功率left_max_power right_max_power
-#define LINE_INITIAL_POWER 50	  // 初始化时的功率，为了快速加速起来，初始化功率作为偏置量，
-#define LINE_RUN_MIN_POWER 70	  // 运动轮子的最低功率，也是为了轮子可以从停止状态或反转状态 快速加速起来
-#define LINE_CHECK_MAX_POWER 90	// 搜索黑线时的初始速度
-#define LINE_CHECK_MIN_POWER 70	// 搜索黑线时的结束速度
-#define LINE_CHECK_ROTATE 5		   // 30  搜索黑线时摇头的幅度
-
-#define LINE_TRACE_MAX_SPEED 20 // 运动轮子的最大速度（也是偏向时的高速度轮子的速度）
-#define LINE_TRACE_MIN_SPEED 7  // 运动轮子的最小速度（也是偏向时的低速度轮子的速度）
-#define LINE_TRACE_BACK_SPEED 5 // 出界时后退的速度
-
-typedef enum
-{
-	LINE_STATE_START = 0,
-	LINE_STATE_STRAIGHT,
-	LINE_STATE_LEFT,
-	LINE_STATE_RIGHT,
-	LINE_STATE_LEFT_DEEP,
-	LINE_STATE_RIGHT_DEEP,
-	LINE_STATE_LEFT_OVER,
-	LINE_STATE_RIGHT_OVER,
-	LINE_STATE_LOST
-} enum_line_state;
-
-/* 
- * 至少要有一个点是放置在黑线上面的
- * 
- * @parameters: 
- * @return: 
- */
-void Wait_Line_Location()
-{
-	byte history_data[2] = {0x00, 0x00};
-	byte sensor_data[2];
-
-	while (1)
-	{
-		for (uint8_t i = 0; i < 8; i++)
-		{
-			Bell_Thunder.Get_IR_Data(sensor_data);
-			history_data[0] = history_data[0] << 1 | sensor_data[0];
-			history_data[1] = history_data[1] << 1 | sensor_data[1];
-		}
-
-		Serial.printf("*** L: 0x%2X   R: 0x%2X ***\n", history_data[0], history_data[1]);
-		if (history_data[0] == 0xFF || history_data[1] == 0xFF)
-		{
-			break;
-		}
-		// Speaker_Thunder.Play_Song(103); // 播放声音：oh, no
-		delay(2000);
-	}
-	// Speaker_Thunder.Play_Song(101); // 播放声音：lets go
-	delay(2000);
-}
-
-float left_power = 0; // 电机使用的功率
-float right_power = 0;
-float left_power_I[3] = {0, 0, 0}; // 当前状态的积分量
-float right_power_I[3] = {0, 0, 0};
-float left_power_pre[3] = {0, 0, 0}; // 之前状态最后使用的功率
-float right_power_pre[3] = {0, 0, 0};
-
-float left_max_power = LINE_INITIAL_MAX_POWER;
-float right_max_power = LINE_INITIAL_MAX_POWER;
-
-// bit0 是左边有白线
-byte lost_recover = 0;
-
-int32_t current_line_rotate = 0;
-int32_t search_line_rotate = 0;
-// 0 为没有搜索动作，1为出去左搜索，2为左搜索回退，3为出去右搜索，4为右搜索回退
-uint32_t search_line_status = 0;
-
-/* 
- * 当巡线状态处于LINE_STATE_LOST 时，要去判断当前是否处于黑线中的位置
- * (可以再加强：如果中间是白色，而且两边都是黑线，就继续跟随白线走，
- *             否则移动到黑色，再判断黑线的两边是否都为白色）
- * 处于黑线中的位置判断条件：当前位置两点传感器数值都为黑色，然后来回探测左右两边是否有白色
- * 如果当前是两点黑，左右探测回来的数据 lost_recover bit0 bit1都是标记为白色，
- * 那就是LINE_STATE_LOST 已经恢复为 LOST_STATE_START
- * 
- * @parameters: 
- * @return: 
- */
-void Check_Line_When_Lost()
-{
-	uint8_t currentIrData = 0;
-
-	currentIrData = Bell_Thunder.history_data[1] & 0x01;
-	// 右边数据在 bit1, 左边数据在 bit0
-	currentIrData = (currentIrData << 1) | (Bell_Thunder.history_data[0] & 0x01);
-
-	// 每次搜索动作行程 完成后 再判断状态
-	switch (search_line_status)
-	{
-	case 0:
-		// 设置功率为 0 后，需要等待电机停止
-		left_power = 0;
-		right_power = 0;
-		while (Motor_Thunder.Get_Speed(1) != 0 || Motor_Thunder.Get_Speed(2) != 0)
-			;
-
-		if (currentIrData == 0x03)
-		{
-			left_power = 0;
-			right_power = LINE_CHECK_MAX_POWER;
-			lost_recover = 0; // init bit0 and bit1
-
-			search_line_status = 1;
-			search_line_rotate = Motor_Thunder.Get_RotateValue(2);
-		}
-		break;
-
-	case 1:
-		current_line_rotate = Motor_Thunder.Get_RotateValue(2);
-		if (current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE)
-		{
-			if (right_power > LINE_CHECK_MIN_POWER)
-			{
-				right_power -= 1;
-			}
-			return;
-		}
-
-		if (currentIrData == 0x03 || currentIrData == 0x01)
-		{
-			lost_recover &= 0xFE; // bit0 No white
-		}
-		else
-		{
-			lost_recover |= 0x01; // bit0 white
-		}
-		left_power = 0;
-		right_power = -LINE_CHECK_MAX_POWER;
-		search_line_status = 2;
-		search_line_rotate = Motor_Thunder.Get_RotateValue(2);
-
-		break;
-
-	case 2:
-		current_line_rotate = Motor_Thunder.Get_RotateValue(2);
-		if (current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE)
-		{
-			if (right_power < -LINE_CHECK_MIN_POWER)
-			{
-				right_power += 1;
-			}
-			return;
-		}
-
-		left_power = LINE_CHECK_MAX_POWER;
-		right_power = 0;
-		lost_recover &= 0xFD; // init bit1
-		search_line_status = 3;
-		search_line_rotate = Motor_Thunder.Get_RotateValue(1);
-		break;
-
-	case 3:
-		current_line_rotate = Motor_Thunder.Get_RotateValue(1);
-		if (current_line_rotate < search_line_rotate + LINE_CHECK_ROTATE)
-		{
-			if (left_power > LINE_CHECK_MIN_POWER)
-			{
-				left_power -= 1;
-			}
-			return;
-		}
-
-		if (currentIrData == 0x03 || currentIrData == 0x02)
-		{
-			lost_recover &= 0xFD; //bit1 No white
-		}
-		else
-		{
-			lost_recover |= 0x02; // bit0 white
-		}
-
-		left_power = -LINE_CHECK_MAX_POWER;
-		right_power = 0;
-		search_line_status = 4;
-		search_line_rotate = Motor_Thunder.Get_RotateValue(1);
-		break;
-
-	case 4:
-		current_line_rotate = Motor_Thunder.Get_RotateValue(1);
-		if (current_line_rotate > search_line_rotate - LINE_CHECK_ROTATE)
-		{
-			if (left_power < -LINE_CHECK_MIN_POWER)
-			{
-				left_power += 1;
-			}
-			return;
-		}
-
-		left_power = 0;
-		right_power = 0;
-		search_line_status = 0;
-		break;
-
-	default:
-		break;
-	}
-
-	// 左右探测回来的数据 lost_recover bit0 bit1都是标记为白色,
-	// 就将 LINE_STATE_LOST 恢复为 LOST_STATE_START
-	if (search_line_status == 0)
-	{
-		if (lost_recover == 3)
-		{
-			left_power = 0;
-			right_power = 0;
-			while (Motor_Thunder.Get_Speed(1) != 0 || Motor_Thunder.Get_Speed(2) != 0)
-				;
-			search_line_status = 0;
-			lost_recover = 0;
-
-			Bell_Thunder.line_state = LINE_STATE_START;
-
-			Serial.println("line tracing recover!");
-			return;
-		}
-		else
-		{
-			delay(2000); // 延时方便用户在这个时间内重新放置好小车。
-		}
-	}
-}
-
-#define DIRECTION_TURN_MAX_POWER 60 // 控制方向的左右轮速度差最大值
-
-// 左右轮最大速度差，这个速度差相当于控制方向，值越大，拐的角度越大
-// 这里的值蕴含着运动最大曲率的问题，这个值与运动速度可以计算出最大转弯的曲率
-#define LINE_DIFF_MAX_SPEED 3.0
-#define LINE_RUN_SPEED 20.0 // 固定速度，做PI控制的巡线是选用的初始速度
-
-#if 0
-#define LINE_TRACE_P 5.0	   // PI 控制速度的参数 Kp
-#define LINE_TRACE_ACCE_I 0.1  // PI 控制速度加速的参数 Ki
-#define LINE_TRACE_DECE_I 0.01 // PI 控制速度减速的参数 Ki
-#define LINE_TRACE_SPEED_D 15  // PI 控制速度的偏差改变量因子 Kd
-
-#define LINE_DEVIATION_I 0.5  // PI 控制偏差的参数 Ki
-#define LINE_DEVIATION_P 10.0 // PI 控制偏差的参数 Kp
-#define LINE_DEVIATION_D 0.2  // PI 控制偏差的参数 Kd
-
-#define DEVIATION_VALUE 1
-#define DEVIATION_DEEP_VALUE 2
-#define DEVIATION_OUT_VALUE 3
-#else
-// 3.000 0.100 0.010 5.000 10.00 0.500 0.100  直线走的很好，不能正常进弯道，不能出弯道
-// 3.000 0.100 0.000 5.000 10.00 0.500 1.000
-// 3.000 0.100 0.000 10.00 15.00 0.200 1.000  可以走完一圈
-// 3.000 0.090 0.000 15.00 15.00 0.130 0.000  可以走完一圈
-// 3.000 0.130 0.000 10.00 15.00 0.300 0.600  可以有点顺的走完一圈，但是一直偏向外边的白线
-// 3.000 0.130 0.000 10.00 8.000 0.280 0.000  可以有点顺的走完一圈，比上一个参数走的快点，而且可以回归到黑线
-
-// #define DIRECTION_TURN_MAX_POWER  35
-// #define LINE_TRACE_MAX_SPEED 10 时采用的参数
-// 3.000 0.130 0.000 10.00 10.00 0.280 0.100
-
-// #define DIRECTION_TURN_MAX_POWER  45
-// #define LINE_TRACE_MAX_SPEED 15 时
-// 2.000 0.080 0.020 8.00 20.00 0.370 0.020
-// 2.000 0.080 0.012 8.000 10.00 0.200 0.000 加减速还可以，转向控制不好
-// 2.000 0.090 0.012 8.000 10.00 0.200 0.000 可以走完一圈
-// 2.000 0.100 0.016 5.000 10.00 0.200 1.000
-// 2.000 0.080 0.014 3.000 10.00 0.200 1.000
-
-// 方向控制PID
-// 3.000 0.400 0.000 0.000 2.000 0.016 2.000
-// 3.000 0.400 0.000 0.000 2.000 0.018 1.300
-// 3.000 0.400 0.000 0.000 2.000 0.015 1.300  // #define LINE_RUN_SPEED        10.0
-// 3.000 0.400 0.000 0.000 1.500 0.018 1.300  // #define LINE_RUN_SPEED        20.0
-float LINE_TRACE_P = 3.0;		// PI 控制速度的参数 Kp
-float LINE_TRACE_ACCE_I = 0.40; // PI 控制速度加速的参数 Ki
-
-float LINE_TRACE_DECE_I = 0.00; // PI 控制速度减速的参数 Ki
-float LINE_TRACE_SPEED_D = 0.0; // PI 控制速度的偏差改变量因子 Kd
-
-float LINE_DEVIATION_P = 1.50;  // PI 控制偏差的参数 Kp
-float LINE_DEVIATION_I = 0.018; // PI 控制偏差的参数 Ki
-float LINE_DEVIATION_D = 1.30;  // PI 控制偏差的参数 Kd
-
-float DEVIATION_VALUE = 1;
-float DEVIATION_DEEP_VALUE = 2;
-float DEVIATION_OUT_VALUE = 3;
-#endif
-
-int deviation[2] = {0, 0}; // 无偏差时为0；左偏差时 正数，右偏差时 负数
-float tempValue;
-
-/* 
- * 加速度 acceleration，所以电机功率对时间进行积分
- * 
- * @parameters: 
- * @return: 
- */
-void Calculate_Motor_Power()
-{
-	int16_t diffSpeed_left;
-	int16_t diffSpeed_right;
-
-	int diffDeviation;
-
-	// 保存好上一次的偏移量
-	deviation[1] = deviation[0];
-
-	switch (Bell_Thunder.line_state)
-	{
-	case LINE_STATE_START: // 刚启动状态
-		deviation[1] = 0;
-		deviation[0] = 0;
-
-		left_power_I[0] = 0;
-		right_power_I[0] = 0;
-		left_power_I[1] = 0;
-		right_power_I[1] = 0;
-		left_power_I[2] = 0;
-		right_power_I[2] = 0;
-
-		left_power = LINE_INITIAL_POWER;
-		right_power = LINE_INITIAL_POWER;
-		break;
-	case LINE_STATE_STRAIGHT: // 直行状态
-		deviation[0] = 0;
-		break;
-
-	case LINE_STATE_LEFT: // 偏左状态, 左轮加速
-		deviation[0] = DEVIATION_VALUE;
-		break;
-	case LINE_STATE_RIGHT: // 偏右状态, 右轮加速
-		deviation[0] = -DEVIATION_VALUE;
-		break;
-
-	case LINE_STATE_LEFT_DEEP: // 太偏左状态, 整体减速
-		deviation[0] = DEVIATION_DEEP_VALUE;
-		break;
-	case LINE_STATE_RIGHT_DEEP: // 太偏右状态, 整体减速
-		deviation[0] = -DEVIATION_DEEP_VALUE;
-		break;
-
-	case LINE_STATE_LEFT_OVER: // 左向出界, 可以打转
-		deviation[0] = DEVIATION_OUT_VALUE;
-		break;
-	case LINE_STATE_RIGHT_OVER: // 右向出界, 可以打转
-		deviation[0] = -DEVIATION_OUT_VALUE;
-		break;
-
-	case LINE_STATE_LOST: // 迷失状态，需要尝试左右旋转寻找出路
-		deviation[1] = 0;
-		deviation[0] = 0;
-
-		left_power_I[0] = 0;
-		right_power_I[0] = 0;
-		left_power_I[1] = 0;
-		right_power_I[1] = 0;
-		left_power_I[2] = 0;
-		right_power_I[2] = 0;
-
-		Check_Line_When_Lost();
-		Motor_Thunder.Set_Motor_Power(1, (int)left_power);
-		Motor_Thunder.Set_Motor_Power(2, (int)right_power);
-		return;
-		break;
-
-	default:
-		break;
-	}
-
-	// // 直线状态会加速，否则会先减速
-	// if(deviation[0] == 0){
-
-	//   left_power_I[1] = 0;
-	//   right_power_I[1] = 0;
-	// }else{
-	//   // 方向 逆向修复量
-	//   tempValue = left_power_I[1];
-	//   left_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? right_power_I[1] : 0);
-	//   right_power_I[1] += LINE_DEVIATION_D * ((diffDeviation > 0)? tempValue : 0);
-
-	//   diffSpeed_left = Motor_Thunder.Get_Speed(1); // 速度越大，减速效果越大
-	//   diffSpeed_right = Motor_Thunder.Get_Speed(2);
-
-	//   // 减速的依据有 目前速度值 和 方向偏移量
-	//   left_power_I[0] -= (left_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_left * abs(deviation[0]);
-	//   right_power_I[0] -= (right_power_I[0] < 50)? 0 : LINE_TRACE_DECE_I * diffSpeed_right * abs(deviation[0]);
-	// }
-
-	/***********************************方向控制PID**************************************/
-	// P: PI控制的 比例P 量，左右轮有个固定的功率差
-	left_power_pre[1] = LINE_DEVIATION_P * deviation[0];
-	right_power_pre[1] = -LINE_DEVIATION_P * deviation[0];
-
-	// I: 根据偏向量deviation 调节左右轮的速度. deviation[0] 在左偏时为正数，右偏时为负数
-	tempValue = left_power_I[1] + LINE_DEVIATION_I * deviation[0];
-	if (abs(tempValue) < LINE_DIFF_MAX_SPEED)
-	{
-		left_power_I[1] = tempValue;
-	}
-	tempValue = right_power_I[1] - LINE_DEVIATION_I * deviation[0];
-	if (abs(tempValue) < LINE_DIFF_MAX_SPEED)
-	{
-		right_power_I[1] = tempValue;
-	}
-
-	// 偏移量变化时给一个速度变化量
-	diffDeviation = abs(deviation[1]) - abs(deviation[0]);
-	// 分级减速, 用于出线时减速，进线时提速
-	left_power_I[2] += (LINE_DEVIATION_D * diffDeviation);
-	right_power_I[2] += (LINE_DEVIATION_D * diffDeviation);
-
-	// 得到的 左右轮子的速度控制目标 left_power_pre[2] right_power_pre[2]
-	left_power_pre[2] = LINE_RUN_SPEED + left_power_pre[1] + left_power_I[1] + left_power_I[2];
-	right_power_pre[2] = LINE_RUN_SPEED + right_power_pre[1] + right_power_I[1] + right_power_I[2];
-
-	/***********************************速度控制PID**************************************/
-	// 计算 速度控制目标 与 速度编码器 的差值
-	diffSpeed_left = left_power_pre[2] - Motor_Thunder.Get_Speed(1);
-	diffSpeed_right = right_power_pre[2] - Motor_Thunder.Get_Speed(2);
-
-	// 积分
-	left_power_I[0] += (abs(left_power_I[0] + LINE_TRACE_ACCE_I * diffSpeed_left) > 255) ? 0 : LINE_TRACE_ACCE_I * diffSpeed_left;
-	right_power_I[0] += (abs(right_power_I[0] + LINE_TRACE_ACCE_I * diffSpeed_right) > 255) ? 0 : LINE_TRACE_ACCE_I * diffSpeed_right;
-	// 比例
-	left_power_pre[0] = LINE_TRACE_P * diffSpeed_left;
-	right_power_pre[0] = LINE_TRACE_P * diffSpeed_right;
-
-	// 根据速度控制得出 电机功率
-	left_power = left_power_pre[0] + left_power_I[0];
-	right_power = right_power_pre[0] + right_power_I[0];
-
-	// if(left_power > left_max_power){
-	//   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-	//   if(Motor_Thunder.Get_Speed(1) < LINE_TRACE_MAX_SPEED){
-	//     left_max_power = (left_max_power<255-LINE_TRACE_ACCELERATION)?(left_max_power+LINE_TRACE_ACCELERATION):255;
-	//   }else if(Motor_Thunder.Get_Speed(1) > LINE_TRACE_MAX_SPEED + 3){
-	//     left_max_power -= LINE_TRACE_ACCELERATION;
-	//   }
-	//   left_power = left_max_power;
-	// }
-	// if(right_power > right_max_power){
-	//   // 已经设置为最大功率了，如果因为电池原因达不到最大速度，则将最大功率调高
-	//   if(Motor_Thunder.Get_Speed(2) < LINE_TRACE_MAX_SPEED){
-	//     right_max_power = (right_max_power<255-LINE_TRACE_ACCELERATION)?(right_max_power+LINE_TRACE_ACCELERATION):255;
-	//   }else if(Motor_Thunder.Get_Speed(2) > LINE_TRACE_MAX_SPEED + 3){
-	//     right_max_power -= LINE_TRACE_ACCELERATION;
-	//   }
-	//   right_power = right_max_power;
-	// }
-
-	// 处理越界问题，不能简单处理，需要保证左右轮的差量合适
-	if (left_power > 255)
-		left_power = 255;
-	else if (left_power < -255)
-		left_power = -255;
-	if (right_power > 255)
-		right_power = 255;
-	else if (right_power < -255)
-		right_power = -255;
-
-	Motor_Thunder.Set_Motor_Power(1, (int)left_power);
-	Motor_Thunder.Set_Motor_Power(2, (int)right_power);
-
-#ifdef DEBUG_LINE_TRACING
-	// Serial.printf("*** Power L: %d   R: %d ***\n", (int)left_power, (int)right_power);
-	Serial.printf("P0: %6.2f %6.2f ", left_power_pre[0], right_power_pre[0]);
-	Serial.printf("I0: %6.2f %6.2f ", left_power_I[0], right_power_I[0]);
-	Serial.printf("P1: %6.2f %6.2f ", left_power_pre[1], right_power_pre[1]);
-	Serial.printf("I1: %6.2f %6.2f\n", left_power_I[1], right_power_I[1]);
-#endif
-}
-
 /* 
  * 后驱电机的巡线
  * 1、控制使用了 方向PID、速度PID、分级减速的方式进行
@@ -2406,7 +1924,7 @@ void BELL_THUNDER::Line_Tracing(void)
 	Line_last_time = millis();
 	Line_last_led_time = millis();
 	Line_last_sound_time = millis();
-	LED_counter = 99;
+	int LED_counter = 99;
 
 	Wait_Line_Location();
 	line_state = LINE_STATE_START;
@@ -2561,7 +2079,7 @@ void BELL_THUNDER::Line_Tracing(void)
 				Line_last_sound_time = millis();
 			}
 
-			Display_Screen.Play_LED_HT16F35B_Show(LED_counter); //单色点阵图案
+			Display_Screen.Play_Thunder_Picture(LED_counter); //单色点阵图案
 			LED_counter++;
 
 			Line_last_led_time = millis();
@@ -2583,21 +2101,21 @@ void BELL_THUNDER::Start_Show(void)
 {
 	Speaker_Thunder.Play_Song(79); //声音编号79
 
-	Display_Screen.Play_LED_HT16F35B_Show(1); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(1); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(2); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(2); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(3); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(3); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(4); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(4); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(5); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(5); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(4); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(4); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(5); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(5); //单色点阵图案
 	delay(200);
-	Display_Screen.Play_LED_HT16F35B_Show(4); //单色点阵图案
+	Display_Screen.Play_Thunder_Picture(4); //单色点阵图案
 	delay(200);
 }
 
@@ -2622,7 +2140,7 @@ void BELL_THUNDER::Wait_Communication(void)
 		System_Task.Remove_Flush_Task(FLUSH_CHARACTER_ROLL);
 		if (lowpower_flag == 0)
 		{
-			Display_Screen.Play_LED_HT16F35B_Show(show_index); //单色点阵图案
+			Display_Screen.Play_Thunder_Picture(show_index); //单色点阵图案
 			if (show_index == 13)
 			{
 				show_index = 6;
@@ -2640,269 +2158,6 @@ void BELL_THUNDER::Wait_Communication(void)
 	}
 	System_Task.Set_Flush_Task(FLUSH_MATRIX_LED);
 	System_Task.Set_Flush_Task(FLUSH_CHARACTER_ROLL);
-}
-
-// 设置将要播放的内置动画编号
-void BELL_THUNDER::Set_LED_Show_No(uint8_t Show_No)
-{
-	Display_Screen.Play_LED_String("");
-	LED_show_No = Show_No;
-}
-
-// 循环执行的内置动画控制程序
-void BELL_THUNDER::LED_Show(void)
-{
-	switch (LED_show_No)
-	{
-	case 0:
-		// Serial.printf("SSSSSSSSSS 无表情 SSSSSSSSSS\n");
-		break;
-	case 1:
-		break;
-	case 3: //眨眼 8帧
-		LED_delay_time = 200;
-		if (LED_counter < 8)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_3[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 4: //爱心  5帧
-		LED_delay_time = 100;
-		if (LED_counter < 5)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_4[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 5: //眼镜  8帧
-		if (LED_counter < 8)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_5[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_delay_time = LED_time_5[LED_counter];
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 6: //严肃 4帧
-		LED_delay_time = 200;
-		if (LED_counter < 4)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_6[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 7:										   //刹车
-		Display_Screen.Play_LED_HT16F35B_Show(29); //单色点阵图案
-		break;
-	case 8: //流汗  3帧
-		if (LED_counter < 3)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_8[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_delay_time = LED_time_8[LED_counter];
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 9: //开心  5帧
-		LED_delay_time = 200;
-		if (LED_counter < 5)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_9[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 10: //等待  3帧
-		LED_delay_time = 1000;
-		if (LED_counter < 3)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_10[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 11: //眯眼 4帧
-		LED_delay_time = 200;
-		if (LED_counter < 4)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_11[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 12: //启动 4帧
-		LED_delay_time = 200;
-		if (LED_counter < 4)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_12[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 13: //凶  5帧
-		LED_delay_time = 500;
-		if (LED_counter < 5)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_13[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 14: //哭泣  9帧
-		LED_delay_time = 200;
-		if (LED_counter < 9)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_14[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	case 15: //语音图  5帧
-		LED_delay_time = 100;
-		if (LED_counter < 5)
-		{
-			current_time = millis();
-			if ((current_time - last_led_time) > LED_delay_time)
-			{
-				Display_Screen.Play_LED_HT16F35B_Show(LED_show_15[LED_counter]); //单色点阵图案
-				last_led_time = millis();
-				LED_counter++;
-			}
-		}
-		else
-		{
-			LED_show_No = 0;
-			LED_counter = 0;
-			last_led_time = 0;
-			LED_delay_time = 0;
-		}
-		break;
-	}
 }
 
 // 获取串口指令到 RX_Data
@@ -3483,7 +2738,7 @@ void BELL_THUNDER::Check_Protocol(void)
 		break;
 
 	case UART_GENERAL_PICTURE_LED: //显示预设的单色点阵灯图案
-		Display_Screen.Play_LED_HT16F35B_Show(Rx_Data[1]);
+		Display_Screen.Play_Thunder_Picture(Rx_Data[1]);
 		break;
 
 	case UART_GENERAL_DEBUG_PRE_LED: //单色点阵灯一次性刷新前半部分灯
@@ -3494,7 +2749,7 @@ void BELL_THUNDER::Check_Protocol(void)
 		break;
 
 	case UART_GENERAL_ANIMATION_LED: //内置单色点阵图案动画显示命令
-		Set_LED_Show_No(Rx_Data[1]);
+		Display_Screen.Play_Animation(Rx_Data[1]);
 		break;
 
 	case 0x61: //_______________________ Demo ___________________
@@ -3699,7 +2954,7 @@ void BELL_THUNDER::Close_Multi_Message()
  * @param name 传入被传输的变量名称字符串，
  * @param init_value 传入 int 变量数值
  */
-void BELL_THUNDER::InitNameVarInt(char *name, int init_value)
+void BELL_THUNDER::InitNameVarInt(const char *name, int init_value)
 {
 	std::vector<struct_Int_Message>::iterator i;
 	for (i = recv_int_message.begin(); i != recv_int_message.end(); i++)
@@ -3726,7 +2981,7 @@ void BELL_THUNDER::InitNameVarInt(char *name, int init_value)
  * @param var_value 传入 int 变量数值
  * @return int 返回错误码，正常发送返回0
  */
-int BELL_THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
+int BELL_THUNDER::SendNameVarInt(unsigned char addr, const char *name, int var_value)
 {
 	if (Mult_Devices == NULL)
 	{
@@ -3744,7 +2999,7 @@ int BELL_THUNDER::SendNameVarInt(unsigned char addr, char *name, int var_value)
  * @param name 传入被传输的变量名称字符串，
  * @return int 返回最新数值
  */
-int BELL_THUNDER::RecvNameVarInt(char *name)
+int BELL_THUNDER::RecvNameVarInt(const char *name)
 {
 	std::vector<struct_Int_Message>::iterator i;
 	for (i = recv_int_message.begin(); i != recv_int_message.end(); i++)
@@ -3756,4 +3011,26 @@ int BELL_THUNDER::RecvNameVarInt(char *name)
 	}
 
 	return 0;
+}
+
+int BELL_THUNDER::SendNameVarInt(unsigned char addr, int name, int var_value)
+{
+	const char *messageName;
+	messageName = String(name).c_str();
+
+	SendNameVarInt(addr, messageName, var_value);
+}
+int BELL_THUNDER::RecvNameVarInt(int name)
+{
+	const char *messageName;
+	messageName = String(name).c_str();
+
+	RecvNameVarInt(messageName);
+}
+void BELL_THUNDER::InitNameVarInt(int name, int init_value)
+{
+	const char *messageName;
+	messageName = String(name).c_str();
+
+	InitNameVarInt(messageName, init_value);
 }

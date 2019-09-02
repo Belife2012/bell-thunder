@@ -1287,7 +1287,7 @@ void DISPLAY_THUNDER::Play_LEDs(const unsigned char *data, int size)
 }
 
 // 跑马灯
-void DISPLAY_THUNDER::Play_LED_HT16F35B()
+void DISPLAY_THUNDER::Test_LEDs()
 {
   for(int i = 1;i < 29; i++)
   {
@@ -1302,9 +1302,9 @@ void DISPLAY_THUNDER::Play_LED_HT16F35B()
 
 // 内置单色点阵图案
 // 参数-->内置的单色点阵图案编号
-void DISPLAY_THUNDER::Play_LED_HT16F35B_Show(int LED_Show_No)
+void DISPLAY_THUNDER::Play_Thunder_Picture(int picture_index)
 {
-  switch(LED_Show_No)
+  switch(picture_index)
   {
     case 0:
       ht16d35b.LED_Show(LED_Clear, sizeof(LED_Clear));
@@ -1938,4 +1938,267 @@ void DISPLAY_THUNDER::Clear_Single_Dot(uint8_t x, uint8_t y)
   }
 
   ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
+}
+
+// 设置将要播放的内置动画编号
+void DISPLAY_THUNDER::Play_Animation(uint8_t Animation_No)
+{
+	Play_LED_String("");
+	LED_show_No = Animation_No;
+}
+
+// 循环执行的内置动画控制程序
+void DISPLAY_THUNDER::Animation_Control(void)
+{
+	switch (LED_show_No)
+	{
+	case 0:
+		// Serial.printf("### No Animation\n");
+		break;
+	case 1:
+		break;
+	case 3: //眨眼 8帧
+		LED_delay_time = 200;
+		if (LED_counter < 8)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_3[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 4: //爱心  5帧
+		LED_delay_time = 100;
+		if (LED_counter < 5)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_4[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 5: //眼镜  8帧
+		if (LED_counter < 8)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_5[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_delay_time = LED_time_5[LED_counter];
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 6: //严肃 4帧
+		LED_delay_time = 200;
+		if (LED_counter < 4)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_6[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 7:										   //刹车
+		Play_Thunder_Picture(29); //单色点阵图案
+		break;
+	case 8: //流汗  3帧
+		if (LED_counter < 3)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_8[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_delay_time = LED_time_8[LED_counter];
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 9: //开心  5帧
+		LED_delay_time = 200;
+		if (LED_counter < 5)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_9[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 10: //等待  3帧
+		LED_delay_time = 1000;
+		if (LED_counter < 3)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_10[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 11: //眯眼 4帧
+		LED_delay_time = 200;
+		if (LED_counter < 4)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_11[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 12: //启动 4帧
+		LED_delay_time = 200;
+		if (LED_counter < 4)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_12[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 13: //凶  5帧
+		LED_delay_time = 500;
+		if (LED_counter < 5)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_13[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 14: //哭泣  9帧
+		LED_delay_time = 200;
+		if (LED_counter < 9)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_14[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	case 15: //语音图  5帧
+		LED_delay_time = 100;
+		if (LED_counter < 5)
+		{
+			current_time = millis();
+			if ((current_time - last_led_time) > LED_delay_time)
+			{
+				Play_Thunder_Picture(LED_show_15[LED_counter]); //单色点阵图案
+				last_led_time = millis();
+				LED_counter++;
+			}
+		}
+		else
+		{
+			LED_show_No = 0;
+			LED_counter = 0;
+			last_led_time = 0;
+			LED_delay_time = 0;
+		}
+		break;
+	}
 }

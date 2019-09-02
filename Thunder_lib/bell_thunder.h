@@ -172,11 +172,11 @@ private:
 	uint8_t button_press_counter;
 	uint8_t button_status_record;
 	uint8_t button_active;
-	enum_Key_Value function_button_event = KEY_NONE;
+	int function_button_event = KEY_NONE;
 
 	// 程序切换
-	enum_Process_Status process_status = PROCESS_STOP;
-	enum_Process_Status program_user;
+	int process_status = PROCESS_STOP;
+	int program_user;
 	uint8_t system_program_mode = 0; // 开机后确定执行的系统程序：用户程序、APP程序。。。
 
 	// 巡线IR
@@ -206,32 +206,9 @@ private:
 	// 串口通信标志位
 	bool need_communication = false;
 	uint8_t Usart_Communication = 0;
-	enum_Ble_Type ble_type = BLE_TYPE_NONE;
+	int ble_type = BLE_TYPE_NONE;
 
-	// 内置表情/动画
-	uint8_t LED_show_No = 0;
-	uint8_t LED_counter = 0;
 	unsigned long current_time = 0;
-	unsigned long last_led_time = 0;
-	uint16_t LED_delay_time = 0;
-
-	uint8_t LED_show_3[8] = {14, 15, 16, 14, 17, 14, 17, 14};
-	uint8_t LED_show_4[5] = {18, 19, 18, 19, 18};
-	uint8_t LED_show_5[8] = {20, 21, 22, 23, 24, 25, 26, 27};
-	uint16_t LED_time_5[8] = {1000, 50, 50, 50, 50, 50, 50, 50};
-	uint8_t LED_show_6[4] = {17, 14, 17, 28};
-
-	uint8_t LED_show_8[3] = {30, 31, 32};
-	uint16_t LED_time_8[3] = {200, 200, 1000};
-	uint8_t LED_show_9[5] = {33, 34, 33, 34, 33};
-
-	uint8_t LED_show_10[3] = {35, 36, 37};
-	uint8_t LED_show_11[4] = {14, 38, 14, 38};
-	uint8_t LED_show_12[4] = {39, 40, 41, 42};
-
-	uint8_t LED_show_13[5] = {43, 44, 43, 44, 43};
-	uint8_t LED_show_14[9] = {45, 46, 47, 45, 46, 47, 45, 46, 47};
-	uint8_t LED_show_15[5] = {72, 73, 74, 75, 76};
 
 	// 超声波数据
 	uint8_t US_Data[2] = {0, 0};
@@ -286,17 +263,17 @@ public:
 	void Update_Led_Indication_Status(uint32_t &current_counter);
 	void Setup_Function_Button();
 	uint8_t Get_Function_Button_Status();
-	enum_Key_Value Check_Function_Button_Value();
-	bool Check_Function_Button_Event(enum_Key_Value key_event);
-	void Set_Process_Status(enum_Process_Status new_status);
-	void Update_Process_Status(enum_Key_Value button_event);
+	int Check_Function_Button_Value();
+	bool Check_Function_Button_Event(int key_event);
+	void Set_Process_Status(int new_status);
+	void Update_Process_Status(int button_event);
 	void Reset_Process_Status();
-	void Set_Program_User(enum_Process_Status new_program_user);
-	void Set_Program_Run_Index(enum_Process_Status new_program);
+	void Set_Program_User(int new_program_user);
+	void Set_Program_Run_Index(int new_program);
 	void Toggle_Led_mode(uint32_t period, uint32_t on_duty, uint32_t off_duty, uint8_t amount);
 
 	/* 程序切换 */
-	static enum_Program_Index program_change_to;
+	static int program_change_to;
 
 	// 编码电机  闭环计算
 	void En_Motor(void);		// 编码电机  闭环计算
@@ -317,8 +294,6 @@ public:
 
 	// 动作表情
 	void Start_Show(void);				   // 开机动画/声效
-	void Set_LED_Show_No(uint8_t Show_No); // 设置将要播放的内置动画编号
-	void LED_Show(void);				   // 循环执行的内置动画控制程序
 
 	// 指令通讯
 	void Wait_Communication(void); // 等待蓝牙连接动画 (有串口数据也跳出)
@@ -328,7 +303,7 @@ public:
 	void Check_Protocol(void);			 // 协议解析
 	void Reset_Rx_Data(void);			 // 清空接收数据
 	void Set_Need_Communication(bool);
-	void Set_Ble_Type(enum_Ble_Type new_type);
+	void Set_Ble_Type(int new_type);
 
 	// 计时器接口
 	uint32_t Get_Virtual_Timer(uint32_t timer_index);
@@ -337,9 +312,13 @@ public:
 	// 多机通信
 	void Open_Multi_Message();
 	void Close_Multi_Message();
-	int SendNameVarInt(unsigned char addr, char *name, int var_value);
-	int RecvNameVarInt(char *name);
-	void InitNameVarInt(char *name, int init_value);
+	int SendNameVarInt(unsigned char addr, const char *name, int var_value);
+	int RecvNameVarInt(const char *name);
+	void InitNameVarInt(const char *name, int init_value);
+	// 重载函数
+	int SendNameVarInt(unsigned char addr, int name, int var_value);
+	int RecvNameVarInt(int name);
+	void InitNameVarInt(int name, int init_value);
 };
 
 extern BELL_THUNDER Bell_Thunder;

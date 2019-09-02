@@ -639,7 +639,7 @@ int MULT_DEVICES::AnalyseRxPackage(unsigned char rx_port)
 	return 0;
 }
 
-int MULT_DEVICES::SendNameVarInt(unsigned char addr, char *name, int var_value)
+int MULT_DEVICES::SendNameVarInt(unsigned char addr, const char *name, int var_value)
 {
 	unsigned char name_length;
 	unsigned char payload_len;

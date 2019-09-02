@@ -20,20 +20,20 @@ bool DISK_MANAGER::Disk_Manager_Initial()
   return true;
 }
 
-bool DISK_MANAGER::Write_Program_User(enum_Process_Status new_mode)
+bool DISK_MANAGER::Write_Program_User(int new_mode)
 {
   EEPROM.writeByte( DISK_ADDR_PROGRAM_MODE, (uint8_t)new_mode );
 
   return EEPROM.commit();
 }
 
-enum_Process_Status DISK_MANAGER::Read_Program_Mode()
+int DISK_MANAGER::Read_Program_Mode()
 {
   uint8_t read_value;
 
   read_value = EEPROM.readByte( DISK_ADDR_PROGRAM_MODE );
 
-  return (enum_Process_Status)read_value;
+  return (int)read_value;
 }
 
 bool DISK_MANAGER::Write_Ble_Server_Mac(const uint8_t* new_mac)

@@ -261,7 +261,7 @@ public:
 
     void OpenCommunicate(std::vector<struct_Int_Message> *message_store);
     void CloseCommunicate(void);
-    int SendNameVarInt(unsigned char addr, char *name, int var_value);
+    int SendNameVarInt(unsigned char addr, const char *name, int var_value);
 };
 
 extern MULT_DEVICES *Mult_Devices;

@@ -42,7 +42,7 @@ void Driver_Flush(void *pvParameters)
     // 
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_MATRIX_LED))
     {
-      Bell_Thunder.LED_Show();
+      Display_Screen.Animation_Control();
     }
     // 
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))

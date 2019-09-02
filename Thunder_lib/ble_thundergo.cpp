@@ -7,7 +7,7 @@
 
 uint8_t BLE_Name_Data[BLE_NAME_SIZE] = {0x00};
 QueueHandle_t BLE_THUNDERGO::Queue_Semaphore_BLE;
-enum_Ble_Status BLE_THUNDERGO::ble_connect_type = BLE_NOT_OPEN;
+int BLE_THUNDERGO::ble_connect_type = BLE_NOT_OPEN;
 
 // 蓝牙连接/断开的回调函数
 class MyServerCallbacks: public BLEServerCallbacks 
@@ -448,11 +448,11 @@ void BLE_THUNDERGO::Give_Semaphore_BLE(int ble_mesg_type)
 }
 
 
-void BLE_THUNDERGO::SetBleConnectType(enum_Ble_Status new_status)
+void BLE_THUNDERGO::SetBleConnectType(int new_status)
 {
   ble_connect_type = new_status;
 }
-enum_Ble_Status BLE_THUNDERGO::GetBleConnectType()
+int BLE_THUNDERGO::GetBleConnectType()
 {
   return ble_connect_type;
 }

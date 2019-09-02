@@ -59,7 +59,7 @@ void ATTITUDE::ShowAttitude()
  * @param axis 
  * @return float 
  */
-double ATTITUDE::GetAttitudeAngle(enum_Attitude_Axis axis)
+double ATTITUDE::GetAttitudeAngle(int axis)
 {
     switch(axis){
         case X_AXIS:
@@ -81,7 +81,7 @@ double ATTITUDE::GetAttitudeAngle(enum_Attitude_Axis axis)
  * 
  * @param axis 可以分别清零x, y, z 轴，ALL_AXIS可以全部一起清零
  */
-void ATTITUDE::ClearAttitudeAngle(enum_Attitude_Axis axis)
+void ATTITUDE::ClearAttitudeAngle(int axis)
 {
     switch(axis){
         case X_AXIS:
@@ -118,7 +118,7 @@ void ATTITUDE::ClearAttitudeAngle(enum_Attitude_Axis axis)
  * Z_AXIS：Z轴(正向为下)，绕Z轴的角速度，看向Z轴正方向，顺时针绕着转为负值，反之为正值
  * @return float 角速度值
  */
-float ATTITUDE::GetAttitudeAngleV(enum_Attitude_Axis axis)
+float ATTITUDE::GetAttitudeAngleV(int axis)
 {
     if(axis < 3){
         return angular_v[axis];
@@ -139,7 +139,7 @@ float ATTITUDE::GetAttitudeAngleV(enum_Attitude_Axis axis)
  * @param axis 
  * @return float 
  */
-float ATTITUDE::GetAttitudeAccel(enum_Attitude_Axis axis)
+float ATTITUDE::GetAttitudeAccel(int axis)
 {
     if(axis < 3){
         return accel_ms2[axis];
@@ -163,7 +163,7 @@ float ATTITUDE::GetAttitudeAccel(enum_Attitude_Axis axis)
  * 
  * @return float 返回相对角度值
  */
-float ATTITUDE::GetAttitudeStatus(enum_Attitude_Axis axis)
+float ATTITUDE::GetAttitudeStatus(int axis)
 {
     float ret;
     switch(axis){
@@ -184,7 +184,7 @@ float ATTITUDE::GetAttitudeStatus(enum_Attitude_Axis axis)
     return ret;
 }
 
-float ATTITUDE::GetCoefficientWave(enum_Attitude_Axis axis)
+float ATTITUDE::GetCoefficientWave(int axis)
 {
     return coefficient_wave[axis];
 }
@@ -194,7 +194,7 @@ float ATTITUDE::GetCoefficientWave(enum_Attitude_Axis axis)
  * @param axis 轴向
  * @param new_data 每次更新陀螺仪数据时会产生一个新的值，传入进行计算
  */
-void ATTITUDE::CalcCoefficientWave(enum_Attitude_Axis axis, float new_data)
+void ATTITUDE::CalcCoefficientWave(int axis, float new_data)
 {
     static uint8_t count_index[3];
     static float max_value[3], min_value[3], sum_all[3], accel_sum[3];

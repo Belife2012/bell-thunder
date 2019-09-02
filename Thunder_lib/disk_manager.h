@@ -20,8 +20,8 @@ public:
     DISK_MANAGER(void);
 
     bool Disk_Manager_Initial(void);
-    bool Write_Program_User(enum_Process_Status new_mode);
-    enum_Process_Status Read_Program_Mode();
+    bool Write_Program_User(int new_mode);
+    int Read_Program_Mode();
     bool Write_Ble_Server_Mac(const unsigned char* new_mac);
     bool Read_Ble_Server_Mac(unsigned char* const mac_addr);
     bool Write_Ble_Name(const unsigned char* new_name);

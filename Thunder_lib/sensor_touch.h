@@ -27,7 +27,7 @@ public:
 
   /*--------------Thunder IDE APIs: -------------*/
   byte Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueValue, unsigned char channel=0);
-  bool Check_Event(enum_touch_event check_event, unsigned char channel=0);
+  bool Check_Event(int check_event, unsigned char channel=0);
   int Get_Event(uint8_t sensorChannel=0);
 private:
   byte Get_Status(byte *readValue, unsigned char channel=0);
