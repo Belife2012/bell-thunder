@@ -358,20 +358,23 @@ void BELL_THUNDER::Indicate_Lowpower(uint32_t Battery_Voltage)
 		return;
 	}
 
-	if (Battery_Voltage < BATTERY_LOW_VALUE && Battery_Voltage < (Low_Power_Old - 100))
+	if ( Battery_Voltage < BATTERY_LOW_VALUE )
 	{
-		lowpower_flag = 1;
+		if(power_alarm_timer + POWER_ALARM_PERIOD < millis() || Battery_Voltage < (Low_Power_Old - 100)){
+			power_alarm_timer = millis();
+			lowpower_flag = 1;
 
-		Display_Screen.Play_Thunder_Picture(101);
+			Display_Screen.Play_Thunder_Picture(101);
 
-		Speaker_Thunder.Play_Song(79);
-		delay(300);
-		Speaker_Thunder.Play_Song(79);
-		delay(300);
-		Speaker_Thunder.Play_Song(79);
+			Speaker_Thunder.Play_Song(79);
+			delay(300);
+			Speaker_Thunder.Play_Song(79);
+			delay(300);
+			Speaker_Thunder.Play_Song(79);
 
-		Serial.printf("\nLow Power: %dmV\n", Battery_Voltage);
-		Low_Power_Old = Battery_Voltage;
+			Serial.printf("\nLow Power: %dmV\n", Battery_Voltage);
+			Low_Power_Old = Battery_Voltage;
+		}
 	}
 }
 

@@ -71,6 +71,7 @@
 #define BATTERY_ADC_PIN 35
 #define ADC_R_1 33.0 // 分压电阻 33K:100K
 #define ADC_R_2 100.0
+#define POWER_ALARM_PERIOD	5000
 
 // 巡线IR
 #define IR_1 36 // IR脚
@@ -151,6 +152,7 @@ private:
 	uint16_t battery_filter_data[BATTERY_FILTER_NUM] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 	uint16_t Low_Power_Old = 9000; //初始值设置为9000mV, 记录报警低电压时的电压值，每下降300mv报警一次
 	uint32_t Battery_Value;		   //记录每次采集电压值时的电压值
+	uint32_t power_alarm_timer;
 	uint8_t lowpower_flag = 0;	 // 1 为低电压状态
 
 	/* 按键、指示灯LED */

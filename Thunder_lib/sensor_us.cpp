@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <sensor_us.h>
 
-#define DEBUG_US_IIC
+// #define DEBUG_US_IIC
 
 // #define DELAY_BEFORE_READ_US
 
