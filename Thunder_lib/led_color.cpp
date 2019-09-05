@@ -85,6 +85,11 @@ void LED_COLOR::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
   }
 }
 
+void LED_COLOR::Set_LEDs_Data(t_color_led_buff data)
+{
+  Set_LEDs_Data(1, (unsigned char *)data, RGB_LED_DATA_SIZE);
+}
+
 // 0xA0  全关，立即刷新
 void LED_COLOR::LED_OFF(void)
 {

@@ -15,10 +15,11 @@ void TASK_SUPREME::Set_Current_Task_Supreme()
 		return;
 	}
 
+	former_Priority = uxTaskPriorityGet(NULL);
+
 	// highese Priority in the AppTasks
 	vTaskPrioritySet(NULL, APP_TASK_PRIORITY_MAX);
 
-	former_Priority = uxTaskPriorityGet(NULL);
 }
 /* 
  * 用于硬件驱动，恢复当前线程的Priority

@@ -88,11 +88,11 @@ void SPEAKER_WT588::send_data(int data)
     {
       digitalWrite(Data_pin, HIGH);
 
-#if ENABLE_WT588_SPINLOCK
-      //exit critical
-      //taskEXIT_CRITICAL(&spinlockMUX_WT588);
-      this_supreme.Clear_Current_Task_Supreme();
-#endif
+      #if ENABLE_WT588_SPINLOCK
+        //exit critical
+        //taskEXIT_CRITICAL(&spinlockMUX_WT588);
+        this_supreme.Clear_Current_Task_Supreme();
+      #endif
       //delay(2);
       lastTime = millis();
       for (;;)
@@ -111,11 +111,11 @@ void SPEAKER_WT588::send_data(int data)
           break;
       }
 
-#if ENABLE_WT588_SPINLOCK
+    #if ENABLE_WT588_SPINLOCK
       //enter critical
       //taskENTER_CRITICAL(&spinlockMUX_WT588);
       this_supreme.Set_Current_Task_Supreme();
-#endif
+    #endif
     }
 
     digitalWrite(Data_pin, HIGH);
@@ -135,7 +135,6 @@ void SPEAKER_WT588::send_data(int data)
     B_DATA = (ddtata_tempp & 0x0001);
   }
   digitalWrite(Data_pin, HIGH);
-
 #if ENABLE_WT588_SPINLOCK
   //exit critical
   // taskEXIT_CRITICAL(&spinlockMUX_WT588);

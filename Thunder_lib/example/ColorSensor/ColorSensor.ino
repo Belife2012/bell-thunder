@@ -43,15 +43,25 @@ void Program_4() {}
  *************************************************************/
 void setup_1_1()
 {
-    // 写入彩灯的显示数据
-    t_color_led_buff colorData = {{182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}, 
-                                    {182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}};
-    LED_Color.Set_LEDs_Data(colorData);
-    LED_Color.Set_LED_Dynamic(COLOR_MODE_BREATH);
+    Serial.println("Sensor of Color...");
 }
 void loop_1_1()
 {
-    Display_Screen.Play_Animation(5);
+    int value;
 
-    delay(6000);
+    value = Sensor_Color.Get_Color_Result(1);
+    switch(value)
+    {
+        case CARD_NO: Speaker_Thunder.Play_Song(SOUND_MUSIC_C0);break;
+        case CARD_RED: Speaker_Thunder.Play_Song(SOUND_MUSIC_C1);break;
+        case CARD_BROWN: Speaker_Thunder.Play_Song(SOUND_MUSIC_C2);break;
+        case CARD_YELLOW: Speaker_Thunder.Play_Song(SOUND_MUSIC_C3);break;
+        case CARD_GREEN: Speaker_Thunder.Play_Song(SOUND_MUSIC_C4);break;
+        case CARD_BLUE: Speaker_Thunder.Play_Song(SOUND_MUSIC_C5);break;
+        case CARD_WHITE: Speaker_Thunder.Play_Song(SOUND_MUSIC_C6);break;
+        case CARD_BLACK: Speaker_Thunder.Play_Song(SOUND_MUSIC_C7);break;
+        default: break;
+    }
+
+    delay(1000);
 }

@@ -1,68 +1,88 @@
 #include <bell_thunder.h>
 
-void setup() {
-  // put your setup code here, to run once:
-  
-  Serial.begin(115200);
-  while (!Serial);
-  
-  Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
-  // 1.9版的电路板增加了IIC扩展芯片，初始化需要调用此函数进行IIC初始化
-  Bell_Thunder.Select_Sensor_AllChannel();
-
-  // 一定要有调用配置 Setup_Motor_PID()，电机旋转量记录才有效
-  Motor_Thunder.Setup_Motor_PID();
-
-  // 初始化单色LED驱动IC配置，才有LED点阵显示
-  Display_Screen.Setup();   // 初始化单色LED驱动IC配置
-
-  // 新建 loop 后 函数setup_1() loop_1()才有效
-  System_Task.Create_New_Loop();
-
-  // 开启后台守护线程
-  System_Task.Set_Flush_Task(1);
-  System_Task.Create_Deamon_Threads();
-}
-
-void loop() {
-
-  Serial.printf("left rotate: %d\n", Motor_Thunder.Get_RotateValue(1));
-  Serial.printf("Right rotate: %d\n\n", Motor_Thunder.Get_RotateValue(2));
-
-  Display_Screen.Play_Animation(5);
-
-  delay(3000);
-}
-
-/****************************setup_1()、loop_1()**************************************/
-void setup_1()
+/*************************************************************
+ * @brief: thunder系统相关配置
+ *************************************************************/
+void setup()
 {
-
+    Bell_Thunder.Setup_All();
+    Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
+    Motor_Servo.Servo_Turn(1, 90);
+    Motor_Servo.Servo_Turn(2, 90);
+}
+void loop()
+{
+    Programs_System();
+    vTaskDelay(pdMS_TO_TICKS(10));
 }
 
-//超声波数据
-float US_Data_cm = 0;
-void loop_1()
+// 系统参数thunder_system_parameter 为赛事时，启动Program_AutoCtrl，此环节蓝牙遥控器不能遥控
+void Program_AutoCtrl() {}
+// ThunderGo依赖于此程序，开机后切换为ThunderGo模式时，执行该程序
+void Program_ThunderGo()
 {
-  // 获取两个超声波模块的数据
-  Bell_Thunder.Select_Sensor_Channel(1);
-  Serial.println("Port 1: ");
-  US_Data_cm = Sensor_Ultrasonic.Get_Distance();
-  if(US_Data_cm < 1.0){
-    Serial.printf("### US_Data_cm : %.1f [cm]###############################\n", US_Data_cm);
-  }else{
-    Serial.printf("*** US_Data_cm : %.1f [cm]***\n",US_Data_cm);
-  }
+    Bell_Thunder.Set_Ble_Type(BLE_TYPE_SERVER);
+    Bell_Thunder.Set_Need_Communication(true);
+}
 
-  Bell_Thunder.Select_Sensor_Channel(2);
-  Serial.println("Port 2: ");
-  US_Data_cm = Sensor_Ultrasonic.Get_Distance();
-  if(US_Data_cm < 1.0){
-    Serial.printf("### US_Data_cm : %.1f [cm]###############################\n", US_Data_cm);
-  }else{
-    Serial.printf("*** US_Data_cm : %.1f [cm]***\n\n",US_Data_cm);
-  }
+/*************************************************************
+ * @brief: thunder用户程序的启动代码，只在用户程序启动时执行一次
+ * 一般在此过程创建用户线程，用户程序最多4个，分别为Program_1、
+ * Program_2、Program_3、Program_4;
+ * 
+ * 在以下程序 Program_1 Program_2 Program_3 Program_4 里面开启任务线程
+ * 使用函数 System_Task.Create_New_Loop 开启任务线程，每个程序中最多可以开启32个任务线程
+ * System_Task.Create_New_Loop需要指定三个参数: 
+ *                                          program_sequence(程序号), 
+ *                                          func_Program_Setup program_setup(setup函数入口), 
+ *                                          func_Program_Loop program_loop(loop函数入口)
+ *
+ *************************************************************/
+void Program_1()
+{
+    System_Task.Create_New_Loop(PROGRAM_USER_1, setup_1_1, loop_1_1);
+    System_Task.Create_New_Loop(PROGRAM_USER_1, setup_1_2, loop_1_2);
+}
+void Program_2() {}
+void Program_3() {}
+void Program_4() {}
 
+/*************************************************************
+ * @brief: thunder用户线程
+ *************************************************************/
+// Task 1
+void setup_1_1()
+{
+    // 写入彩灯的显示数据
+    t_color_led_buff colorData = {{182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}, 
+                                    {182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}};
+    LED_Color.Set_LEDs_Data(colorData);
+    LED_Color.Set_LED_Dynamic(COLOR_MODE_BREATH);
+}
+void loop_1_1()
+{
+    Display_Screen.Play_Animation(5);
 
-  delay(1000);
+    delay(6000);
+}
+
+// Task 2
+void setup_1_2()
+{
+    Sensor_Light.Set_Operate_Mode(100, 1);
+    Sensor_Light.Set_Extremum(0, 25, 1);
+}
+
+#define MOTOR_MAX   40
+void loop_1_2()
+{
+    float light_value;
+
+    light_value = Sensor_Light.Get_Light_Value(1);
+    Serial.printf("light: %f\n", light_value);
+
+    Motor_Thunder.Set_Motor_Power(1, MOTOR_MAX * light_value / 100);
+    Motor_Thunder.Set_Motor_Power(2, MOTOR_MAX - (MOTOR_MAX * light_value / 100));
+
+    delay(10);
 }

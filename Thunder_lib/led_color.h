@@ -22,6 +22,8 @@ typedef enum{
   COLOR_MODE_BREATH
 }enum_ColorLED_Mode_Type;
 
+typedef unsigned char t_color_led_buff[RGB_LED_AMOUNT][3];
+
 class LED_COLOR : public SENSOR_IIC
 {
   public:
@@ -31,6 +33,7 @@ class LED_COLOR : public SENSOR_IIC
 
     void Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b);  // 写入单个寄存器数据
     void Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size);     // 写入多个寄存器数据
+    void Set_LEDs_Data(t_color_led_buff data);
 
     void LED_OFF(void);                 // 0xA0  全关，立即刷新
     void LED_Updata(void);              // 0xA1  按照现有数据刷新

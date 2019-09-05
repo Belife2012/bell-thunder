@@ -172,7 +172,7 @@ uint8_t SENSOR_COLOR::Colour_Recognition(unsigned short *RGBC)
   //先处理特殊的, 无色卡情况
   // if (RGBC[3] < NO_COLOR_CARD_C) //C值小于NO_COLOR_CARD_C ，没有东西反光
   // {
-  //   return NO_CARD; //没有东西反光
+  //   return CARD_NO; //没有东西反光
   // }
   // else
   {
@@ -185,62 +185,62 @@ uint8_t SENSOR_COLOR::Colour_Recognition(unsigned short *RGBC)
            ) 
       {
         Env_Backlight_Filter(RGBC[3]);
-        return BLACK_CARD; //黑色
+        return CARD_BLACK; //黑色
       }
       else if (m_min >= WHITE_CARD_MIN_RGB && 
           ( WHITE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < WHITE_CARD_MAX_C ) 
           // && (WHITE_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < WHITE_MAX_H) 
           ) 
       {
-        return WHITE_CARD; //白色
+        return CARD_WHITE; //白色
       }
     }else{
       if ( (RED_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < RED_CARD_MAX_H)
             //  &&  ( RED_CARD_MIN_C < RGBC[3]) && (RGBC[3] < RED_CARD_MAX_C )
              )
       {
-        return RED_CARD; // 
+        return CARD_RED; // 
       }
       else if ( (BROWN_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < BROWN_CARD_MAX_H)
             //  &&  ( BROWN_CARD_MIN_C < RGBC[3]) && (RGBC[3] < BROWN_CARD_MAX_C )
              )
       {
-        return BROWN_CARD; //
+        return CARD_BROWN; //
       }
       // 黄色与棕色的交叉区域使用 S 值进行区分
       else if ( (BROWN_CARD_MAX_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < YELLOW_CARD_MIN_H)
              )
       {
         if( HSV[1] < 0.85 ){
-          return BROWN_CARD; //
+          return CARD_BROWN; //
         }
         else{
-          return YELLOW_CARD; //
+          return CARD_YELLOW; //
         }
       }
       else if ( (YELLOW_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < YELLOW_CARD_MAX_H)
             //  &&  ( YELLOW_CARD_MIN_C < RGBC[3]) && (RGBC[3] < YELLOW_CARD_MAX_C )
              )
       {
-        return YELLOW_CARD; //
+        return CARD_YELLOW; //
       }
       else if ( (GREEN_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < GREEN_CARD_MAX_H)
             //  &&  ( GREEN_CARD_MIN_C < RGBC[3]) && (RGBC[3] < GREEN_CARD_MAX_C )
              )
       {
-        return GREEN_CARD; //
+        return CARD_GREEN; //
       }
       else if ( (BLUE_CARD_MIN_H < (uint32_t)HSV[0]) && ((uint32_t)HSV[0] < BLUE_CARD_MAX_H)
             //  &&  ( BLUE_CARD_MIN_C < RGBC[3]) && (RGBC[3] < BLUE_CARD_MAX_C )
              )
       {
-        return BLUE_CARD; //
+        return CARD_BLUE; //
       }
     }
     
   }
   Env_Backlight_Filter(RGBC[3]);
-  return NO_CARD;
+  return CARD_NO;
 }
 
 // 类内部使用，读取传感器数据
@@ -346,38 +346,9 @@ uint16_t SENSOR_COLOR::Get_Clear(uint8_t channel)
  */
 uint8_t SENSOR_COLOR::Get_Color_Result(uint8_t sensorChannel)
 {    
-  uint8_t Colour_Num = 0;
   unsigned short RGBC[4] = {
       0
   };
   Get_RGBC_Data(RGBC, sensorChannel);
-  switch (Colour_Recognition(RGBC)) {
-      case BLACK_CARD:
-          return Colour_Num = 7; //黑色
-          break;
-      case WHITE_CARD:
-          return Colour_Num = 6; //白色
-          break;
-      case RED_CARD:
-          return Colour_Num = 1; //红色
-          break;
-      case BROWN_CARD:
-          return Colour_Num = 5; //棕色
-          break;
-      case YELLOW_CARD:
-          return Colour_Num = 2; //黄色
-          break;
-      case GREEN_CARD:
-          return Colour_Num = 3; //绿色
-          break;
-      case BLUE_CARD:
-          return Colour_Num = 4; //蓝色
-          break;
-      case NO_CARD:
-          return Colour_Num = 0; //无颜色
-          break;
-      default:
-          return Colour_Num = 0; //bad return
-          break;
-  }
+  return Colour_Recognition(RGBC);
 }

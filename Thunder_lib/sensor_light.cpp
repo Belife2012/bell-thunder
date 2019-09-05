@@ -88,9 +88,9 @@ float SENSOR_LIGHT::Get_Light_Value(unsigned char channel )
 /**
  * @brief: 设置光电传感器的最大值或最小值
  * 
- * @param sensorChannel: 传感器接口编号
  * @param mode: 0 设置值为最大值，1 设置值为最小值
  * @param value: 新设置的数值（0~100）
+ * @param sensorChannel: 传感器接口编号
  */
 void SENSOR_LIGHT::Set_Extremum(int mode, float value, uint8_t sensorChannel)
 {

@@ -48,7 +48,7 @@ void setup_1_1()
 void loop_1_1()
 {
     uint16_t distance;
-    distance = Sensor_Ultrasonic.Get_Distance(4);
+    distance = Sensor_Ultrasonic.Get_Distance(1);
 
     Serial.printf("Ultrasonic: %d\n", distance);
     Display_Screen.Play_LED_String(distance);

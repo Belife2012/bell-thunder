@@ -47,7 +47,7 @@ void setup_1_1()
 void loop_1_1()
 {
     uint16_t status;
-    status = Sensor_Touch.Get_Event(3);
+    status = Sensor_Touch.Get_Event(1);
 
     Serial.printf("Touch Status: %d\n", status);
     Display_Screen.Play_LED_String(status);

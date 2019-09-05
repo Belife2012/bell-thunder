@@ -334,7 +334,12 @@ void MOTOR_THUNDER::Motor_Free(int motor)
 }
 #endif
 
-// 参数1-->输出的值；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度PID控制）
+/**
+ * @brief: 电机控制；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
+ * 
+ * @param motor: 1 是左电机，2 是右电机
+ * @param power: 范围为-100 ~ 100，电池电压变化时，输出电机功率会变化
+ */
 void MOTOR_THUNDER::Set_Motor_Output(int motor, int M_output)
 {
 	if (M_output >= 0)
@@ -347,7 +352,12 @@ void MOTOR_THUNDER::Set_Motor_Output(int motor, int M_output)
 	}
 }
 
-// 参数1-->功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
+/**
+ * @brief: 功率，会随电压浮动；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度PID控制）
+ * 
+ * @param motor: 1 是左电机，2 是右电机
+ * @param power: 范围为-100 ~ 100，电池电压变化时，会相对于Set_Motor_Output稳定的输出电机功率
+ */
 void MOTOR_THUNDER::Set_Motor_Power(int motor, int power)
 {
 	Bell_Thunder.Disable_En_Motor();
@@ -647,6 +657,8 @@ void MOTOR_THUNDER::Position_Control()
 
   //0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
   byte running_mode;
+  // 控制模式的参数
+  float mode_data;
 
   //左电机的转动速度
   float left_motor_speed;
@@ -793,7 +805,15 @@ void MOTOR_THUNDER::Control_Motor_Running(MotorRunning_Struct &running_data)
 		break;
 	}
 }
-
+/**
+ * @brief: 
+ * 
+ * @param _select: 0代表left 和 right的控制都起效；1代表left控制起效，right无效; 2代表right控制起效，left无效
+ * @param _mode: 0: 无模式；1：控制时间（秒）；2：控制角度（度）；3：控制圈数（圈）
+ * @param _data: 控制模式的参数
+ * @param _left_speed: 左电机的转动速度
+ * @param _right_speed: 右电机的转动速度
+ */
 void MOTOR_THUNDER::Control_Motor_Running(byte _select, byte _mode, float _data, float _left_speed, float _right_speed)
 {
 	MotorRunning_Struct _running_data;

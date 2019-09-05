@@ -22,6 +22,8 @@ typedef struct{
   byte comIndex;
 } LedDotLocation;
 
+typedef unsigned char t_picture_buff[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM];
+
 #ifdef __cplusplus
 }
 #endif
@@ -71,7 +73,7 @@ class DISPLAY_THUNDER
     void Play_LED_String(uint32_t number);
     void Play_String_NextFrame(void);
     void Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
-                                    byte display_flag);
+                                    byte display_flag=1);
     void Move_Picture_To(int x, int y);
     void Set_Single_Dot(uint8_t x, uint8_t y);
     void Clear_Single_Dot(uint8_t x, uint8_t y);

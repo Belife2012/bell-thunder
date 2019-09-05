@@ -1,5 +1,12 @@
 #include <bell_thunder.h>
 
+
+/*************************************************************
+ * @brief: 
+ * 出厂内置程序，设备启动按一下或者两下，都是进入到ThunderGO模式，
+ * 可以使用ThunderGo APP进行遥控，开机立刻可以玩耍。
+ *************************************************************/
+
 void setup()
 {
 	// initial thunder-car all hareware resource

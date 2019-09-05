@@ -1,134 +1,84 @@
 #include <bell_thunder.h>
 
+/*************************************************************
+ * @brief: thunder系统相关配置
+ *************************************************************/
 void setup()
 {
-  // initial System
-  thunder_system_parameter = 1;
+    // initial System
+    thunder_system_parameter = 1; // 开启赛事模式
 
-  // initial thunder-car all hareware resource
-  Bell_Thunder.Setup_All();
-  Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
+    // initial thunder-car all hareware resource
+    Bell_Thunder.Setup_All();
+    Bell_Thunder.Set_Ble_Type(BLE_TYPE_CLIENT);
 
-  // 舵机位置初始化
-  Motor_Servo.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
-  Motor_Servo.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+    // 舵机位置初始化
+    Motor_Servo.Servo_Turn(1, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
+    Motor_Servo.Servo_Turn(2, 90); //参数1--> 舵机编号；参数2 --> 角度[%](0~180)
 }
 void loop()
 {
-  Programs_System();
+    Programs_System();
+    vTaskDelay(pdMS_TO_TICKS(10));
 }
 
-/* 
- * 在以下程序 Program_1 Program_2 Program_3 Program_4 Program_ThunderGo 里面开启任务线程
- * 使用函数 System_Task.Create_New_Loop 开启任务线程，每个程序中最多可以开启五个任务线程
- * System_Task.Create_New_Loop需要指定三个参数: program_sequence(程序号), 
- *                                          func_Program_Setup program_setup(setup函数入口), 
- *                                          func_Program_Loop program_loop(loop函数入口)
- * 
- * @parameters: 
- * @return: 
- */
 #ifdef COMPETITION_FW_001
 void Program_AutoCtrl()
 {
-  // 创建赛前一分钟的程序
-  Create_New_Loop_AutoCtrl(PROGRAM_USER_1, setup_AutoCtrl_1, loop_AutoCtrl_1);
+    // 使用Create_New_Loop_AutoCtrl创建赛前一分钟的任务
+    Create_New_Loop_AutoCtrl(PROGRAM_USER_1, setup_AutoCtrl_1, loop_AutoCtrl_1);
 }
 #endif
-void Program_1()
-{
-  // 创建用户程序1的线程，最多五个线程
-  System_Task.Create_New_Loop(PROGRAM_USER_1, setup_1_1, loop_1_1);
-}
-void Program_2()
-{
-  // 创建用户程序2的线程，最多五个线程
-  System_Task.Create_New_Loop(PROGRAM_USER_2, setup_2_1, loop_2_1);
-}
-void Program_3()
-{
-  // 创建用户程序3的线程，最多五个线程
-  System_Task.Create_New_Loop(PROGRAM_USER_3, setup_3_1, loop_3_1);
-}
-void Program_4()
-{
-  // 创建用户程序4的线程，最多五个线程
-  System_Task.Create_New_Loop(PROGRAM_USER_4, setup_4_1, loop_4_1);
-}
 void Program_ThunderGo()
 {
-  Bell_Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
-  Bell_Thunder.Set_Need_Communication(true);
+    Bell_Thunder.Set_Ble_Type(BLE_TYPE_SERVER); // ThunderGo 模式，进入BLE Server
+    Bell_Thunder.Set_Need_Communication(true);
 }
-/*******setup函数 loop函数********/
-#ifdef COMPETITION_FW_001
 
+/*************************************************************
+ * @brief: thunder用户程序的启动代码，赛事程序只能启动 Program_1 程序
+ *************************************************************/
+void Program_1()
+{
+    System_Task.Create_New_Loop(PROGRAM_USER_1, setup_1_1, loop_1_1);
+}
+void Program_2() {}
+void Program_3() {}
+void Program_4() {}
+
+/*************************************************************
+ * @brief: thunder用户线程
+ *************************************************************/
+
+// 编写赛前一分钟的任务
+#ifdef COMPETITION_FW_001
 void setup_AutoCtrl_1()
 {
-
-  Serial.printf("timer1: %.3f\n",Bell_Thunder.Get_Virtual_Timer(1));
-  Bell_Thunder.Reset_Virtual_Timer(1);
-  Serial.printf("light1: %.3f\n",Sensor_Light.Get_Light_Value(0));
-
-  delay(3000);
-  Sensor_Light.Set_Dark_Value(0,50);
-  
-  Serial.printf("timer1: %.3f\n",Bell_Thunder.Get_Virtual_Timer(1));
-  Serial.printf("timer4: %.3f\n\n",Bell_Thunder.Get_Virtual_Timer(4));
-  Serial.printf("light2: %.3f\n",Sensor_Light.Get_Light_Value(0));
 }
 void loop_AutoCtrl_1()
 {
-  /* 滚动显示字符串 */
-  char alphabet_B[] = "AutoCtrl";
-  Display_Screen.Play_LED_String(alphabet_B);
-  delay(10000);
+    /* 滚动显示字符串 */
+    char alphabet_B[] = "AutoCtrl";
+    Display_Screen.Play_LED_String(alphabet_B);
+    delay(10000);
 }
-
 #endif
+
+// 用户自主的程序，下面示例编写 4 个程序
+
+// 1 号程序
 void setup_1_1()
 {
-  Serial.printf("timer1: %.3f\n",Bell_Thunder.Get_Virtual_Timer(1));
+    Display_Screen.Play_LED_String("RUN");
 }
 void loop_1_1()
 {
-  /* 滚动显示字符串 */
-  char alphabet_B[] = "1bell";
-  Display_Screen.Play_LED_String(alphabet_B);
-  delay(10000);
-}
-
-void setup_2_1()
-{
-
-}
-void loop_2_1()
-{
-  /* 滚动显示字符串 */
-  char alphabet_B[] = "2bellbell";
-  Display_Screen.Play_LED_String(alphabet_B);
-  delay(10000);
-}
-
-void setup_3_1()
-{
-
-}
-void loop_3_1()
-{
-  /* 滚动显示字符串 */
-  char alphabet_C[] = "abcdefghijklmnopqrstuvwxyz0123456789";
-  Display_Screen.Play_LED_String(alphabet_C);
-  delay(40000);
-}
-
-void setup_4_1()
-{
-  byte colorData[36] = {182, 180, 245, 132, 129, 239, 90, 86, 235, 44, 39, 228, 29, 24, 205, 22, 19, 155,
-                        182, 180, 245, 132, 129, 239, 90, 86, 235, 44, 39, 228, 29, 24, 205, 22, 19, 155};
-  LED_Color.Set_LEDs_Data(0x01, colorData, sizeof(colorData));
-  LED_Color.Set_LED_Dynamic(COLOR_MODE_ROLL);
-}
-void loop_4_1()
-{
+    Display_Screen.Move_Picture_To(0, 1);
+    delay(100);
+    Display_Screen.Move_Picture_To(0, -1);
+    delay(100);
+    Display_Screen.Move_Picture_To(0, 1);
+    delay(100);
+    Display_Screen.Move_Picture_To(0, -1);
+    delay(1000);
 }
