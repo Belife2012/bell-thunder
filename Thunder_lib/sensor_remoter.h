@@ -46,8 +46,8 @@ typedef enum{
 } enum_Remoter_Value;
 
 typedef enum{
-    KEY_PRESSING = 0,
-    KEY_RELEASING
+    KEY_RELEASING = 0,
+    KEY_PRESSING
 } enum_Key_Action;
 
 const struct_Key_Location key_location_info[KEY_AMOUNT] = {

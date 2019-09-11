@@ -41,29 +41,27 @@ void Program_4() {}
 /*************************************************************
  * @brief: thunder用户线程
  *************************************************************/
-DISPLAY_SCREEN::t_picture_buff myPic = {
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-};
-
 void setup_1_1()
 {
-    Display_Screen.Display_Picture(myPic);
+    Motor_Servo.Servo_Turn(1, 0);
+    Motor_Servo.Servo_Turn(2, 0);
+    delay(2000);
+    Motor_Servo.Servo_Turn(1, 180);
+    Motor_Servo.Servo_Turn(2, 180);
 }
 void loop_1_1()
 {
-    Display_Screen.Move_Picture_To(3, 0);
-    delay(300);
-    Display_Screen.Move_Picture_To(-3, 0);
-    delay(300);
+    delay(2000);
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::A, -100); // 没有控制速度时，不产生阻塞
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::B, -100);
+    delay(2000);
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::A, 80);
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::B, 80);
+
+    delay(2000);
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::A, -100, 10); // 控制速度时会阻塞直到转到固定位置
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::B, -100, 10);
+    delay(2000);
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::A, 80, 50);
+    Motor_Servo.Servo_Turn_Percent(MOTOR_SERVO::B, 80, 50);
 }

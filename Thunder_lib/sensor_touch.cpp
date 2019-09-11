@@ -38,7 +38,7 @@ byte SENSOR_TOUCH::Get_Status(byte *readValue, unsigned char channel)
 }
 
 /* 
- * 复位工作模式：自动模式，未按下亮绿灯，按下亮红灯
+ * 复位灯光模式：自动模式，释放状态亮绿灯，按下状态亮红灯
  * 
  * @parameters: 
  * @return: 
@@ -108,11 +108,11 @@ byte SENSOR_TOUCH::Set_LED_RGBvalue(byte RedValue, byte GreenValue, byte BlueVal
 }
 
 /* 
- * 获取触碰传感器事件，0为未按下状态，1为按下状态，其他的过程值 可以通过连续获取状态做判断触碰过程
+ * 获取触碰传感器事件
  * 
  * @parameters: 
  * @return: 
- *      0 未按下状态
+ *      0 未按下状态（释放状态）
  *      1 按下状态
  *      2 按下后释放（触碰）
  */

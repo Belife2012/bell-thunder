@@ -1275,19 +1275,19 @@ const uint8_t LED_SHOW1_101[29] =
 // };
 
 // 初始化单色点阵灯驱动
-void DISPLAY_THUNDER::Setup()
+void DISPLAY_SCREEN::Setup()
 {
   ht16d35b.Setup();
   display_string_len = 0;
 }
 
-void DISPLAY_THUNDER::Play_LEDs(const unsigned char *data, int size)
+void DISPLAY_SCREEN::Play_LEDs(const unsigned char *data, int size)
 {
   ht16d35b.LED_Show(data, size);
 }
 
 // 跑马灯
-void DISPLAY_THUNDER::Test_LEDs()
+void DISPLAY_SCREEN::Test_LEDs()
 {
   for(int i = 1;i < 29; i++)
   {
@@ -1302,7 +1302,7 @@ void DISPLAY_THUNDER::Test_LEDs()
 
 // 内置单色点阵图案
 // 参数-->内置的单色点阵图案编号
-void DISPLAY_THUNDER::Play_Thunder_Picture(int picture_index)
+void DISPLAY_SCREEN::Play_Thunder_Picture(int picture_index)
 {
   switch(picture_index)
   {
@@ -1651,10 +1651,10 @@ void DISPLAY_THUNDER::Play_Thunder_Picture(int picture_index)
  * 如果显示内容不超过显示范围，将是居中静态显示
  * 最长可以支持40个字符
  * 
- * @parameters: 传入字符串首地址，字符串最长30字节，NULL 表示清空显示
+ * @parameters: 传入字符串首地址，字符串最长40字节，NULL 表示清空显示
  * @return: 
  */
-void DISPLAY_THUNDER::Play_LED_String(const char *playString)
+void DISPLAY_SCREEN::Play_LED_String(const char *playString)
 {
   uint8_t i;
 
@@ -1698,7 +1698,7 @@ void DISPLAY_THUNDER::Play_LED_String(const char *playString)
  * @parameters: 
  * @return: 
  */
-void DISPLAY_THUNDER::Play_LED_String(double number){
+void DISPLAY_SCREEN::Play_LED_String(double number){
   int number_int;
   String number_char;
 
@@ -1714,13 +1714,13 @@ void DISPLAY_THUNDER::Play_LED_String(double number){
   Play_LED_String( number_char.c_str() );
 
 }
-void DISPLAY_THUNDER::Play_LED_String(uint32_t number){
+void DISPLAY_SCREEN::Play_LED_String(uint32_t number){
   Play_LED_String( (double)number );
 }
-void DISPLAY_THUNDER::Play_LED_String(int number){
+void DISPLAY_SCREEN::Play_LED_String(int number){
   Play_LED_String( (double)number );
 }
-void DISPLAY_THUNDER::Play_LED_String(float number){
+void DISPLAY_SCREEN::Play_LED_String(float number){
   Play_LED_String( (double)number );
 }
 
@@ -1731,7 +1731,7 @@ void DISPLAY_THUNDER::Play_LED_String(float number){
  * @parameters: 
  * @return: 
  */
-void DISPLAY_THUNDER::Play_String_NextFrame()
+void DISPLAY_SCREEN::Play_String_NextFrame()
 {
   uint8_t i;
   uint8_t j;
@@ -1802,13 +1802,13 @@ void DISPLAY_THUNDER::Play_String_NextFrame()
   ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
-/* 
- * 显示18*12的点阵画面
+/**
+ * @brief: 显示18*12的点阵画面
  * 
- * @parameters: 
- * @return: 
+ * @param picture_dots: 存有显示数据的二维数组数据
+ * @param display_flag: 默认为1 表示立刻显示，0表示仅仅修改显示内存
  */
-void DISPLAY_THUNDER::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
+void DISPLAY_SCREEN::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
                                     byte display_flag)
 {
   uint8_t i;
@@ -1840,13 +1840,13 @@ void DISPLAY_THUNDER::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM
   }
 }
 
-/* 
- * 移动点阵画面
+/**
+ * @brief: 移动点阵画面
  * 
- * @parameters: 
- * @return: 
+ * @param x: 水平轴的偏移
+ * @param y: 垂直轴的偏移
  */
-void DISPLAY_THUNDER::Move_Picture_To(int x, int y)
+void DISPLAY_SCREEN::Move_Picture_To(int x, int y)
 {
   uint8_t i;
   uint8_t j;
@@ -1886,13 +1886,13 @@ void DISPLAY_THUNDER::Move_Picture_To(int x, int y)
   ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
-/* 
- * 点亮画面的一个x,y点
+/**
+ * @brief: 点亮画面的一个x,y点
  * 
- * @parameters: 
- * @return: 
+ * @param x: 水平轴位置
+ * @param y: 垂直轴位置
  */
-void DISPLAY_THUNDER::Set_Single_Dot(uint8_t x, uint8_t y)
+void DISPLAY_SCREEN::Set_Single_Dot(uint8_t x, uint8_t y)
 {
   uint8_t i;
   uint8_t j;
@@ -1913,13 +1913,13 @@ void DISPLAY_THUNDER::Set_Single_Dot(uint8_t x, uint8_t y)
   ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
-/* 
- * 熄灭画面的一个x,y点
+/**
+ * @brief: 熄灭画面的一个x,y点
  * 
- * @parameters: 
- * @return: 
+ * @param x: 水平轴位置
+ * @param y: 垂直轴位置
  */
-void DISPLAY_THUNDER::Clear_Single_Dot(uint8_t x, uint8_t y)
+void DISPLAY_SCREEN::Clear_Single_Dot(uint8_t x, uint8_t y)
 {
   uint8_t i;
   uint8_t j;
@@ -1940,15 +1940,19 @@ void DISPLAY_THUNDER::Clear_Single_Dot(uint8_t x, uint8_t y)
   ht16d35b.LED_Show(LED_BUFF, sizeof(LED_BUFF));
 }
 
-// 设置将要播放的内置动画编号
-void DISPLAY_THUNDER::Play_Animation(uint8_t Animation_No)
+/**
+ * @brief: 设置将要播放的内置动画编号
+ * 
+ * @param Animation_No: 有效编号：3 ~ 15
+ */
+void DISPLAY_SCREEN::Play_Animation(uint8_t Animation_No)
 {
 	Play_LED_String("");
 	LED_show_No = Animation_No;
 }
 
 // 循环执行的内置动画控制程序
-void DISPLAY_THUNDER::Animation_Control(void)
+void DISPLAY_SCREEN::Animation_Control(void)
 {
 	switch (LED_show_No)
 	{
@@ -2037,7 +2041,7 @@ void DISPLAY_THUNDER::Animation_Control(void)
 			LED_delay_time = 0;
 		}
 		break;
-	case 7:										   //刹车
+	case 7:	//刹车
 		Play_Thunder_Picture(29); //单色点阵图案
 		break;
 	case 8: //流汗  3帧
@@ -2200,5 +2204,6 @@ void DISPLAY_THUNDER::Animation_Control(void)
 			LED_delay_time = 0;
 		}
 		break;
+    default: break;
 	}
 }

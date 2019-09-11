@@ -100,6 +100,21 @@ void SENSOR_LIGHT::Set_Extremum(int mode, float value, uint8_t sensorChannel)
     Set_Dark_Value(value, sensorChannel);
   }
 }
+/**
+ * @brief 设置光线检测的最大值和最小值
+ * 
+ * @param max_value 最大值
+ * @param min_value 最小值
+ * @param sensorChannel 
+ */
+void SENSOR_LIGHT::SetDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)
+{
+  CHECK_RANGE(max_value, 0, 100);
+  CHECK_RANGE(min_value, 0, 100);
+
+  dark_value[sensorChannel] = min_value;
+  bright_value[sensorChannel] = max_value;
+}
 
 /**
  * @brief: 复位光电传感器的设置
@@ -124,6 +139,7 @@ void SENSOR_LIGHT::Reset(unsigned char channel )
 byte SENSOR_LIGHT::Set_Operate_Mode(byte optMode,unsigned char channel)
 {
   byte ret;
+  CHECK_RANGE(optMode, 0, 100);
   ret = write(LIGHT_IIC_REG_SETLIGHT, &optMode, 1, channel);
 
   return ret;

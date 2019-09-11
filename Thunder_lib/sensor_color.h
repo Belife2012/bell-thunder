@@ -155,17 +155,6 @@
 // 颜色识别模块
 #define COLOR_IIC_ADDR 0x38 //颜色识别模块I2C器件地址
 
-typedef enum{
-  CARD_NO = 0,
-  CARD_RED,
-  CARD_YELLOW,
-  CARD_GREEN,
-  CARD_BLUE,
-  CARD_BROWN,
-  CARD_WHITE,
-  CARD_BLACK,
-}enum_Color_Card;
-
 class SENSOR_COLOR : public SENSOR_IIC
 {
   private:
@@ -176,6 +165,18 @@ class SENSOR_COLOR : public SENSOR_IIC
     byte get_rawval(unsigned char *data, unsigned char channel=0);
 
   public:
+  
+    typedef enum{
+      CARD_NO = 0,
+      CARD_RED,
+      CARD_YELLOW,
+      CARD_GREEN,
+      CARD_BLUE,
+      CARD_BROWN,
+      CARD_WHITE,
+      CARD_BLACK,
+    }enum_Color_Card;
+
     SENSOR_COLOR(int slave_address);                     // 配置I2C地址
     
     void RGBtoHSV(unsigned short *RGBC, float *HSV);  // 计算HSV

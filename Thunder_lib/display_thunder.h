@@ -22,14 +22,13 @@ typedef struct{
   byte comIndex;
 } LedDotLocation;
 
-typedef unsigned char t_picture_buff[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM];
 
 #ifdef __cplusplus
 }
 #endif
 
 // 单色点阵
-class DISPLAY_THUNDER
+class DISPLAY_SCREEN
 {
   private:
     HT16D35B ht16d35b = HT16D35B(HT16D35B_DEVICE_ADDRESS_69);
@@ -62,11 +61,13 @@ class DISPLAY_THUNDER
     const uint8_t LED_show_15[5] = {72, 73, 74, 75, 76};
 
   public:
-    void Setup(void);                               // 初始化单色点阵灯驱动
-    void Test_LEDs(void);                   // 跑马灯
+    typedef unsigned char t_picture_buff[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM];
+
+    void Setup(void); // 初始化单色点阵灯驱动
+    void Test_LEDs(void); // 跑马灯
     void Play_LEDs(const unsigned char *data, int size);
-    void Play_Thunder_Picture(int picture_index);   // 内置单色点阵图案
-    void Play_LED_String(const char *playString);         // 显示字符，长字符串以滚动方式呈现
+    void Play_Thunder_Picture(int picture_index); // 内置单色点阵图案
+    void Play_LED_String(const char *playString); // 显示字符，长字符串以滚动方式呈现
     void Play_LED_String(double number);
     void Play_LED_String(float number);
     void Play_LED_String(int number);
@@ -78,7 +79,7 @@ class DISPLAY_THUNDER
     void Set_Single_Dot(uint8_t x, uint8_t y);
     void Clear_Single_Dot(uint8_t x, uint8_t y);
     void Play_Animation(uint8_t Show_No); // 设置将要播放的内置动画编号
-    void Animation_Control(void);				   // 循环执行的内置动画控制程序
+    void Animation_Control(void); // 循环执行的内置动画控制程序
 
 };
 

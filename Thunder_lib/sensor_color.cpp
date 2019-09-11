@@ -285,7 +285,7 @@ byte SENSOR_COLOR::Get_RGBC_Data(unsigned short *data, unsigned char channel)
  * @brief: 获取颜色（红色）分量
  * 
  * @param channel: 传感器接口编号
- * @return uint16_t : 颜色分量
+ * @return uint16_t : R颜色分量
  */
 uint16_t SENSOR_COLOR::Get_Red(uint8_t channel) 
 {
@@ -298,7 +298,7 @@ uint16_t SENSOR_COLOR::Get_Red(uint8_t channel)
  * @brief: 获取颜色（绿色）分量
  * 
  * @param channel: 传感器接口编号
- * @return uint16_t : 颜色分量
+ * @return uint16_t : G颜色分量
  */
 uint16_t SENSOR_COLOR::Get_Green(uint8_t channel) 
 {
@@ -311,7 +311,7 @@ uint16_t SENSOR_COLOR::Get_Green(uint8_t channel)
  * @brief: 获取颜色（蓝牙）分量
  * 
  * @param channel: 传感器接口编号
- * @return uint16_t : 颜色分量
+ * @return uint16_t : B颜色分量
  */
 uint16_t SENSOR_COLOR::Get_Blue(uint8_t channel) 
 {
@@ -342,7 +342,7 @@ uint16_t SENSOR_COLOR::Get_Clear(uint8_t channel)
  * @brief: 获取颜色传感器检测到的色卡颜色
  * 
  * @param sensorChannel:传感器接口编号
- * @return uint8_t :色卡颜色编号
+ * @return uint8_t :色卡颜色编号: 0|无（传感器前方没有色卡）、1|红、2|黄、3|绿、4|蓝、5|棕、6|白、7|黑
  */
 uint8_t SENSOR_COLOR::Get_Color_Result(uint8_t sensorChannel)
 {    

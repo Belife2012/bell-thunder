@@ -27,6 +27,7 @@ public:
   float Get_Light_Value(unsigned char channel=0);
   byte Set_Operate_Mode(byte optMode,unsigned char channel=0);
   void Set_Extremum(int mode, float value, uint8_t sensorChannel=0);
+  void SetDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel=0);
   void Reset(unsigned char channel=0);
 };
 

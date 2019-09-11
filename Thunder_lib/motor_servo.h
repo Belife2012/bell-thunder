@@ -14,18 +14,24 @@ class MOTOR_SERVO
 private:
     // 舵机 PWM频率50Hz，0度时 脉宽最小500us，180度时 脉宽最大2500us，开机舵机居中为 90度
     // 20000[us] * 计数值 / 8191 = 输出[us]
-    float Servo_MIN = 205;
-    float Servo_Range = 819; 
+    const float Servo_MIN = 205;
+    const float Servo_Range = 819; 
     float servo_percent_max[2] = {100, 100};
     float servo_percent_min[2] = {-100, -100};
     float servo_percent_zero[2] = {0, 0};
+    uint32_t servo_position[2] = {0, 0};
 public:
+    typedef enum{
+        A = 1,
+        B = 2
+    } enum_Servo_Index;
+
     void Setup_Servo(void);
     void Servo_Turn(int servo, float angle);
 
     /*--------------Thunder IDE APIs: -------------*/
-    void Servo_Percent_Setting(int servo_index, float max_value, float min_value, float zero_value, int direction);
-    void Servo_Turn_Percent(int servo, float percent);
+    void Servo_Percent_Setting(int servo_index, float max_value = 100, float min_value = -100, float zero_value=0, int direction=1);
+    void Servo_Turn_Percent(int servo, float percent, float speed=100);
 };
 
 #endif

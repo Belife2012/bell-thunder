@@ -9,17 +9,18 @@
 #define INFRARED_IIC_REG_BEACON             (0x02)
 #define INFRARED_IIC_REG_REMOTE             (0x03)
 
-typedef enum {
-    SYS_MODE_REMOTE,
-    SYS_MODE_BEACON,
-    SYS_MODE_DISTANCE
-} SysMode_TypeEnum;
 
 class SENSOR_INFRARED : public SENSOR_IIC
 {
 private:
     unsigned char Check_Out_IRdata(uint16_t data);
 public:
+    typedef enum {
+        SYS_MODE_REMOTE,
+        SYS_MODE_BEACON,
+        SYS_MODE_DISTANCE
+    } SysMode_TypeEnum;
+
     SENSOR_INFRARED(int slave_address) : SENSOR_IIC(slave_address) {};
 
     /*--------------Thunder IDE APIs: -------------*/

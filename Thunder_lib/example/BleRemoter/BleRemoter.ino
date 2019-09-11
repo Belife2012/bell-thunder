@@ -51,42 +51,42 @@ void loop_1_1()
     if (BLE_Remoter.Check_Key_Action(KEY_Y, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_C5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_X, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_F5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_F5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_A, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_E5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_E5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_B, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_D5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_D5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_UP, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_G5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_G5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_RIGHT, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_A5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_A5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_DOWN, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_B5);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_B5);
     }
     if (BLE_Remoter.Check_Key_Action(KEY_LEFT, KEY_PRESSING))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MUSIC_C6);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C6);
     }
 
     if (BLE_Remoter.Check_Key_Action(KEY_Y, KEY_RELEASING) ||
@@ -109,21 +109,21 @@ void loop_1_1()
     if (Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_ONE))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MACHINE_SPORTCAR);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MACHINE_SPORTCAR);
     }
     else if (Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_TWO))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MACHINE_SHIP);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MACHINE_SHIP);
     }
     else if (Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_THREE))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MACHINE_PLANE);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MACHINE_PLANE);
     }
     else if (Bell_Thunder.Check_Function_Button_Event(KEY_CLICK_FOUR))
     {
         Speaker_Thunder.Set_Sound_Volume(100);
-        Speaker_Thunder.Play_Song(SOUND_MACHINE_MOTORBIKE);
+        Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MACHINE_MOTORBIKE);
     }
 }

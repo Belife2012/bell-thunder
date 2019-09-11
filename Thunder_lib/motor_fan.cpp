@@ -21,12 +21,12 @@ unsigned char MOTOR_FAN::Get_Fan_Speed(unsigned char channel)
  * @param speed: 最大功率百分比（0~100）
  * @param channel:风扇电机接口的编号
  */
-void MOTOR_FAN::Set_Fan_Speed(unsigned char speed, unsigned char channel)
+void MOTOR_FAN::Set_Fan_Speed(signed char speed, unsigned char channel)
 {
-    unsigned char fan_speed;
+    signed char fan_speed;
     fan_speed = speed;
 
-    CHECK_RANGE(fan_speed, 0, 100);
-    write(FAN_REG_SPEED, &fan_speed, 1, channel);
+    CHECK_RANGE(fan_speed, -100, 100);
+    write(FAN_REG_SPEED, (const unsigned char *)&fan_speed, 1, channel);
 }
 

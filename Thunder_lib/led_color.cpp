@@ -26,11 +26,14 @@ void LED_COLOR::Set_LED_Num(uint8_t number)
   }
 }
 
-// 写入单个寄存器数据
-// 参数1 --> 单个彩灯地址
-// 参数2 --> 单个彩灯R值
-// 参数3 --> 单个彩灯G值
-// 参数4 --> 单个彩灯B值
+/**
+ * @brief: 修改单个彩灯的RGB数据
+ * 
+ * @param address: 彩灯编号，左边上面第一个为1，右上面第一个为7
+ * @param r: 单个彩灯R值
+ * @param g: 单个彩灯G值
+ * @param b: 单个彩灯B值
+ */
 void LED_COLOR::Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b)
 {
   byte rc;
@@ -58,7 +61,13 @@ void LED_COLOR::Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b)
   LEDs_Data[startIndex + 2] = rgb[2];
 }
 
-// 写入多个寄存器数据
+/**
+ * @brief: 修改多个彩灯的缓存，显示模式恢复为静态显示
+ * 
+ * @param address: 起始编号
+ * @param data: 数据
+ * @param size: 数据长度
+ */
 void LED_COLOR::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
 {
   byte rc;
@@ -85,12 +94,21 @@ void LED_COLOR::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
   }
 }
 
+/**
+ * @brief: 修改全部彩灯的缓存，修改后需要调用LED_Updata进行刷新彩灯显示
+ * 修改后显示模式恢复为静态，如果需要改变显示模式，需要调用Set_LED_Dynamic
+ * 
+ * @param data: 显示数据
+ */
 void LED_COLOR::Set_LEDs_Data(t_color_led_buff data)
 {
   Set_LEDs_Data(1, (unsigned char *)data, RGB_LED_DATA_SIZE);
 }
 
-// 0xA0  全关，立即刷新
+/**
+ * @brief: 关闭彩灯显示
+ * 
+ */
 void LED_COLOR::LED_OFF(void)
 {
   byte rc;
@@ -101,7 +119,10 @@ void LED_COLOR::LED_OFF(void)
   write(XT1511_I2C_COM_OFF, NULL, 0);
 }
 
-// 0xA1  按照现有数据刷新
+/**
+ * @brief: 依据显示内存更新显示
+ * 
+ */
 void LED_COLOR::LED_Updata(void)
 {
   byte rc;
@@ -149,16 +170,16 @@ void LED_COLOR::LED_Flush(void)
 {
   switch (LED_Dynamic)
   {
-  case 0:
+  case COLOR_MODE_STATIC:
     LED_Flush_Static();
     break;
-  case 1:
+  case COLOR_MODE_BLINK:
     LED_Flush_Blink();
     break;
-  case 2:
+  case COLOR_MODE_ROLL:
     LED_Flush_Roll();
     break;
-  case 3:
+  case COLOR_MODE_BREATH:
     LED_Flush_Breath();
     break;
   case 0xff: // 熄灭

@@ -44,13 +44,13 @@ void Program_4() {}
 // Task 1
 void setup_1_1()
 {
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_C4); delay(800);
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_D4); delay(800);
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_E4); delay(800);
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_F4); delay(800);
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_G4); delay(800);
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_A4); delay(800);
-    Speaker_Thunder.Play_Song(SOUND_MUSIC_B4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_D4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_E4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_F4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_G4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_A4); delay(800);
+    Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_B4); delay(800);
     delay(2000);
 }
 void loop_1_1()
@@ -163,21 +163,21 @@ void Play_OdeToJoy(int chart, int sustain, int volume)
 {
     int sound;
 
-    switch(chart) { //SOUND_MUSIC_ + CDEFGAB 为七音阶，1234567为高低音 
-        case 1: sound = SOUND_MUSIC_C4; break;
-        case 2: sound = SOUND_MUSIC_D4; break;
-        case 3: sound = SOUND_MUSIC_E4; break;
-        case 4: sound = SOUND_MUSIC_F4; break;
-        case 5: sound = SOUND_MUSIC_G4; break;
-        case 6: sound = SOUND_MUSIC_A4; break;
-        case 7: sound = SOUND_MUSIC_B4; break;
-        case -1: sound = SOUND_MUSIC_C3; break;
-        case -2: sound = SOUND_MUSIC_D3; break;
-        case -3: sound = SOUND_MUSIC_E3; break;
-        case -4: sound = SOUND_MUSIC_F3; break;
-        case -5: sound = SOUND_MUSIC_G3; break;
-        case -6: sound = SOUND_MUSIC_A3; break;
-        case -7: sound = SOUND_MUSIC_B3; break;
+    switch(chart) { //SPEAKER_THUNDER::SOUND_MUSIC_ + CDEFGAB 为七音阶，1234567为高低音 
+        case 1: sound = SPEAKER_THUNDER::SOUND_MUSIC_C4; break;
+        case 2: sound = SPEAKER_THUNDER::SOUND_MUSIC_D4; break;
+        case 3: sound = SPEAKER_THUNDER::SOUND_MUSIC_E4; break;
+        case 4: sound = SPEAKER_THUNDER::SOUND_MUSIC_F4; break;
+        case 5: sound = SPEAKER_THUNDER::SOUND_MUSIC_G4; break;
+        case 6: sound = SPEAKER_THUNDER::SOUND_MUSIC_A4; break;
+        case 7: sound = SPEAKER_THUNDER::SOUND_MUSIC_B4; break;
+        case -1: sound = SPEAKER_THUNDER::SOUND_MUSIC_C3; break;
+        case -2: sound = SPEAKER_THUNDER::SOUND_MUSIC_D3; break;
+        case -3: sound = SPEAKER_THUNDER::SOUND_MUSIC_E3; break;
+        case -4: sound = SPEAKER_THUNDER::SOUND_MUSIC_F3; break;
+        case -5: sound = SPEAKER_THUNDER::SOUND_MUSIC_G3; break;
+        case -6: sound = SPEAKER_THUNDER::SOUND_MUSIC_A3; break;
+        case -7: sound = SPEAKER_THUNDER::SOUND_MUSIC_B3; break;
         default: break;
     }
     

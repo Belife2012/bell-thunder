@@ -52,14 +52,14 @@ void loop_1_1()
     value = Sensor_Color.Get_Color_Result(1);
     switch(value)
     {
-        case CARD_NO: Speaker_Thunder.Play_Song(SOUND_MUSIC_C0);break;
-        case CARD_RED: Speaker_Thunder.Play_Song(SOUND_MUSIC_C1);break;
-        case CARD_BROWN: Speaker_Thunder.Play_Song(SOUND_MUSIC_C2);break;
-        case CARD_YELLOW: Speaker_Thunder.Play_Song(SOUND_MUSIC_C3);break;
-        case CARD_GREEN: Speaker_Thunder.Play_Song(SOUND_MUSIC_C4);break;
-        case CARD_BLUE: Speaker_Thunder.Play_Song(SOUND_MUSIC_C5);break;
-        case CARD_WHITE: Speaker_Thunder.Play_Song(SOUND_MUSIC_C6);break;
-        case CARD_BLACK: Speaker_Thunder.Play_Song(SOUND_MUSIC_C7);break;
+        case SENSOR_COLOR::CARD_NO: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C0);break;
+        case SENSOR_COLOR::CARD_RED: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C1);break;
+        case SENSOR_COLOR::CARD_BROWN: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C2);break;
+        case SENSOR_COLOR::CARD_YELLOW: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C3);break;
+        case SENSOR_COLOR::CARD_GREEN: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C4);break;
+        case SENSOR_COLOR::CARD_BLUE: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C5);break;
+        case SENSOR_COLOR::CARD_WHITE: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C6);break;
+        case SENSOR_COLOR::CARD_BLACK: Speaker_Thunder.Play_Song(SPEAKER_THUNDER::SOUND_MUSIC_C7);break;
         default: break;
     }
 

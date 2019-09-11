@@ -34,36 +34,45 @@ void Program_1()
 {
     System_Task.Create_New_Loop(PROGRAM_USER_1, setup_1_1, loop_1_1);
 }
-void Program_2() {}
+void Program_2() 
+{
+    System_Task.Create_New_Loop(PROGRAM_USER_1, setup_2_1, loop_2_1);
+}
 void Program_3() {}
 void Program_4() {}
 
 /*************************************************************
  * @brief: thunder用户线程
  *************************************************************/
-DISPLAY_SCREEN::t_picture_buff myPic = {
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-};
-
+// Program_1
 void setup_1_1()
 {
-    Display_Screen.Display_Picture(myPic);
+    Display_Screen.Play_LED_String(0);
+    Motor_Thunder.Set_Motor_Power(MOTOR_THUNDER::L, 50);
 }
 void loop_1_1()
 {
-    Display_Screen.Move_Picture_To(3, 0);
-    delay(300);
-    Display_Screen.Move_Picture_To(-3, 0);
-    delay(300);
+    int speed;
+
+    speed = Motor_Thunder.Get_Speed(MOTOR_THUNDER::L, 10);
+    Display_Screen.Play_LED_String(speed);
+
+    delay(100);
 }
+
+// Program_2
+void setup_2_1()
+{
+    Display_Screen.Play_LED_String(0);
+    Motor_Thunder.Set_Target(MOTOR_THUNDER::L, 50);
+}
+void loop_2_1()
+{
+    int speed;
+
+    speed = Motor_Thunder.Get_Speed(MOTOR_THUNDER::L);
+    Display_Screen.Play_LED_String(speed);
+
+    delay(100);
+}
+

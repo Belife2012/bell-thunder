@@ -15,10 +15,10 @@
 
 #define MAX_CHANNEL_INDEX     (3)
 
-#define CHECK_RANGE(value, min, max) do{if(value > max) { \
-                                          value = max; \
-                                        } else if (value < min) { \
-                                          value = min; \
+#define CHECK_RANGE(value, min, max) do{if( value > (max) ) { \
+                                          value = (max); \
+                                        } else if ( value < (min) ) { \
+                                          value = (min); \
                                         } \
                                       } while(0)
 #define CHECK_IIC_RETURN(ret) do{ if(ret != 0) { \
@@ -39,13 +39,21 @@ private:
   static bool i2c_enable;
   static SemaphoreHandle_t xSemaphore_IIC;
 
-  static uint8_t Set_I2C_Chanel(uint8_t channelData);
   static inline void SELECT_IIC_CHANNEL(uint8_t channel);
 
+  static uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
 public:
+  typedef enum {
+    PORT_1 = 1,
+    PORT_2 = 2,
+    PORT_3 = 3,
+    PORT_4 = 4,
+    PORT_A = 5,
+    PORT_B = 6
+  } enum_iic_port;
+
   SENSOR_IIC(int slave_address);
   static void IIC_Init();
-  static uint8_t Select_Sensor_Channel(uint8_t sensorChannel);
   static uint8_t Select_Sensor_AllChannel(uint8_t flag=DEFAULT_PORTS);
   static void CreateSemaphoreIIC();
   static void Take_Semaphore_IIC();

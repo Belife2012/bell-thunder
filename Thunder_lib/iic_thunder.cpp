@@ -145,7 +145,7 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
 
 /*
  * 选择传感器通道1/2/3/4/5(A)/6(B)，选择后只有当前通道可使用，可用多个相同模块
- * sensorChannel=0xff时，选通1/2/3/A/B
+ * sensorChannel 的bit7置位，说明这个 sensorChannel 参数是多通道开启
  * 
  * @parameter：需要使用的传感器接口号
  * @return: 设置成功返回0，发生错误返回非0 的错误码
@@ -228,15 +228,22 @@ void SENSOR_IIC::Give_Semaphore_IIC()
   xSemaphoreGive(xSemaphore_IIC);
 }
 
+/**
+ * @brief: 一旦启用 Port4 作为IIC接口，后续所有IIC接口的传感器都要指定接口编号
+ * 
+ * @param setting:
+ */
 void SENSOR_IIC::Set_Port4_IIC(bool setting)
 {
   if(setting == true) {
     Select_Sensor_Channel(4);
     Serial.println("Enable port4 IIC");
   } else {
-    // ir_init标志是否为巡线传感器的初始化，如果是巡线传感器的初始化过程，需要执行设置
-    if(i2c_channel == 4) {
-      Select_Sensor_Channel(0);
+    if(i2c_channel == 4) { 
+      Select_Sensor_Channel(0);// 
+      Serial.println("Disable port4 IIC");
+    } else if((i2c_channel & 0xC0) == 0xC0) {
+      Select_Sensor_Channel(i2c_channel & 0xBF);// 
       Serial.println("Disable port4 IIC");
     }
   }

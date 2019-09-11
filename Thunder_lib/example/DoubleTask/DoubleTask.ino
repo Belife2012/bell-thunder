@@ -54,10 +54,10 @@ void Program_4() {}
 void setup_1_1()
 {
     // 写入彩灯的显示数据
-    t_color_led_buff colorData = {{182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}, 
+    LED_COLOR::t_color_led_buff colorData = {{182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}, 
                                     {182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}};
     LED_Color.Set_LEDs_Data(colorData);
-    LED_Color.Set_LED_Dynamic(COLOR_MODE_BREATH);
+    LED_Color.Set_LED_Dynamic(LED_COLOR::COLOR_MODE_BREATH);
 }
 void loop_1_1()
 {
@@ -70,7 +70,7 @@ void loop_1_1()
 void setup_1_2()
 {
     Sensor_Light.Set_Operate_Mode(100, 1);
-    Sensor_Light.Set_Extremum(0, 25, 1);
+    Sensor_Light.Set_Extremum(0, 25, 1); // 设置最大值
 }
 
 #define MOTOR_MAX   40

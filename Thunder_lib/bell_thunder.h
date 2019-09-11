@@ -76,6 +76,8 @@
 // 巡线IR
 #define IR_1 36 // IR脚
 #define IR_2 39 // IR脚
+#define LINE_PORT_B 36 
+#define LINE_PORT_A 39 
 
 // 音频
 #define AUDIO 16 // AUDIO脚
@@ -103,7 +105,7 @@ extern BLE_THUNDERGO BLE_ThunderGo;
 extern BLE_CLIENT BLE_Client;
 extern MOTOR_THUNDER Motor_Thunder;
 // 音频
-extern SPEAKER_WT588 Speaker_Thunder;
+extern SPEAKER_THUNDER Speaker_Thunder;
 // 超声波
 extern SENSOR_US Sensor_Ultrasonic;
 // 火焰传感器
@@ -131,7 +133,7 @@ extern SENSOR_TOUCH Sensor_Touch;
 // 光电传感器
 extern SENSOR_LIGHT Sensor_Light;
 // 单色LED
-extern DISPLAY_THUNDER Display_Screen;
+extern DISPLAY_SCREEN Display_Screen;
 // 遥控器
 extern SENSOR_REMOTER BLE_Remoter;
 extern BELL_BARBETTE Barbette_Thunder;
@@ -284,8 +286,10 @@ public:
 	void Enable_Motor_Position(void);
 	void Disable_En_Motor(void); // 关闭编码电机计算
 
-	// 巡线IR
+	// 巡线传感器
 	void Setup_IR(void);			  // 巡线IR传感器初始化配置
+
+	// 巡线模式
 	void Get_IR_Data(uint8_t data[]); // 获取巡线IR数据
 	void Wait_For_Motor_Slow();
 	void Line_Tracing(void); // 使用开环控制电机的巡线模式

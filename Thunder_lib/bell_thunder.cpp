@@ -21,9 +21,9 @@ BELL_BARBETTE Barbette_Thunder;
 // 彩色LED（IIC address：0x11）
 LED_COLOR LED_Color(CLOOUR_LED_DEVICE);
 // 单色色LED（IIC address：0x69）
-DISPLAY_THUNDER Display_Screen;
+DISPLAY_SCREEN Display_Screen;
 // 音频
-SPEAKER_WT588 Speaker_Thunder(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
+SPEAKER_THUNDER Speaker_Thunder(AUDIO, BUSY); // 配置引脚16 --> AUDIO 和 4 --> BUSY
 MOTOR_SERVO Motor_Servo;
 
 // 姿态传感器（IIC address: 0x68 0x0C）
@@ -1028,7 +1028,7 @@ void BELL_THUNDER::En_Motor(void)
 // 开启 Drive_Car_Control 功能
 void BELL_THUNDER::Enable_Drive_Car(void)
 {
-	motor_semaphore.take(std::string("setMode"));
+	motor_semaphore.take(std::string("Drive_Car"));
 	if (En_Motor_Flag != 2)
 	{
 		En_Motor_Flag = 2;
@@ -1039,7 +1039,7 @@ void BELL_THUNDER::Enable_Drive_Car(void)
 // 开启 电机PID 功能
 void BELL_THUNDER::Enable_En_Motor(void)
 {
-	motor_semaphore.take(std::string("setMode"));
+	motor_semaphore.take(std::string("En_Motor"));
 	if (En_Motor_Flag != 1)
 	{
 		En_Motor_Flag = 1;
@@ -1050,7 +1050,7 @@ void BELL_THUNDER::Enable_En_Motor(void)
 // 开启 电机位置 控制
 void BELL_THUNDER::Enable_Motor_Position(void)
 {
-	motor_semaphore.take(std::string("setMode"));
+	motor_semaphore.take(std::string("Motor_Position"));
 	if (En_Motor_Flag != 3)
 	{
 		Motor_Thunder.Clear_Position_Control();
@@ -1062,7 +1062,7 @@ void BELL_THUNDER::Enable_Motor_Position(void)
 // 关闭编码电机计算
 void BELL_THUNDER::Disable_En_Motor(void)
 {
-	motor_semaphore.take(std::string("setMode"));
+	motor_semaphore.take(std::string("Disable_Ctrl"));
 	if (En_Motor_Flag != 0)
 	{
 		// 清除PID控制的变量
@@ -1106,7 +1106,7 @@ void BELL_THUNDER::Wait_For_Motor_Slow()
 	do
 	{
 		delay(1);
-	} while (Motor_Thunder.Get_Speed(1) > 15 || Motor_Thunder.Get_Speed(2) > 15);
+	} while (Motor_Thunder.Get_Speed_simple(1) > 15 || Motor_Thunder.Get_Speed_simple(2) > 15);
 }
 #if 1
 /* 
@@ -1502,7 +1502,7 @@ void BELL_THUNDER::Motor_Slow_Go()
 	do
 	{
 		delay(1);
-	} while (Motor_Thunder.Get_Speed(1) > 15 || Motor_Thunder.Get_Speed(2) > 15);
+	} while (Motor_Thunder.Get_Speed_simple(1) > 15 || Motor_Thunder.Get_Speed_simple(2) > 15);
 }
 /* 
  * 车子左右晃动0.5s, IR传感器发现有黑线则返回
@@ -2693,8 +2693,8 @@ void BELL_THUNDER::Check_Protocol(void)
 		break;
 
 	case UART_GENERAL_GET_MOTOR_SPEED: //获取当前电机速度(编码器计数值)  需要在Enable_En_Motor()状态下
-		L_Speed = Motor_Thunder.Get_Speed(1);
-		R_Speed = Motor_Thunder.Get_Speed(2);
+		L_Speed = Motor_Thunder.Get_Speed_simple(1);
+		R_Speed = Motor_Thunder.Get_Speed_simple(2);
 
 		Tx_Data[0] = UART_GENERAL_GET_MOTOR_SPEED;
 		if (L_Speed >= 0)
@@ -2718,7 +2718,7 @@ void BELL_THUNDER::Check_Protocol(void)
 			Tx_Data[3] = (-1) * R_Speed;
 			Tx_Data[4] = 2;
 		}
-		// Serial.printf("L_Speed:%d; R_Speed:%d; \n",Motor_Thunder.Get_Speed(1),Motor_Thunder.Get_Speed(2));
+		// Serial.printf("L_Speed:%d; R_Speed:%d; \n",Motor_Thunder.Get_Speed_simple(1),Motor_Thunder.Get_Speed_simple(2));
 		break;
 
 	case UART_GENERAL_SINGLE_RGBLED:											//控制单个彩色灯颜色

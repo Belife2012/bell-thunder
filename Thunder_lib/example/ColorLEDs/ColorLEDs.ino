@@ -44,10 +44,10 @@ void Program_4() {}
 void setup_1_1()
 {
     // 写入彩灯的显示数据
-    t_color_led_buff colorData = {{182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}, 
+    LED_COLOR::t_color_led_buff colorData = {{182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}, 
                                     {182, 180, 245}, {132, 129, 239}, {90, 86, 235}, {44, 39, 228}, {29, 24, 205}, {22, 19, 155}};
     LED_Color.Set_LEDs_Data(colorData);
-    LED_Color.Set_LED_Dynamic(COLOR_MODE_BREATH);
+    LED_Color.Set_LED_Dynamic(LED_COLOR::COLOR_MODE_BREATH);
 }
 void loop_1_1()
 {

@@ -115,7 +115,7 @@ void SENSOR_REMOTER::Clear_All_keys()
  * @brief 检测是否发生了按下动作（每次按下只能读到一次true）或释放动作（每次释放只能读到一次true）
  * 
  * @param key_index 按键标识
- * @param key_action 检测的动作
+ * @param key_action 检测的动作，0为释放按键，1为按下按键
  * @return true 检测的动作有发生
  * @return false 检测的动作没有发生
  */
@@ -150,7 +150,7 @@ bool SENSOR_REMOTER::Check_Key_Action(int key_index, int key_action)
  * @brief 打开/关闭蓝牙遥控器功能，默认是打开蓝牙遥控器功能的，但是蓝牙遥控器功能会占用
  * 系统资源，如果不需要蓝牙遥控器功能，可以使用此函数关闭
  * 
- * @param enable true打开蓝牙遥控器功能， false关闭蓝牙遥控器功能
+ * @param enable: true打开蓝牙遥控器功能， false关闭蓝牙遥控器功能
  */
 void SENSOR_REMOTER::Turnon_Remote(bool enable)
 {
@@ -164,18 +164,19 @@ void SENSOR_REMOTER::Turnon_Remote(bool enable)
 /**
  * @brief 获取摇杆或按键的数值
  * 
- * @param key_index 摇杆、按键标识
+ * @param key_index 摇杆、按键标识，参照枚举变量 enum_Remoter_Value
  * @return int 摇杆、按键的模拟数值
  */
 int SENSOR_REMOTER::Get_Control_Value(int key_index)
 {
+    CHECK_RANGE(key_index, 0, KEY_ANALOG_AMOUNT-1);
     return control_value[key_index];
 }
 
 /**
  * @brief 判断按键状态
  * 
- * @param key_index 按键标识
+ * @param key_index 按键标识，参照枚举变量 enum_Remoter_Key
  * @return true 按键状态为按下
  * @return false 按键状态为释放
  */

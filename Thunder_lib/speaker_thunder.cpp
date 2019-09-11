@@ -16,7 +16,7 @@
 // 配置引脚
 // 参数DP --> DataPin,主控接芯片WT588的一线串口通讯数据脚，IO输出口
 // 参数BP --> BusyPin,主控接芯片WT588的BUSY状态脚，IO输入口
-SPEAKER_WT588::SPEAKER_WT588(int DP, int BP)
+SPEAKER_THUNDER::SPEAKER_THUNDER(int DP, int BP)
 {
   pinMode(DP, OUTPUT);
   pinMode(BP, INPUT);
@@ -24,7 +24,7 @@ SPEAKER_WT588::SPEAKER_WT588(int DP, int BP)
   Data_pin = DP;
   Busy_pin = BP;
 
-  //使用 UART 模拟一线串口 输出到 SPEAKER_WT588 data线
+  //使用 UART 模拟一线串口 输出到 SPEAKER_THUNDER data线
   //speakSerial = uartBegin(2, 9600, SERIAL_8N0, 4, 16, 12, false);
 
 #if ENABLE_WT588_SPINLOCK
@@ -34,7 +34,7 @@ SPEAKER_WT588::SPEAKER_WT588(int DP, int BP)
 }
 
 // 类内部使用，按WT588一线串口时序图发送数据
-void SPEAKER_WT588::send_data(int data)
+void SPEAKER_THUNDER::send_data(int data)
 {
   uint32_t currentTime;
   uint32_t lastTime;
@@ -146,7 +146,7 @@ void SPEAKER_WT588::send_data(int data)
 
 // 获取播放状态
 // 返回 --> 音频播放状态，即读取BUSY脚的状态
-int SPEAKER_WT588::WT588_Busy_Check()
+int SPEAKER_THUNDER::WT588_Busy_Check()
 {
   int busy_flag;
   busy_flag = digitalRead(Busy_pin);
@@ -162,7 +162,7 @@ int SPEAKER_WT588::WT588_Busy_Check()
  * 
  * @param data：最大音量的百分比
  */
-void SPEAKER_WT588::Set_Sound_Volume(int data)
+void SPEAKER_THUNDER::Set_Sound_Volume(int data)
 {
   if (data > 100){
     data = 15;
@@ -177,9 +177,13 @@ void SPEAKER_WT588::Set_Sound_Volume(int data)
   send_data(0xFFE0 + data);
 }
 
-// 播放声音
-// 参数 --> 歌曲的地址编号
-void SPEAKER_WT588::Play_Song(int data)
+/**
+ * @brief: 播放声音
+ * 
+ * @param data: 歌曲的地址编号，
+ * 例如 音符A音调0的编号，可以使用 SPEAKER_THUNDER::SOUND_MUSIC_A0 来代表 
+ */
+void SPEAKER_THUNDER::Play_Song(int data)
 {
   send_data(data);
 }

@@ -270,7 +270,7 @@ void BELL_BARBETTE::Fire_Control(int pos,uint8_t mode,uint8_t time)
 
 uint16_t BELL_BARBETTE::Thunder_Battery_Get(uint8_t sensorChannel)
 {
-    SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
+    // SENSOR_IIC::Select_Sensor_Channel(sensorChannel);
     uint16_t value;
     value = Get_Bullet();
     return value;
