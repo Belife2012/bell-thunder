@@ -8,6 +8,9 @@ MULT_DEVICES *Mult_Devices = NULL;
 #define TAKE_MESG_UART_MUTEX	do{} while(pdPASS != xSemaphoreTake(mutex_mesg_uart, portMAX_DELAY))
 #define GIVE_MESG_UART_MUTEX	do{xSemaphoreGive(mutex_mesg_uart);} while(0)
 
+#define UART_TX_PIN		18
+#define UART_RX_PIN		32
+
 MULT_DEVICES::MULT_DEVICES()
 {
 }
@@ -18,7 +21,7 @@ MULT_DEVICES::~MULT_DEVICES()
 
 void MULT_DEVICES::Uart_Init(void)
 {
-	Serial1.begin(THUNDER_MULTI_BAUD, SERIAL_8N1, 32, 18);
+	Serial1.begin(THUNDER_MULTI_BAUD, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
 	Serial1.write(0x55);
 	Serial1.write(0x55);
 	Serial1.write(0x55);

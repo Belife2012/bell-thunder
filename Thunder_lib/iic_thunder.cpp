@@ -56,8 +56,11 @@ inline void SENSOR_IIC::SELECT_IIC_CHANNEL(uint8_t channel)
             break;
     case 6: Wire.write(IIC_PORTB);
             break;
-    default:Wire.write(IIC_PORTALL & channel);
-            break;
+    default:
+      if(channel & 0x80){
+        Wire.write(IIC_PORTALL & channel);
+      }
+      break;
   }
   Wire.endTransmission(true);
 
@@ -79,10 +82,18 @@ byte SENSOR_IIC::write(unsigned char memory_address,const unsigned char *data, u
   TwoWire *p_iic;
 
   Take_Semaphore_IIC();
-  if(channel > 0 && i2c_channel != channel){
-    SELECT_IIC_CHANNEL(channel);
+  if(channel >= PORT_U && (channel & 0x80) != 0x80){
+    if(i2c_u_enable == false){ // 首次使用初始化配置Wire1
+      Wire1.begin(PORTU_SDA_PIN, PORTU_SCL_PIN, 100000);
+      i2c_u_enable = true;
+    }
+    p_iic = &Wire1;
+  } else {
+    if(channel > 0 && i2c_channel != channel){
+      SELECT_IIC_CHANNEL(channel);
+    }
+    p_iic = &Wire;
   }
-  p_iic = &Wire;
 
   p_iic->beginTransmission(_device_address);
   p_iic->write(memory_address);
@@ -109,10 +120,18 @@ byte SENSOR_IIC::read(unsigned char memory_address, unsigned char *data, unsigne
   TwoWire *p_iic;
 
   Take_Semaphore_IIC();
-  if(channel > 0 && i2c_channel != channel){
-    SELECT_IIC_CHANNEL(channel);
+  if(channel >= PORT_U && (channel & 0x80) != 0x80){
+    if(i2c_u_enable == false){ // 首次使用初始化配置Wire1
+      Wire1.begin(PORTU_SDA_PIN, PORTU_SCL_PIN, 100000);
+      i2c_u_enable = true;
+    }
+    p_iic = &Wire1;
+  } else {
+    if(channel > 0 && i2c_channel != channel){
+      SELECT_IIC_CHANNEL(channel);
+    }
+    p_iic = &Wire;
   }
-  p_iic = &Wire;
 
   p_iic->beginTransmission(_device_address); // 开启发送
   p_iic->write(memory_address);

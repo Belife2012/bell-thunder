@@ -15,7 +15,8 @@
 // 触碰传感器
 #include <sensor_touch.h>
 // 光电传感器
-#include <sensor_light.h>
+#include "sensor_light.h"
+#include "sensor_colorlight.h"
 // 雷霆
 #include <ble_thundergo.h>
 #include <ble_client.h>
@@ -132,6 +133,7 @@ extern LED_COLOR LED_Color;
 extern SENSOR_TOUCH Sensor_Touch;
 // 光电传感器
 extern SENSOR_LIGHT Sensor_Light;
+extern SENSOR_COLORLIGHT Sensor_ColorLight;
 // 单色LED
 extern DISPLAY_SCREEN Display_Screen;
 // 遥控器

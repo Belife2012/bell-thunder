@@ -35,6 +35,7 @@ SENSOR_COLOR Sensor_Color(COLOR_IIC_ADDR); //I2C从机地址
 SENSOR_TOUCH Sensor_Touch(TOUCH_IIC_ADDR);
 // 光电传感器（IIC address：0x52）
 SENSOR_LIGHT Sensor_Light(LIGHT_IIC_ADDR);
+SENSOR_COLORLIGHT Sensor_ColorLight(COLORLIGHT_IIC_ADDR);
 // 火焰传感器（IIC address：0x02）
 SENSOR_FLAME Sensor_Flame(FLAME_IIC_ADDR);
 // 空气温湿度 （IIC address：0x05）

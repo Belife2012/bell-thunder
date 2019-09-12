@@ -1,6 +1,6 @@
 #include "motor_fan.h"
 
-unsigned char MOTOR_FAN::Get_Fan_Speed(unsigned char channel)
+signed char MOTOR_FAN::Get_Fan_Speed(unsigned char channel)
 {
     unsigned char speed;
 

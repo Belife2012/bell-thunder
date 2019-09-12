@@ -12,6 +12,9 @@
 // Port4 IIC
 #define PORT4_SDA_PIN 39
 #define PORT4_SCL_PIN 36
+// PortU IIC
+#define PORTU_SCL_PIN		18
+#define PORTU_SDA_PIN		32
 
 #define MAX_CHANNEL_INDEX     (3)
 
@@ -38,6 +41,7 @@ private:
   static uint8_t i2c_channel;
   static bool i2c_enable;
   static SemaphoreHandle_t xSemaphore_IIC;
+  bool i2c_u_enable = false;
 
   static inline void SELECT_IIC_CHANNEL(uint8_t channel);
 
@@ -49,7 +53,8 @@ public:
     PORT_3 = 3,
     PORT_4 = 4,
     PORT_A = 5,
-    PORT_B = 6
+    PORT_B = 6,
+    PORT_U = 7
   } enum_iic_port;
 
   SENSOR_IIC(int slave_address);
