@@ -49,8 +49,7 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = read_data[0];
         break;
     case DATA_HSV_H:
-        bakCode = read(CLINE_IIC_REG_HSV_H_L, &read_data[0], 1, channel);
-        bakCode |= read(CLINE_IIC_REG_HSV_H_H, &read_data[1], 1, channel);
+        bakCode |= read(CLINE_IIC_REG_HSV_H, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         break;
@@ -59,26 +58,22 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = read_data[0];
         break;
     case DATA_HSV_V:
-        bakCode = read(CLINE_IIC_REG_HSV_V_L, &read_data[0], 1, channel);
-        bakCode |= read(CLINE_IIC_REG_HSV_V_H, &read_data[1], 1, channel);
+        bakCode |= read(CLINE_IIC_REG_HSV_V, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         break;
     case DATA_COLOR_R:
-        bakCode = read(CLINE_IIC_REG_COLOR_R_L, &read_data[0], 1, channel);
-        bakCode |= read(CLINE_IIC_REG_COLOR_R_H, &read_data[1], 1, channel);
+        bakCode |= read(CLINE_IIC_REG_COLOR_R, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         break;
     case DATA_COLOR_G:
-        bakCode = read(CLINE_IIC_REG_COLOR_G_L, &read_data[0], 1, channel);
-        bakCode |= read(CLINE_IIC_REG_COLOR_G_H, &read_data[1], 1, channel);
+        bakCode |= read(CLINE_IIC_REG_COLOR_G, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         break;
     case DATA_COLOR_B:
-        bakCode = read(CLINE_IIC_REG_COLOR_B_L, &read_data[0], 1, channel);
-        bakCode |= read(CLINE_IIC_REG_COLOR_B_H, &read_data[1], 1, channel);
+        bakCode |= read(CLINE_IIC_REG_COLOR_B, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         break;

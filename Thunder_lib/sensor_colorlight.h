@@ -12,17 +12,12 @@
 #define CLINE_IIC_REG_REFLECT_G      0x04
 #define CLINE_IIC_REG_REFLECT_B      0x05
 #define CLINE_IIC_REG_COLOR          0x06
-#define CLINE_IIC_REG_HSV_H_L        0x07
-#define CLINE_IIC_REG_HSV_H_H        0x08
-#define CLINE_IIC_REG_HSV_V_L        0x09
-#define CLINE_IIC_REG_HSV_V_H        0x0A
+#define CLINE_IIC_REG_HSV_H          0x07
+#define CLINE_IIC_REG_HSV_V          0x09
 #define CLINE_IIC_REG_HSV_S          0x0B
-#define CLINE_IIC_REG_COLOR_R_L      0x0C
-#define CLINE_IIC_REG_COLOR_R_H      0x0D
-#define CLINE_IIC_REG_COLOR_G_L      0x0E
-#define CLINE_IIC_REG_COLOR_G_H      0x0F
-#define CLINE_IIC_REG_COLOR_B_L      0x10
-#define CLINE_IIC_REG_COLOR_B_H      0x11
+#define CLINE_IIC_REG_COLOR_R        0x0C
+#define CLINE_IIC_REG_COLOR_G        0x0E
+#define CLINE_IIC_REG_COLOR_B        0x10
 #define CLINE_IIC_REG_REFLECT_MAX    0x12
 #define CLINE_IIC_REG_REFLECT_MIN    0x13
 
