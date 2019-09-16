@@ -6,27 +6,29 @@
 // 光电模块
 #define COLORLIGHT_IIC_ADDR 0x0B //光电模块I2C器件地址
 
-#define IIC_REG_ADDR_SETTING 0x01 // 设置工作模式和反射模式的灯光, bit0~3: 工作模式；bit4~7: 反射模式的RGB灯数据
-#define IIC_REG_ADDR_ENV 0x02
-#define IIC_REG_ADDR_REFLECT_R 0x03
-#define IIC_REG_ADDR_REFLECT_G 0x04
-#define IIC_REG_ADDR_REFLECT_B 0x05
-#define IIC_REG_ADDR_COLOR 0x06
-#define IIC_REG_ADDR_HSV_H_L 0x07
-#define IIC_REG_ADDR_HSV_H_H 0x08
-#define IIC_REG_ADDR_HSV_S 0x09
-#define IIC_REG_ADDR_COLOR_R_L 0x0A
-#define IIC_REG_ADDR_COLOR_R_H 0x0B
-#define IIC_REG_ADDR_COLOR_G_L 0x0C
-#define IIC_REG_ADDR_COLOR_G_H 0x0D
-#define IIC_REG_ADDR_COLOR_B_L 0x0E
-#define IIC_REG_ADDR_COLOR_B_H 0x0F
+#define CLINE_IIC_REG_SETTING        0x01 // 设置工作模式和反射模式的灯光, bit0~3: 工作模式；bit4~7: 反射模式的RGB灯数据
+#define CLINE_IIC_REG_ENV            0x02
+#define CLINE_IIC_REG_REFLECT_R      0x03
+#define CLINE_IIC_REG_REFLECT_G      0x04
+#define CLINE_IIC_REG_REFLECT_B      0x05
+#define CLINE_IIC_REG_COLOR          0x06
+#define CLINE_IIC_REG_HSV_H_L        0x07
+#define CLINE_IIC_REG_HSV_H_H        0x08
+#define CLINE_IIC_REG_HSV_V_L        0x09
+#define CLINE_IIC_REG_HSV_V_H        0x0A
+#define CLINE_IIC_REG_HSV_S          0x0B
+#define CLINE_IIC_REG_COLOR_R_L      0x0C
+#define CLINE_IIC_REG_COLOR_R_H      0x0D
+#define CLINE_IIC_REG_COLOR_G_L      0x0E
+#define CLINE_IIC_REG_COLOR_G_H      0x0F
+#define CLINE_IIC_REG_COLOR_B_L      0x10
+#define CLINE_IIC_REG_COLOR_B_H      0x11
+#define CLINE_IIC_REG_REFLECT_MAX    0x12
+#define CLINE_IIC_REG_REFLECT_MIN    0x13
 
 class SENSOR_COLORLIGHT : public SENSOR_IIC
 {
 private:
-    float dark_value[6] = {0, 0, 0, 0, 0, 0};
-    float bright_value[6] = {100, 100, 100, 100, 100, 100};
 
 public:
     typedef enum
@@ -43,6 +45,15 @@ public:
         RESULT_REFLECT_B,
         RESULT_COLOR
     } enum_Result_Index;
+    typedef enum
+    {
+        DATA_HSV_H,
+        DATA_HSV_S,
+        DATA_HSV_V,
+        DATA_COLOR_R,
+        DATA_COLOR_G,
+        DATA_COLOR_B
+    } enum_Data_Index;
     typedef enum {
         COLOR_NON ,
         COLOR_BLACK ,
@@ -64,6 +75,7 @@ public:
     SENSOR_COLORLIGHT(int slave_address);
 
     /*--------------Thunder IDE APIs: -------------*/
+    int Get_Data(unsigned char data_index, unsigned char channel = 0);
     int Get_Result(unsigned char result_index, unsigned char channel = 0);
     byte Set_Operate_Mode(byte optMode, unsigned char channel = 0);
     byte Set_Operate_Modes(byte optMode, byte optData, unsigned char channel = 0);
