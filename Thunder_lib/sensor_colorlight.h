@@ -47,7 +47,7 @@ public:
     } enum_Result_Index;
     typedef enum
     {
-        DATA_HSV_H,
+        DATA_HSV_H = 10,
         DATA_HSV_S,
         DATA_HSV_V,
         DATA_COLOR_R,
@@ -75,10 +75,9 @@ public:
     SENSOR_COLORLIGHT(int slave_address);
 
     /*--------------Thunder IDE APIs: -------------*/
-    int Get_Data(unsigned char data_index, unsigned char channel = 0);
     int Get_Result(unsigned char result_index, unsigned char channel = 0);
     byte Set_Operate_Mode(byte optMode, unsigned char channel = 0);
-    byte Set_Operate_Modes(byte optMode, byte optData, unsigned char channel = 0);
+    byte Set_Reflect_Led(byte optData, unsigned char channel = 0);
     void SetDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel = 0);
     void Reset(unsigned char channel = 0);
 };
