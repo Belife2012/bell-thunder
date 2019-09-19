@@ -5,10 +5,10 @@
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief 获取声音强度相对值
+ * @brief 获取声音的相对强度值
  * 
  * @param sensorChannel 
- * @return unsigned char 声音强度相对值（0~100）
+ * @return unsigned char 声音的相对强度值（0~100）
  */
 unsigned char SENSOR_SOUND::GetSoundDB(unsigned char sensorChannel)
 {
@@ -27,8 +27,8 @@ unsigned char SENSOR_SOUND::GetSoundDB(unsigned char sensorChannel)
 /**
  * @brief 设置声音强度检测的最大值和最小值
  * 
- * @param max_value 最大值
- * @param min_value 最小值
+ * @param max_value 最大值，取默认最大值的 max_value% 为最大值
+ * @param min_value 最小值，取默认最大值的 min_value% 为最小值
  * @param sensorChannel 
  */
 void SENSOR_SOUND::SetDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)

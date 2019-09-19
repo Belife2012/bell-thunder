@@ -61,21 +61,29 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         bakCode |= read(CLINE_IIC_REG_HSV_V, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
+        CHECK_RANGE(getValue, 0, 1800);
+        getValue = getValue * 100 / 1800;
         break;
     case DATA_COLOR_R:
         bakCode |= read(CLINE_IIC_REG_COLOR_R, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
+        CHECK_RANGE(getValue, 0, 1800);
+        getValue = getValue * 100 / 1800;
         break;
     case DATA_COLOR_G:
         bakCode |= read(CLINE_IIC_REG_COLOR_G, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
+        CHECK_RANGE(getValue, 0, 1800);
+        getValue = getValue * 100 / 1800;
         break;
     case DATA_COLOR_B:
         bakCode |= read(CLINE_IIC_REG_COLOR_B, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
+        CHECK_RANGE(getValue, 0, 1800);
+        getValue = getValue * 100 / 1800;
         break;
 
     default:

@@ -8,7 +8,7 @@ SENSOR_HT::SENSOR_HT(int slave_address) : SENSOR_IIC(slave_address)
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief: 获取温湿度传感器检测到的湿度相对值
+ * @brief: 获取温湿度传感器的相对湿度
  * 
  * @param sensorChannel:传感器接口编号
  * @return float : 湿度相对值（0~100）
@@ -39,7 +39,7 @@ float SENSOR_HT::GetHumidity(uint8_t sensorChannel)
 }
 
 /**
- * @brief: 获取温湿度传感器检测到的温度
+ * @brief: 获取温湿度传感器的温度值
  * 
  * @param sensorChannel:传感器接口编号
  * @return float :温度（摄氏度℃）
