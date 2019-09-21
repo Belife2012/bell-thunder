@@ -1,6 +1,13 @@
 #ifndef __DATA_TYPE_H__
 #define __DATA_TYPE_H__
 
+#define CHECK_RANGE(value, min, max) do{if( value > (max) ) { \
+                                          value = (max); \
+                                        } else if ( value < (min) ) { \
+                                          value = (min); \
+                                        } \
+                                      } while(0)
+                                      
 typedef enum {
   PROGRAM_USER_1 = 0,
   PROGRAM_USER_2,

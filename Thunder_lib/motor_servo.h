@@ -14,7 +14,7 @@ class MOTOR_SERVO
 private:
     // 舵机 PWM频率50Hz，0度时 脉宽最小500us，180度时 脉宽最大2500us，开机舵机居中为 90度
     // 20000[us] * 计数值 / 8191 = 输出[us]
-    const float Servo_MIN = 205;
+    const float Servo_MIN = 220; // 205 = 500us
     const float Servo_Range = 819; 
     float servo_percent_max[2] = {100, 100};
     float servo_percent_min[2] = {-100, -100};

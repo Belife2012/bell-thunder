@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "data_type.h"
 
 // I2C
 #define SDA_PIN 21 // SDA_PIN
@@ -18,12 +19,6 @@
 
 #define MAX_CHANNEL_INDEX     (3)
 
-#define CHECK_RANGE(value, min, max) do{if( value > (max) ) { \
-                                          value = (max); \
-                                        } else if ( value < (min) ) { \
-                                          value = (min); \
-                                        } \
-                                      } while(0)
 #define CHECK_IIC_RETURN(ret) do{ if(ret != 0) { \
                                     log_e("%s IIC error", __FUNCTION__);\
                                   } \

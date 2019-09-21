@@ -72,7 +72,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'V', 1, 2, 0};
+const uint8_t Version_FW[4] = {'V', 1, 2, 1};
 
 uint32_t thunder_system_parameter = 0;
 // 所有模块初始化
@@ -93,11 +93,13 @@ void BELL_THUNDER::Setup_All(void)
 
 	Serial.printf("\nInitialize All modules of -Bell_Thunder Go- \n\n");
 
+	SENSOR_IIC::IIC_Init(); // 会对 IIC扩展IC 和 UART扩展模块IC 进行复位
+
+	// 多机通信模块初始化测试
 	Open_Multi_Message();
 	delay(10);
 	Close_Multi_Message();
 
-	SENSOR_IIC::IIC_Init();
 
 	Disk_Manager.Disk_Manager_Initial();
 

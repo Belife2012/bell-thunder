@@ -103,7 +103,7 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 		inPin2 = HIGH;
 	}
 
-	if (motor == 1)
+	if (motor == L)
 	{
 		if (speed > LIMIT_SPEED)
 		{
@@ -118,7 +118,7 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 			ledcWrite(MOTOR_CHANNEL_2, 0);
 		}
 	}
-	else if (motor == 2)
+	else if (motor == R)
 	{
 		if (speed > LIMIT_SPEED)
 		{
@@ -138,13 +138,13 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 void MOTOR_THUNDER::Motor_Brake(int motor)
 {
 	Bell_Thunder.Disable_En_Motor();
-	if (motor == 1)
+	if (motor == L)
 	{
 		digitalWrite(MOTOR_L_IN1, HIGH);
 		digitalWrite(MOTOR_L_IN2, HIGH);
 		ledcWrite(MOTOR_CHANNEL_2, 0);
 	}
-	else if (motor == 2)
+	else if (motor == R)
 	{
 		digitalWrite(MOTOR_R_IN1, HIGH);
 		digitalWrite(MOTOR_R_IN2, HIGH);
@@ -156,13 +156,13 @@ void MOTOR_THUNDER::Motor_Brake(int motor)
 void MOTOR_THUNDER::Motor_Free(int motor)
 {
 	Bell_Thunder.Disable_En_Motor();
-	if (motor == 1)
+	if (motor == L)
 	{
 		digitalWrite(MOTOR_L_IN1, LOW);
 		digitalWrite(MOTOR_L_IN2, LOW);
 		ledcWrite(MOTOR_CHANNEL_2, 0);
 	}
-	else if (motor == 2)
+	else if (motor == R)
 	{
 		digitalWrite(MOTOR_R_IN1, LOW);
 		digitalWrite(MOTOR_R_IN2, LOW);
@@ -247,7 +247,7 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 		speed = 0;
 	}
 
-	if (motor == 1)
+	if (motor == L)
 	{
 		if (speed > LIMIT_SPEED)
 		{
@@ -268,7 +268,7 @@ void MOTOR_THUNDER::Motor_Move(int motor, int speed, int direction)
 			set_speed(PWM_L_B, 0);
 		}
 	}
-	else if (motor == 2)
+	else if (motor == R)
 	{
 		if (speed > LIMIT_SPEED)
 		{
@@ -301,24 +301,24 @@ void MOTOR_THUNDER::Motor_Brake(int motor)
 #if 0
   Bell_Thunder.Disable_En_Motor();
 
-  if(motor == 1)
+  if(motor == L)
   {
     set_speed(PWM_L_A,MOTOR_INPUT_MAX);
     set_speed(PWM_L_B,MOTOR_INPUT_MAX);
   }
-  else if(motor == 2)
+  else if(motor == R)
   {
     set_speed(PWM_R_A,MOTOR_INPUT_MAX);
     set_speed(PWM_R_B,MOTOR_INPUT_MAX);
   }
 #else
 	int rotate_value;
-	if (motor == 1)
+	if (motor == L)
 	{
 		rotate_value = Get_RotateValue(1);
 		Set_Motor_Position(1, rotate_value);
 	}
-	else if (motor == 2)
+	else if (motor == R)
 	{
 		rotate_value = Get_RotateValue(2);
 		Set_Motor_Position(2, rotate_value);
@@ -336,12 +336,12 @@ void MOTOR_THUNDER::Motor_Free(int motor)
 {
 	Bell_Thunder.Disable_En_Motor();
 
-	if (motor == 1)
+	if (motor == L)
 	{
 		set_speed(PWM_L_A, 0);
 		set_speed(PWM_L_B, 0);
 	}
-	else if (motor == 2)
+	else if (motor == R)
 	{
 		set_speed(PWM_R_A, 0);
 		set_speed(PWM_R_B, 0);
@@ -632,12 +632,14 @@ void MOTOR_THUNDER::Motor_Position_Control(MotorPosition_Struct *position_ctrl)
 
 void MOTOR_THUNDER::Set_Motor_Position(int motor, int position_target)
 {
+	int motor_index;
 	CHECK_MOTOR_INDEX(motor);
+	motor_index = motor - 1;
 	
-	Position_Ctrl[motor - 1].target = position_target;
+	Position_Ctrl[motor_index].target = position_target;
 
 	Bell_Thunder.Enable_Motor_Position();
-	Position_Ctrl[motor - 1].enable_ctrl = true;
+	Position_Ctrl[motor_index].enable_ctrl = true;
 }
 void MOTOR_THUNDER::Clear_Position_Control()
 {
@@ -708,18 +710,18 @@ void MOTOR_THUNDER::Control_Motor_Running(MotorRunning_Struct &running_data)
 	{
 	case 0:
 	{
-		Set_Motor_Output(1, running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);
-		Set_Motor_Output(2, running_data.right_motor_speed * MAX_DRIVE_OUTPUT / 100);
+		Set_Motor_Output(L, running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);
+		Set_Motor_Output(R, running_data.right_motor_speed * MAX_DRIVE_OUTPUT / 100);
 		break;
 	}
 	case 1:
 	{
-		Set_Motor_Output(1, running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);
+		Set_Motor_Output(L, running_data.left_motor_speed * MAX_DRIVE_OUTPUT / 100);
 		break;
 	}
 	case 2:
 	{
-		Set_Motor_Output(2, running_data.right_motor_speed * MAX_DRIVE_OUTPUT / 100);
+		Set_Motor_Output(R, running_data.right_motor_speed * MAX_DRIVE_OUTPUT / 100);
 		break;
 	}
 	default:
@@ -801,18 +803,18 @@ void MOTOR_THUNDER::Control_Motor_Running(MotorRunning_Struct &running_data)
 	{
 	case 0:
 	{
-		Set_Motor_Output(1, 0);
-		Set_Motor_Output(2, 0);
+		Set_Motor_Output(L, 0);
+		Set_Motor_Output(R, 0);
 		break;
 	}
 	case 1:
 	{
-		Set_Motor_Output(1, 0);
+		Set_Motor_Output(L, 0);
 		break;
 	}
 	case 2:
 	{
-		Set_Motor_Output(2, 0);
+		Set_Motor_Output(R, 0);
 		break;
 	}
 	default:
@@ -1073,8 +1075,8 @@ void MOTOR_THUNDER::Drive_Car_Control()
 
 	// Serial.printf("LeftOut:%f, RightOut:%f \n\n", drive_car_pid.Out_left, drive_car_pid.Out_right);
 
-	Set_Motor_Output(1, (int)drive_car_pid.Out_left);
-	Set_Motor_Output(2, (int)drive_car_pid.Out_right);
+	Set_Motor_Output(L, (int)drive_car_pid.Out_left);
+	Set_Motor_Output(R, (int)drive_car_pid.Out_right);
 }
 
 /* 
@@ -1156,13 +1158,15 @@ void MOTOR_THUNDER::Set_Car_Speed_Direction(float speed, float direction)
 void MOTOR_THUNDER::Set_Target(int motor, float target)
 {
 	float target_encoder_num;
+	int motor_index;
 	CHECK_MOTOR_INDEX(motor);
+	motor_index = motor - 1;
 
 	target_encoder_num = target / 100 * MAX_DRIVE_SPEED;
-	if (Motor_Speed_PID[motor - 1].Ref != target_encoder_num)
+	if (Motor_Speed_PID[motor_index].Ref != target_encoder_num)
 	{
 		// PID_Reset(&Motor_Speed_PID[0]);
-		Motor_Speed_PID[motor - 1].Ref = target_encoder_num;
+		Motor_Speed_PID[motor_index].Ref = target_encoder_num;
 	}
 
 	Bell_Thunder.Enable_En_Motor();
@@ -1170,9 +1174,11 @@ void MOTOR_THUNDER::Set_Target(int motor, float target)
 
 int16_t MOTOR_THUNDER::Get_Speed_simple(int motor)
 {
+	int motor_index;
 	CHECK_MOTOR_INDEX(motor);
-	motor = motor - 1;
-	return Encoder_Counter[motor] * 100 / MAX_DRIVE_SPEED;
+	motor_index = motor - 1;
+
+	return Encoder_Counter[motor_index] * 100 / MAX_DRIVE_SPEED;
 }
 
 /**
@@ -1185,24 +1191,27 @@ int16_t MOTOR_THUNDER::Get_Speed_simple(int motor)
  */
 int16_t MOTOR_THUNDER::Get_Speed(int motor, uint8_t times)
 {
+	int motor_index;
 	CHECK_MOTOR_INDEX(motor);
+	motor_index = motor - 1;
 
-	motor = motor - 1;
-	if(times != encode_amount[motor]._times){
-		encode_amount[motor].times = 0;
-		encode_amount[motor].amount = 0;
-		encode_amount[motor]._times = times;
+	if(times != encode_amount[motor_index]._times){
+		encode_amount[motor_index].times = 0;
+		encode_amount[motor_index].amount = 0;
+		encode_amount[motor_index]._times = times;
 	}
 
-	return encode_amount[motor]._amount * 100 / ((encode_amount[motor]._times+1)*MAX_DRIVE_SPEED);
+	return encode_amount[motor_index]._amount * 100 / ((encode_amount[motor_index]._times+1)*MAX_DRIVE_SPEED);
 }
 
 // 获取目标(编码器计数值)
 int16_t MOTOR_THUNDER::Get_Target(int motor)
 {
+	int motor_index;
 	CHECK_MOTOR_INDEX(motor);
+	motor_index = motor - 1;
 
-	return Motor_Speed_PID[motor - 1].Ref * 100 / MAX_DRIVE_SPEED;
+	return Motor_Speed_PID[motor_index].Ref * 100 / MAX_DRIVE_SPEED;
 }
 
 /* 
@@ -1263,10 +1272,12 @@ inline void Update_Rotate_Value()
  */
 int32_t MOTOR_THUNDER::Get_RotateValue(int motor)
 {
+	int motor_index;
 	int32_t rotate_value;
 	CHECK_MOTOR_INDEX(motor);
+	motor_index = motor - 1;
 
-	rotate_value = rotate_RawValue[motor - 1] - rotate_Record_Origin[motor - 1];
+	rotate_value = rotate_RawValue[motor_index] - rotate_Record_Origin[motor_index];
 	rotate_value = rotate_value * DEGREES_EVERY_CIRCLE / ENCODER_NUM_EVERY_CIRCLE;
 
 	return rotate_value;
@@ -1279,6 +1290,9 @@ int32_t MOTOR_THUNDER::Get_RotateValue(int motor)
  */
 void MOTOR_THUNDER::Clear_RotateValue(int motor)
 {
+	int motor_index;
 	CHECK_MOTOR_INDEX(motor);
-	rotate_Record_Origin[motor - 1] = rotate_RawValue[motor - 1];
+	motor_index = motor - 1;
+
+	rotate_Record_Origin[motor_index] = rotate_RawValue[motor_index];
 }

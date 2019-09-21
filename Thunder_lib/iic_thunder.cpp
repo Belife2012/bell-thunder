@@ -22,7 +22,14 @@ SENSOR_IIC::SENSOR_IIC(int slave_address)
 
 void SENSOR_IIC::IIC_Init()
 {
-  if(SENSOR_IIC::i2c_enable == false) {
+  if(SENSOR_IIC::i2c_enable == false) {  
+    // reset IC 
+    pinMode(15, OUTPUT);
+    digitalWrite(15, LOW);
+    delay(1);
+    digitalWrite(15, HIGH);
+    delay(5);
+
     Wire.begin(SDA_PIN, SCL_PIN, 100000); //Wire.begin();
   	SENSOR_IIC::CreateSemaphoreIIC();
     SENSOR_IIC::Select_Sensor_AllChannel();
