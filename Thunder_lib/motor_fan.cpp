@@ -18,8 +18,8 @@ signed char MOTOR_FAN::Get_Fan_Speed(unsigned char channel)
 /**
  * @brief: 设置风扇电机的功率
  * 
- * @param speed: 最大功率百分比（0~100）
- * @param channel:风扇电机接口的编号
+ * @param speed: 功率值-100~100，负数表示反转，数值的绝对值越大，电机功率越大
+ * @param channel:风扇电机接口的编号：1/2/3/4/5(A)/6(B)
  */
 void MOTOR_FAN::Set_Fan_Speed(signed char speed, unsigned char channel)
 {

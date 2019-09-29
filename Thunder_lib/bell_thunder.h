@@ -50,6 +50,7 @@
 #include "sensor_remoter.h"
 
 #include "motor_servo.h"
+#include "sensor_attitude.h"
 
 /* 通用宏 */
 #define MOTOR_WITHOUT_CTRL_FOR_USER 1
@@ -140,6 +141,7 @@ extern DISPLAY_SCREEN Display_Screen;
 extern SENSOR_REMOTER BLE_Remoter;
 extern BELL_BARBETTE Barbette_Thunder;
 extern MOTOR_SERVO Motor_Servo;
+extern SENSOR_ATTITUDE Sensor_Attitude;
 
 extern uint32_t thunder_system_parameter;
 

@@ -56,6 +56,7 @@ SENSOR_INFRARED Sensor_Infrared(INFRARED_IIC_ADDR);
 BLE_THUNDERGO BLE_ThunderGo;
 BLE_CLIENT BLE_Client;
 SENSOR_REMOTER BLE_Remoter;
+SENSOR_ATTITUDE Sensor_Attitude(ATTITUDE_IIC_ADDR);
 
 // 蓝牙
 uint8_t Rx_Data[21] = {0};
@@ -2882,17 +2883,17 @@ void BELL_THUNDER::Reset_Rx_Data()
 	ble_command_busy = false;
 }
 
+/**
+ * @brief: 获取虚拟计时器的时间，单位：毫秒ms
+ * 
+ * @param timer_index: 计时器序号 1~5
+ * @return uint32_t : 返回计时时间，单位：毫秒ms
+ */
 uint32_t BELL_THUNDER::Get_Virtual_Timer(uint32_t timer_index)
 {
 	uint32_t ret_value;
-	if (timer_index == 0)
-	{
-		timer_index = 1;
-	}
-	else if (timer_index > 5)
-	{
-		timer_index = 5;
-	}
+	
+	CHECK_RANGE(timer_index, 1, 5);
 
 	ret_value = millis() - timer_value[timer_index - 1];
 	return ret_value;
@@ -2901,18 +2902,11 @@ uint32_t BELL_THUNDER::Get_Virtual_Timer(uint32_t timer_index)
 /**
  * @brief 将虚拟计时器清零，清零后的计时器数值变为0，然后立刻从 0 开始计时，+1/ms
  * 
- * @param timer_index 计时器的序号，无符号类型，有效值为0~5，超出最大值的以 5 替代
+ * @param timer_index 计时器序号 1~5
  */
 void BELL_THUNDER::Reset_Virtual_Timer(uint32_t timer_index)
 {
-	if (timer_index == 0)
-	{
-		timer_index = 1;
-	}
-	else if (timer_index > 5)
-	{
-		timer_index = 5;
-	}
+	CHECK_RANGE(timer_index, 1, 5);
 
 	timer_value[timer_index - 1] = millis();
 }
@@ -2982,7 +2976,7 @@ void BELL_THUNDER::InitNameVarInt(const char *name, int init_value)
  * 支持设置最多 32个 命名变量，名字长度最大 16个字符，
  * 可以调用 SendNameVarInt() 向某个地址传输一个命名 int变量
  * 
- * @param addr 传入目的地址
+ * @param addr 传入目的地址 0~4
  * @param name 传入被传输的变量名称字符串，
  * @param var_value 传入 int 变量数值
  * @return int 返回错误码，正常发送返回0

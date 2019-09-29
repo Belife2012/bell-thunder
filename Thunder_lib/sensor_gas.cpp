@@ -5,10 +5,10 @@
 /*---------------------------------------------------------------------------*/
 
 /**
- * @brief: 获取传感器检测到的有毒气体浓度
+ * @brief: 获取传感器检测到的气体浓度
  * 
  * @param sensorChannel: 传感器接口编号
- * @return unsigned char : 有毒气体浓度（0~100）
+ * @return unsigned char : 气体浓度（0~100）
  */
 unsigned char SENSOR_GAS::GetToxicgasRatio(unsigned char sensorChannel)
 {
@@ -24,8 +24,8 @@ unsigned char SENSOR_GAS::GetToxicgasRatio(unsigned char sensorChannel)
 /**
  * @brief: 设置传感器检测的最大值和最小值
  * 
- * @param max_value: 最大值
- * @param min_value: 最小值
+ * @param max_value 最大值，取默认最大值的 max_value% 为最大值
+ * @param min_value 最小值，取默认最大值的 min_value% 为最小值
  * @param sensorChannel: 传感器接口编号
  */
 void SENSOR_GAS::SetDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)
