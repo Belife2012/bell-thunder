@@ -140,7 +140,7 @@ void BELL_THUNDER::Setup_All(void)
 	System_Task.Set_Flush_Task(FLUSH_COMMUNICATIONS);  // 开启UART指令、BLE指令 通信控制功能
 	System_Task.Create_Deamon_Threads();			   // 创建并开始 守护线程
 
-	Serial.printf("\n*** Initial Completes, spend time:%d ***\n\n", millis());
+	Serial.printf("\n*** Initial Completes, spend time:%d ***\n\n", (int)millis());
 	SENSOR_IIC::Select_Sensor_AllChannel();
 
 #ifndef DISABLE_LAUNCH_DISPLAY
@@ -1145,8 +1145,8 @@ void BELL_THUNDER::Line_Tracing(void)
 	int line_out_flag = 0;
 	int LED_counter = 99;
 
-	uint32_t L_last_time; // 上次偏左的时间戳
-	uint32_t R_last_time; // 上次偏右的时间戳
+	uint32_t L_last_time = 0; // 上次偏左的时间戳
+	uint32_t R_last_time = 0; // 上次偏右的时间戳
 
 	Line_last_time = millis();
 	Line_last_led_time = millis();
@@ -1637,8 +1637,8 @@ int BELL_THUNDER::Car_Rotate_90_Left_Right(int dir)
 
 void BELL_THUNDER::Line_Tracing_Speed_Ctrl(void)
 {
-	uint32_t L_last_time; // 上次偏左的时间戳
-	uint32_t R_last_time; // 上次偏右的时间戳
+	uint32_t L_last_time = 0; // 上次偏左的时间戳
+	uint32_t R_last_time = 0; // 上次偏右的时间戳
 	int line_out_flag = 0;
 	int LED_counter = 99;
 
@@ -2512,7 +2512,6 @@ void BELL_THUNDER::Check_UART_Communication(void)
 // 协议解析
 void BELL_THUNDER::Check_Protocol(void)
 {
-	float rev_motor_speed;
 	switch (Rx_Data[0])
 	{
 	case 0x00:
@@ -2587,68 +2586,20 @@ void BELL_THUNDER::Check_Protocol(void)
 		break;
 
 	case UART_GENERAL_PLAY_VOICE:			   //控制声音播放
+		Speaker_Thunder.Set_Sound_Level(Rx_Data[2]);
 		Speaker_Thunder.Play_Song(Rx_Data[1]); //播放第编号段音频
-		Speaker_Thunder.Set_Sound_Volume(Rx_Data[2]);
 		break;
 
 	case UART_GENERAL_MOTOR_SINGLE: //控制单个电机
-#if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
 		Disable_En_Motor();
 		Motor_Thunder.Motor_Move(Rx_Data[1], Rx_Data[2], Rx_Data[3]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
-#else
-		rev_motor_speed = (float)Rx_Data[2] * 0.39;
-		if (Rx_Data[1] == 1)
-		{
-			if (Rx_Data[3] == 1)
-			{
-				Motor_Thunder.Set_Target(1, rev_motor_speed);
-			}
-			else
-			{
-				Motor_Thunder.Set_Target(1, (-1) * rev_motor_speed);
-			}
-		}
-		else
-		{
-			if (Rx_Data[3] == 1)
-			{
-				Motor_Thunder.Set_Target(2, rev_motor_speed);
-			}
-			else
-			{
-				Motor_Thunder.Set_Target(2, (-1) * rev_motor_speed);
-			}
-		}
-#endif
 		break;
 
 	case UART_GENERAL_MOTOR_DOUBLE: //控制两个电机
-#if (MOTOR_WITHOUT_CTRL_FOR_USER == 1)
 		Disable_En_Motor();
 
 		Motor_Thunder.Motor_Move(1, Rx_Data[1], Rx_Data[2]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
 		Motor_Thunder.Motor_Move(2, Rx_Data[3], Rx_Data[4]); //参数1 --> 电机编号；参数2 --> 速度(0-255)；参数3 -->方向
-#else
-		rev_motor_speed = (float)Rx_Data[1] * 0.39;
-		if (Rx_Data[2] == 1)
-		{
-			Motor_Thunder.Set_Target(1, rev_motor_speed);
-		}
-		else
-		{
-			Motor_Thunder.Set_Target(1, (-1) * rev_motor_speed);
-		}
-
-		rev_motor_speed = (float)Rx_Data[3] * 0.39;
-		if (Rx_Data[4] == 1)
-		{
-			Motor_Thunder.Set_Target(2, rev_motor_speed);
-		}
-		else
-		{
-			Motor_Thunder.Set_Target(2, (-1) * rev_motor_speed);
-		}
-#endif
 		break;
 
 	case UART_GENERAL_MOTOR_SINGLE_PID: //控制单个闭环电机
@@ -3018,14 +2969,14 @@ int BELL_THUNDER::SendNameVarInt(unsigned char addr, int name, int var_value)
 	const char *messageName;
 	messageName = String(name).c_str();
 
-	SendNameVarInt(addr, messageName, var_value);
+	return SendNameVarInt(addr, messageName, var_value);
 }
 int BELL_THUNDER::RecvNameVarInt(int name)
 {
 	const char *messageName;
 	messageName = String(name).c_str();
 
-	RecvNameVarInt(messageName);
+	return RecvNameVarInt(messageName);
 }
 void BELL_THUNDER::InitNameVarInt(int name, int init_value)
 {

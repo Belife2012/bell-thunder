@@ -65,7 +65,7 @@ byte SENSOR_TOUCH::Reset_Mode(unsigned char channel)
  */
 bool SENSOR_TOUCH::Check_Event(int check_event, unsigned char channel)
 {
-  byte ret;
+  byte ret=0xff;
   byte readValue = 0;
 
   if(check_event == TOUCH_EVENT_RELEASE){

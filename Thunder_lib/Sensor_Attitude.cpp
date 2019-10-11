@@ -1,5 +1,6 @@
 #include "sensor_attitude.h"
 #include "byte_convertion.h"
+
 /**
  * @brief 在执行函数Calibrate_Sensor时，首先要静止放置3秒，
  * 然后分别绕着X、Y、Z轴旋转器件至少一圈
@@ -9,6 +10,7 @@
  */
 bool SENSOR_ATTITUDE::CalibrateSensor()
 {
+    return true;
 }
 
 void SENSOR_ATTITUDE::ShowAttitude(unsigned char channel)

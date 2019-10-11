@@ -350,10 +350,10 @@ void MOTOR_THUNDER::Motor_Free(int motor)
 #endif
 
 /**
- * @brief: 电机控制；范围为-100 ~ 100（负数为反向转，正为正向转；没有做速度控制）
+ * @brief: 电机控制；范围为-255 ~ 255（负数为反向转，正为正向转；没有做速度控制）
  * 
  * @param motor: 1 是左电机，2 是右电机
- * @param power: 范围为-100 ~ 100，电池电压变化时，电机输出功率会变化
+ * @param M_output: 范围为-255 ~ 255，电池电压变化时，电机实际输出功率会变化
  */
 void MOTOR_THUNDER::Set_Motor_Output(int motor, int M_output)
 {
@@ -368,7 +368,8 @@ void MOTOR_THUNDER::Set_Motor_Output(int motor, int M_output)
 }
 
 /**
- * @brief: 开环控制电机，电机功率随电压浮动的范围较小，在电池电压下降时，回提高电机控制PWM脉宽
+ * @brief: 开环控制电机，电机功率随电压浮动的范围较小，
+ * 在电池电压下降时，会提高电机控制PWM脉宽，保持电机实际输出功率相对稳定
  * 
  * @param motor: 1 是左电机，2 是右电机
  * @param power: 范围为-100 ~ 100，电池电压变化时，会相对于Set_Motor_Output稳定的输出电机功率

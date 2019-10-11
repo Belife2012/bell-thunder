@@ -3,7 +3,7 @@
 #include <led_color.h>
 
 // 配置I2C地址
-LED_COLOR::LED_COLOR(uint8_t slave_address) : 
+LED_COLOR::LED_COLOR(int slave_address) : 
   SENSOR_IIC(slave_address),
   LEDs_Data({0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
@@ -64,11 +64,11 @@ void LED_COLOR::Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b)
 /**
  * @brief: 修改多个彩灯的缓存，显示模式恢复为静态显示
  * 
- * @param address: 起始编号
+ * @param address: 起始编号1~12
  * @param data: 数据
  * @param size: 数据长度
  */
-void LED_COLOR::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
+void LED_COLOR::Set_LEDs_Data(uint8_t address, const uint8_t *data, uint8_t size)
 {
   byte rc;
   byte startIndex;
@@ -100,9 +100,9 @@ void LED_COLOR::Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size)
  * 
  * @param data: 显示数据
  */
-void LED_COLOR::Set_LEDs_Data(t_color_led_buff data)
+void LED_COLOR::Set_LEDs_Data(const t_color_led_buff data)
 {
-  Set_LEDs_Data(1, (unsigned char *)data, RGB_LED_DATA_SIZE);
+  Set_LEDs_Data(1, (const uint8_t *)data, RGB_LED_DATA_SIZE);
 }
 
 /**
@@ -125,8 +125,6 @@ void LED_COLOR::LED_OFF(void)
  */
 void LED_COLOR::LED_Updata(void)
 {
-  byte rc;
-
   write(XT1511_I2C_COM_UODATA, NULL, 0);
 }
 

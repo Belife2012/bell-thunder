@@ -44,7 +44,6 @@ void MULT_DEVICES::uart_sendByte(unsigned char dat)
 int MULT_DEVICES::uart_recByte(unsigned char* readValue) 
 { 
 	unsigned int timeOut;
-	int flag; 
 
 	timeOut = millis();
 	while(!Serial1.available()){
@@ -455,7 +454,6 @@ int MULT_DEVICES::CheckMultiHost()
 
 int MULT_DEVICES::CheckPackage(unsigned char port)
 {
-	unsigned char recv_byte;
 	unsigned char recv_index = 0;
 	
 	Wk2114readFIFO(port, (unsigned char *)&recv_head_info + recv_head_info.valid_cnt, 3 - recv_head_info.valid_cnt);

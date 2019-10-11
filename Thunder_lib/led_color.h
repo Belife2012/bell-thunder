@@ -27,13 +27,13 @@ public:
     COLOR_MODE_BREATH
   } enum_ColorLED_Mode_Type;
 
-  LED_COLOR(uint8_t slave_address); // 配置I2C地址
+  LED_COLOR(int slave_address); // 配置I2C地址
 
   void Set_LED_Num(uint8_t number); // 写入一共可以控制多少个灯
 
   void Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b); // 写入单个寄存器数据
-  void Set_LEDs_Data(t_color_led_buff data);
-  void Set_LEDs_Data(uint8_t address, uint8_t *data, uint8_t size); // 写入多个寄存器数据
+  void Set_LEDs_Data(const t_color_led_buff data);
+  void Set_LEDs_Data(uint8_t address, const uint8_t *data, uint8_t size); // 写入多个寄存器数据
 
   void LED_OFF(void);    // 0xA0  全关，立即刷新
   void LED_Updata(void); // 0xA1  按照现有数据刷新

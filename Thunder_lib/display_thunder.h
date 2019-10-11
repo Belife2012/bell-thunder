@@ -10,18 +10,19 @@
 #include <ht16d35b.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-#define LED_MATRIX_ROW_NUM      18
-#define LED_MATRIX_COL_NUM      12
-#define SINGLE_CHARACTER_WIDTH  6
+#define LED_MATRIX_ROW_NUM 18
+#define LED_MATRIX_COL_NUM 12
+#define SINGLE_CHARACTER_WIDTH 6
 
-typedef struct{
-  byte rowIndex;
-  byte comIndex;
+typedef struct
+{
+    byte rowIndex;
+    byte comIndex;
 } LedDotLocation;
-
 
 #ifdef __cplusplus
 }
@@ -30,7 +31,7 @@ typedef struct{
 // 单色点阵
 class DISPLAY_SCREEN
 {
-  private:
+private:
     HT16D35B ht16d35b = HT16D35B(HT16D35B_DEVICE_ADDRESS_69);
     byte display_start_X, display_string_len;
     const byte (*play_string_data[40])[LED_MATRIX_COL_NUM][SINGLE_CHARACTER_WIDTH];
@@ -60,10 +61,22 @@ class DISPLAY_SCREEN
     const uint8_t LED_show_14[9] = {45, 46, 47, 45, 46, 47, 45, 46, 47};
     const uint8_t LED_show_15[5] = {72, 73, 74, 75, 76};
 
-  public:
+public:
     typedef unsigned char t_picture_buff[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM];
+    class PICTURE_BUFF
+    {
+    private:
+        t_picture_buff data;
 
-    void Setup(void); // 初始化单色点阵灯驱动
+    public:
+        PICTURE_BUFF() {memset(data, 0, sizeof(data));}
+        PICTURE_BUFF(unsigned char s_data[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM])
+        {
+            memcpy(data, s_data, sizeof(data));
+        }
+    };
+
+    void Setup(void);     // 初始化单色点阵灯驱动
     void Test_LEDs(void); // 跑马灯
     void Play_LEDs(const unsigned char *data, int size);
     void Play_Thunder_Picture(int picture_index); // 内置单色点阵图案
@@ -74,13 +87,12 @@ class DISPLAY_SCREEN
     void Play_LED_String(uint32_t number);
     void Play_String_NextFrame(void);
     void Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM],
-                                    byte display_flag=1);
+                         byte display_flag = 1);
     void Move_Picture_To(int x, int y);
     void Set_Single_Dot(uint8_t x, uint8_t y);
     void Clear_Single_Dot(uint8_t x, uint8_t y);
     void Play_Animation(uint8_t Show_No); // 设置将要播放的内置动画编号
-    void Animation_Control(void); // 循环执行的内置动画控制程序
-
+    void Animation_Control(void);         // 循环执行的内置动画控制程序
 };
 
 #endif

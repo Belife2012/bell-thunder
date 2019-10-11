@@ -121,7 +121,7 @@ void SENSOR_REMOTER::Clear_All_keys()
  */
 bool SENSOR_REMOTER::Check_Key_Action(int key_index, int key_action)
 {
-    bool ret;
+    bool ret=false;
 
     if(key_action == KEY_PRESSING){
         if( (keys_pressing & (0x00000001 << key_index)) == 0 ){

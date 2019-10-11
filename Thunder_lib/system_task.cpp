@@ -382,8 +382,6 @@ void SYSTEM_TASK::Toggle_Competition_Status(int status_index)
 
 void SYSTEM_TASK::Clear_All_Loops()
 {
-  uint8_t ret;
-
   SENSOR_IIC::Take_Semaphore_IIC();// 拿到资源控制权才开始删除线程
   for (uint8_t i = 0; i < MAX_APPS_TASK_COUNTER; i++)
   {
