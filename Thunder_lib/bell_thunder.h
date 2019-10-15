@@ -26,8 +26,6 @@
 #include <bell_barbette.h>
 // 串口多机通信
 #include <mult_devices.h>
-// 九轴姿态传感器
-#include "Sensor_Attitude.h"
 // 火焰传感器
 #include "sensor_flame.h"
 // 风扇电动机
@@ -50,6 +48,7 @@
 #include "sensor_remoter.h"
 
 #include "motor_servo.h"
+// 九轴姿态传感器
 #include "sensor_attitude.h"
 
 /* 通用宏 */
