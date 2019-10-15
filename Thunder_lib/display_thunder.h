@@ -63,18 +63,6 @@ private:
 
 public:
     typedef unsigned char t_picture_buff[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM];
-    class PICTURE_BUFF
-    {
-    private:
-        t_picture_buff data;
-
-    public:
-        PICTURE_BUFF() {memset(data, 0, sizeof(data));}
-        PICTURE_BUFF(unsigned char s_data[LED_MATRIX_COL_NUM][LED_MATRIX_ROW_NUM])
-        {
-            memcpy(data, s_data, sizeof(data));
-        }
-    };
 
     void Setup(void);     // 初始化单色点阵灯驱动
     void Test_LEDs(void); // 跑马灯
@@ -93,6 +81,8 @@ public:
     void Clear_Single_Dot(uint8_t x, uint8_t y);
     void Play_Animation(uint8_t Show_No); // 设置将要播放的内置动画编号
     void Animation_Control(void);         // 循环执行的内置动画控制程序
+
+    void Clear(void); // 清除所有屏幕点阵显示内容
 };
 
 #endif

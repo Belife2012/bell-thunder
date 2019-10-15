@@ -2207,3 +2207,12 @@ void DISPLAY_SCREEN::Animation_Control(void)
     default: break;
 	}
 }
+
+/**
+ * @brief: 清除所有屏幕点阵显示内容
+ * 
+ */
+void DISPLAY_SCREEN::Clear()
+{
+  Play_LED_String(""); // 显示空内容就清除屏幕点阵显示了
+}

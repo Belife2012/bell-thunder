@@ -111,8 +111,6 @@ void LED_COLOR::Set_LEDs_Data(const t_color_led_buff data)
  */
 void LED_COLOR::LED_OFF(void)
 {
-  byte rc;
-
   Set_LED_Dynamic(0xff);
   memset(LEDs_Data, 0, RGB_LED_DATA_SIZE);
 
@@ -340,4 +338,13 @@ void LED_COLOR::LED_Flush_Roll()
   LED_Updata();
 
   ledDynamicIndex++;
+}
+
+/**
+ * @brief: 清除所有屏幕彩灯条显示内容
+ * 
+ */
+void LED_COLOR::Clear()
+{
+  LED_OFF();
 }

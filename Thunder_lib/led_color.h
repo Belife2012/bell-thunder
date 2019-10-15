@@ -40,6 +40,8 @@ public:
 
   void Set_LED_Dynamic(uint8_t dynamicMode);
   void LED_Flush(void);
+  
+  void Clear(void); // 清除所有屏幕彩灯条显示内容
 
 private:
   byte LEDs_Data[RGB_LED_DATA_SIZE];
@@ -54,6 +56,7 @@ private:
   void LED_Flush_Breath(void);
   void LED_Flush_Blink(void);
   void LED_Flush_Roll(void);
+
 };
 
 #endif // _XT1511_I2C_H_
