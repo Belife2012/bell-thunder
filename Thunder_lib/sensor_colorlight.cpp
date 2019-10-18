@@ -22,8 +22,8 @@ SENSOR_COLORLIGHT::SENSOR_COLORLIGHT(int slave_address) : SENSOR_IIC(slave_addre
  */
 int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char channel)
 {
-    int getValue=0;
-    byte bakCode=0;
+    int getValue = 0;
+    byte bakCode = 0;
     byte read_data[2];
 
     switch (result_index)
@@ -99,6 +99,35 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
     // Serial.printf(" 0x%02x 0x%02x ", read_data[1], read_data[0]);
 
     return getValue;
+}
+/**
+ * @brief: 校准传感器的最大值或最小值
+ * 
+ * @param mode: 0 设置值为最大值，1 设置值为最小值, 2 重置设置值
+ * @param value: 新设置的数值（0~100）
+ * @param sensorChannel: 传感器接口编号
+ */
+void SENSOR_COLORLIGHT::Set_Extremum(int mode, float value, uint8_t channel)
+{
+    unsigned char new_value;
+    CHECK_RANGE(value, 0, 100);
+
+    new_value = (unsigned char)value;
+    if (mode == 0)
+    {
+        write(CLINE_IIC_REG_REFLECT_MAX, &new_value, 1, channel);
+    }
+    else if (mode == 1)
+    {
+        write(CLINE_IIC_REG_REFLECT_MIN, &new_value, 1, channel);
+    }
+    else if (mode == 2)
+    {
+        new_value = 100;
+        write(CLINE_IIC_REG_REFLECT_MAX, &new_value, 1, channel);
+        new_value = 0;
+        write(CLINE_IIC_REG_REFLECT_MAX, &new_value, 1, channel);
+    }
 }
 
 /**

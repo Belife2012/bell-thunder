@@ -16,6 +16,8 @@ public:
 
     /*--------------Thunder IDE APIs: -------------*/
     unsigned char GetToxicgasRatio(unsigned char sensorChannel=0);
+    void Set_Extremum(int mode, float value, uint8_t channel=0);
+    
     void SetDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel=0);
 };
 

@@ -86,9 +86,9 @@ float SENSOR_LIGHT::Get_Light_Value(unsigned char channel )
 }
 
 /**
- * @brief: 设置光电传感器的最大值或最小值
+ * @brief: 校准传感器的最大值或最小值
  * 
- * @param mode: 0 设置值为最大值，1 设置值为最小值
+ * @param mode: 0 设置值为最大值，1 设置值为最小值, 2 重置设置值
  * @param value: 新设置的数值（0~100）
  * @param sensorChannel: 传感器接口编号
  */
@@ -98,8 +98,12 @@ void SENSOR_LIGHT::Set_Extremum(int mode, float value, uint8_t sensorChannel)
     Set_Bright_Value(value, sensorChannel);
   } else if(mode == 1) {
     Set_Dark_Value(value, sensorChannel);
+  } else if(mode == 2) {
+    Set_Bright_Value(100, sensorChannel);
+    Set_Dark_Value(0, sensorChannel);
   }
 }
+
 /**
  * @brief 设置光线检测的最大值和最小值
  * 
