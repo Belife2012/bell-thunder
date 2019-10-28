@@ -1767,7 +1767,7 @@ void DISPLAY_SCREEN::Play_String_NextFrame()
     }
   }
   // 保留移动量，延时开始滚动，因为一开始就滚动会看不清前面的字符
-  if(start_roll_delay > 5){
+  if(start_roll_delay > 3){
     play_string_offset++;
     if(play_string_offset == SINGLE_CHARACTER_WIDTH){
       play_string_offset = 0;

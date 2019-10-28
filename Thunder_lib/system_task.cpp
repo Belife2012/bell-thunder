@@ -47,7 +47,7 @@ void Driver_Flush(void *pvParameters)
     // 
     if (System_Task.Get_flush_Tasks() & (0x00000001 << FLUSH_CHARACTER_ROLL))
     {
-      if (current_time - character_roll_time > 150)
+      if (current_time - character_roll_time > 100)
       {
         Display_Screen.Play_String_NextFrame();
         character_roll_time = millis();
