@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "sensor_colorlight.h"
+#include "byte_convertion.h"
 
 SENSOR_COLORLIGHT::SENSOR_COLORLIGHT(int slave_address) : SENSOR_IIC(slave_address)
 {
@@ -71,21 +72,21 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         CHECK_RANGE(getValue, 0, 2000);
-        getValue = getValue * 100 / 2000;
+        getValue = getValue * 255 / 2000;
         break;
     case DATA_COLOR_G:
         bakCode |= read(CLINE_IIC_REG_COLOR_G, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         CHECK_RANGE(getValue, 0, 2000);
-        getValue = getValue * 100 / 2000;
+        getValue = getValue * 255 / 2000;
         break;
     case DATA_COLOR_B:
         bakCode |= read(CLINE_IIC_REG_COLOR_B, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         CHECK_RANGE(getValue, 0, 1700);
-        getValue = getValue * 100 / 1700;
+        getValue = getValue * 255 / 1700;
         break;
 
     default:
@@ -198,6 +199,50 @@ byte SENSOR_COLORLIGHT::Set_Reflect_Led(byte optData, unsigned char channel)
     optMode = MODE_REFLECT;
     optMode |= (optData << 4);
     ret = write(CLINE_IIC_REG_SETTING, &optMode, 1, channel);
+
+    return ret;
+}
+
+void SENSOR_COLORLIGHT::Read_RGB_Scale(float *RGB_scale, unsigned char channel)
+{
+    byte read_buf[4];
+    BYTE_CONVERTION _data;
+
+    read(CLINE_IIC_REG_SCALE_R, read_buf, 4, channel);
+    read_buf[3] = read_buf[2];
+    read_buf[2] = read_buf[1];
+    read_buf[1] = read_buf[0];
+    read_buf[0] = 0;
+    byte_convertion_init(&_data, read_buf, 4, 0);
+    byte_convertion_read_float(&_data, &RGB_scale[0]);
+    Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[0]);
+
+    read(CLINE_IIC_REG_SCALE_G, read_buf, 4, channel);
+    read_buf[3] = read_buf[2];
+    read_buf[2] = read_buf[1];
+    read_buf[1] = read_buf[0];
+    read_buf[0] = 0;
+    byte_convertion_init(&_data, read_buf, 4, 0);
+    byte_convertion_read_float(&_data, &RGB_scale[1]);
+    Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[1]);
+
+    read(CLINE_IIC_REG_SCALE_B, read_buf, 4, channel);
+    read_buf[3] = read_buf[2];
+    read_buf[2] = read_buf[1];
+    read_buf[1] = read_buf[0];
+    read_buf[0] = 0;
+    byte_convertion_init(&_data, read_buf, 4, 0);
+    byte_convertion_read_float(&_data, &RGB_scale[2]);
+    Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[2]);
+
+}
+
+byte SENSOR_COLORLIGHT::Calibrate_Sensor(unsigned char channel)
+{
+    byte calibrate_flag, ret;
+
+    calibrate_flag = 0x01;
+    ret = write(CLINE_IIC_REG_CALIBRATE, &calibrate_flag, 1, channel);
 
     return ret;
 }

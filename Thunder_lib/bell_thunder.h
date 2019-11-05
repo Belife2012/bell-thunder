@@ -1,6 +1,8 @@
 #ifndef _THUNDER_H_
 #define _THUNDER_H_
 
+#define BELL_THUNDER_VERSION {'V', 1, 2, 2}
+
 #include <Arduino.h>
 #include "Esp.h"
 #include "data_type.h"

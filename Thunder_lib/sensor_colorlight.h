@@ -21,6 +21,11 @@
 #define CLINE_IIC_REG_REFLECT_MAX    0x12
 #define CLINE_IIC_REG_REFLECT_MIN    0x13
 
+#define CLINE_IIC_REG_SCALE_R        0x1C
+#define CLINE_IIC_REG_SCALE_G        0x1D
+#define CLINE_IIC_REG_SCALE_B        0x1E
+#define CLINE_IIC_REG_CALIBRATE      0x1F
+
 class SENSOR_COLORLIGHT : public SENSOR_IIC
 {
 private:
@@ -68,6 +73,8 @@ public:
     } enum_Color;
 
     SENSOR_COLORLIGHT(int slave_address);
+    byte Calibrate_Sensor(unsigned char channel = 0);
+    void Read_RGB_Scale(float *RGB_scale, unsigned char channel = 0);
 
     /*--------------Thunder IDE APIs: -------------*/
     int Get_Result(unsigned char result_index, unsigned char channel = 0);

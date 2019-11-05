@@ -1664,6 +1664,7 @@ void DISPLAY_SCREEN::Play_LED_String(const char *playString)
 
   if(display_string_len == 0){
     ht16d35b.LED_Show(LED_Clear, sizeof(LED_Clear));
+    memset(led_display_dots, 0, sizeof(led_display_dots));
     return;
   }
   string_row_dots_num = display_string_len * SINGLE_CHARACTER_WIDTH;
@@ -1842,7 +1843,17 @@ void DISPLAY_SCREEN::Display_Picture(const byte picture_dots[LED_MATRIX_COL_NUM]
 
 /**
  * @brief: 移动点阵画面
- * 
+ *
+ *(0,0)│――――――――――――――――――――――――――――――→ X 轴 
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     ↓                             (17,11)
+ *    Y 轴
  * @param x: 水平轴的偏移
  * @param y: 垂直轴的偏移
  */
@@ -1888,7 +1899,17 @@ void DISPLAY_SCREEN::Move_Picture_To(int x, int y)
 
 /**
  * @brief: 点亮画面的一个x,y点
- * 
+ *
+ *(0,0)│――――――――――――――――――――――――――――――→ X 轴 
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     ↓                             (17,11)
+ *    Y 轴
  * @param x: 水平轴位置
  * @param y: 垂直轴位置
  */
@@ -1915,7 +1936,17 @@ void DISPLAY_SCREEN::Set_Single_Dot(uint8_t x, uint8_t y)
 
 /**
  * @brief: 熄灭画面的一个x,y点
- * 
+ *
+ *(0,0)│――――――――――――――――――――――――――――――→ X 轴 
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     │
+ *     ↓                             (17,11)
+ *    Y 轴
  * @param x: 水平轴位置
  * @param y: 垂直轴位置
  */

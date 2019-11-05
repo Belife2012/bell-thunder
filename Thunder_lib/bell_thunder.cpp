@@ -73,7 +73,7 @@ bool ble_command_busy = false;
 // 版本号第一位数字，发布版本具有重要功能修改
 // 版本号第二位数字，当有功能修改和增减时，相应地递增
 // 版本号第三位数字，每次为某个版本修复BUG时，相应地递增
-const uint8_t Version_FW[4] = {'V', 1, 2, 1};
+const uint8_t Version_FW[4] = BELL_THUNDER_VERSION;
 
 uint32_t thunder_system_parameter = 0;
 // 所有模块初始化
@@ -2458,11 +2458,11 @@ void BELL_THUNDER::Get_Serial_Command()
 // 通信确认，蓝牙
 void BELL_THUNDER::Check_BLE_Communication(void)
 {
-	// BLE已经过去到指令
+	// BLE 如果接收到指令
 	if (Rx_Data[0] != 0)
 	{
 		Check_Protocol();
-		if (Tx_Data[0] != 0)
+		if (Tx_Data[0] != 0) // 执行后，BLE 如果有数据要返回，则调用 BLE_ThunderGo.Tx_BLE
 		{
 			Tx_Data[5] = Tx_Data[0] + Tx_Data[1] + Tx_Data[2] + Tx_Data[3] + Tx_Data[4];
 			BLE_ThunderGo.Tx_BLE(Tx_Data, 6); //通过蓝牙发送数据;参数1 --> 数据数组；参数2 -->字节数
