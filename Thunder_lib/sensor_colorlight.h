@@ -20,6 +20,8 @@
 #define CLINE_IIC_REG_COLOR_B        0x10
 #define CLINE_IIC_REG_REFLECT_MAX    0x12
 #define CLINE_IIC_REG_REFLECT_MIN    0x13
+#define CLINE_IIC_REG_ENV_MAX        0x14
+#define CLINE_IIC_REG_ENV_MIN        0x15
 
 #define CLINE_IIC_REG_SCALE_R        0x1C
 #define CLINE_IIC_REG_SCALE_G        0x1D
@@ -43,33 +45,25 @@ public:
         RESULT_REFLECT_R,
         RESULT_REFLECT_G,
         RESULT_REFLECT_B,
-        RESULT_COLOR
-    } enum_Result_Index;
-    typedef enum
-    {
+        RESULT_COLOR,
         DATA_HSV_H = 10,
         DATA_HSV_S,
         DATA_HSV_V,
         DATA_COLOR_R,
         DATA_COLOR_G,
         DATA_COLOR_B
-    } enum_Data_Index;
+    } enum_Result_Index;
+    
     typedef enum {
         COLOR_NON ,
         COLOR_BLACK ,
         COLOR_WHITE ,
         COLOR_RED ,
-        COLOR_ORANGE ,
-        COLOR_YELLOWISH ,
         COLOR_YELLOW ,
-        COLOR_GRASS ,
         COLOR_GREEN ,
         COLOR_CYAN ,
-        COLOR_SKY ,
         COLOR_BLUE ,
         COLOR_PURPLE ,
-        COLOR_FUCHSIA ,
-        COLOR_PINK ,
     } enum_Color;
 
     SENSOR_COLORLIGHT(int slave_address);
@@ -83,6 +77,8 @@ public:
     void Set_Extremum(int mode, float value, uint8_t channel=0);
     
     void SetDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel = 0);
+    void SetReflectDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel = 0);
+    void SetEnvDetectRange(unsigned char max_value = 100, unsigned char min_value = 0, unsigned char sensorChannel = 0);
     void Reset(unsigned char channel = 0);
 };
 

@@ -10,13 +10,17 @@ SENSOR_COLORLIGHT::SENSOR_COLORLIGHT(int slave_address) : SENSOR_IIC(slave_addre
 /*---------------------------------------------------------------------------*/
 /*----------------------------- Thunder IDE API -----------------------------*/
 /*---------------------------------------------------------------------------*/
-
+#define MAX_VALUE_RED       2100      
+#define MAX_VALUE_GREEN     2300
+#define MAX_VALUE_BLUE      2200
+#define MAX_VALUE_CLEAR     2100
 /**
- * @brief: 获取检测结果，可以获取环境光检测结果、反射光检测结果（红、绿、蓝分量），颜色检测结果；
- * 还可以获取颜色模式的数据: HSV数据和RGB数据
+ * @brief: 获取检测结果，可以获取环境光模式的检测结果、反射光模式的检测结果（红、绿、蓝分量），
+ * 颜色模式的检测结果，还可以获取颜色模式的数据: HSV数据和RGB数据；
  * 
  * @param result_index: 
- * 0|环境光，1|反射红光分量，2|反射绿光分量，3|反射蓝光分量，4|颜色（颜色结果参考SENSOR_COLORLIGHT::enum_Color）
+ * 0|环境光，1|反射红光分量，2|反射绿光分量，3|反射蓝光分量，
+ * 4|颜色（颜色结果参考SENSOR_COLORLIGHT::enum_Color 0~8分别代表 无颜色/黑/白/红/黄/绿/青/蓝/紫）
  * 10|H值，11|S值，12|V值，13|R值，14|G值，15|B值
  * @param channel:传感器接口编号
  * @return int :返回的检测数据结果
@@ -64,29 +68,32 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         bakCode |= read(CLINE_IIC_REG_HSV_V, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
-        CHECK_RANGE(getValue, 0, 1800);
-        getValue = getValue * 100 / 1800;
+        CHECK_RANGE(getValue, 0, MAX_VALUE_CLEAR);
+        getValue = getValue * 100 / MAX_VALUE_CLEAR;
         break;
     case DATA_COLOR_R:
         bakCode |= read(CLINE_IIC_REG_COLOR_R, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
-        CHECK_RANGE(getValue, 0, 2000);
-        getValue = getValue * 255 / 2000;
+        // Serial.printf("%d ", getValue);
+        CHECK_RANGE(getValue, 0, MAX_VALUE_RED);
+        getValue = getValue * 255 / MAX_VALUE_RED;
         break;
     case DATA_COLOR_G:
         bakCode |= read(CLINE_IIC_REG_COLOR_G, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
-        CHECK_RANGE(getValue, 0, 2000);
-        getValue = getValue * 255 / 2000;
+        // Serial.printf("%d ", getValue);
+        CHECK_RANGE(getValue, 0, MAX_VALUE_GREEN);
+        getValue = getValue * 255 / MAX_VALUE_GREEN;
         break;
     case DATA_COLOR_B:
         bakCode |= read(CLINE_IIC_REG_COLOR_B, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
-        CHECK_RANGE(getValue, 0, 1700);
-        getValue = getValue * 255 / 1700;
+        // Serial.printf("%d ", getValue);
+        CHECK_RANGE(getValue, 0, MAX_VALUE_BLUE);
+        getValue = getValue * 255 / MAX_VALUE_BLUE;
         break;
 
     default:
@@ -104,7 +111,8 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
 /**
  * @brief: 校准传感器的最大值或最小值
  * 
- * @param mode: 0 设置值为最大值，1 设置值为最小值, 2 重置设置值
+ * @param mode: 0 设置值为反射光最大值，1 设置值为反射光最小值, 2 重置反射光设置值
+ *              3 设置值为环境光最大值，4 设置值为环境光最小值, 5 重置环境光设置值
  * @param value: 新设置的数值（0~100）
  * @param sensorChannel: 传感器接口编号
  */
@@ -128,6 +136,20 @@ void SENSOR_COLORLIGHT::Set_Extremum(int mode, float value, uint8_t channel)
         write(CLINE_IIC_REG_REFLECT_MAX, &new_value, 1, channel);
         new_value = 0;
         write(CLINE_IIC_REG_REFLECT_MAX, &new_value, 1, channel);
+    }else if (mode == 3)
+    {
+        write(CLINE_IIC_REG_ENV_MAX, &new_value, 1, channel);
+    }
+    else if (mode == 4)
+    {
+        write(CLINE_IIC_REG_ENV_MIN, &new_value, 1, channel);
+    }
+    else if (mode == 5)
+    {
+        new_value = 100;
+        write(CLINE_IIC_REG_ENV_MAX, &new_value, 1, channel);
+        new_value = 0;
+        write(CLINE_IIC_REG_ENV_MAX, &new_value, 1, channel);
     }
 }
 
@@ -146,9 +168,39 @@ void SENSOR_COLORLIGHT::SetDetectRange(unsigned char max_value, unsigned char mi
     write(CLINE_IIC_REG_REFLECT_MAX, &max_value, 1, sensorChannel);
     write(CLINE_IIC_REG_REFLECT_MIN, &min_value, 1, sensorChannel);
 }
+/**
+ * @brief 设置反射光模式检测的范围
+ * 
+ * @param max_value 最大值
+ * @param min_value 最小值
+ * @param sensorChannel 
+ */
+void SENSOR_COLORLIGHT::SetReflectDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)
+{
+    CHECK_RANGE(max_value, 0, 100);
+    CHECK_RANGE(min_value, 0, 100);
+
+    write(CLINE_IIC_REG_ENV_MAX, &max_value, 1, sensorChannel);
+    write(CLINE_IIC_REG_ENV_MIN, &min_value, 1, sensorChannel);
+}
+/**
+ * @brief 设置环境光模式检测的范围
+ * 
+ * @param max_value 最大值
+ * @param min_value 最小值
+ * @param sensorChannel 
+ */
+void SENSOR_COLORLIGHT::SetEnvDetectRange(unsigned char max_value, unsigned char min_value, unsigned char sensorChannel)
+{
+    CHECK_RANGE(max_value, 0, 100);
+    CHECK_RANGE(min_value, 0, 100);
+
+    write(CLINE_IIC_REG_REFLECT_MAX, &max_value, 1, sensorChannel);
+    write(CLINE_IIC_REG_REFLECT_MIN, &min_value, 1, sensorChannel);
+}
 
 /**
- * @brief: 复位反射模式的范围设置
+ * @brief: 复位传感器的反射光最大最小值设置，环境光的最大最小值设置
  * 
  * @param channel:传感器接口编号 
  */
@@ -159,6 +211,10 @@ void SENSOR_COLORLIGHT::Reset(unsigned char channel)
     write(CLINE_IIC_REG_REFLECT_MAX, &reg_data, 1, channel);
     reg_data = 0;
     write(CLINE_IIC_REG_REFLECT_MIN, &reg_data, 1, channel);
+    reg_data = 100;
+    write(CLINE_IIC_REG_ENV_MAX, &reg_data, 1, channel);
+    reg_data = 0;
+    write(CLINE_IIC_REG_ENV_MAX, &reg_data, 1, channel);
 }
 
 /**
@@ -215,7 +271,7 @@ void SENSOR_COLORLIGHT::Read_RGB_Scale(float *RGB_scale, unsigned char channel)
     read_buf[0] = 0;
     byte_convertion_init(&_data, read_buf, 4, 0);
     byte_convertion_read_float(&_data, &RGB_scale[0]);
-    Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[0]);
+    // Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[0]);
 
     read(CLINE_IIC_REG_SCALE_G, read_buf, 4, channel);
     read_buf[3] = read_buf[2];
@@ -224,7 +280,7 @@ void SENSOR_COLORLIGHT::Read_RGB_Scale(float *RGB_scale, unsigned char channel)
     read_buf[0] = 0;
     byte_convertion_init(&_data, read_buf, 4, 0);
     byte_convertion_read_float(&_data, &RGB_scale[1]);
-    Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[1]);
+    // Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[1]);
 
     read(CLINE_IIC_REG_SCALE_B, read_buf, 4, channel);
     read_buf[3] = read_buf[2];
@@ -233,7 +289,7 @@ void SENSOR_COLORLIGHT::Read_RGB_Scale(float *RGB_scale, unsigned char channel)
     read_buf[0] = 0;
     byte_convertion_init(&_data, read_buf, 4, 0);
     byte_convertion_read_float(&_data, &RGB_scale[2]);
-    Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[2]);
+    // Serial.printf("\niic: %d, %d, %d, %d, %f", read_buf[0],read_buf[1],read_buf[2],read_buf[3],RGB_scale[2]);
 
 }
 
