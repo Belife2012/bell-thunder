@@ -825,7 +825,7 @@ void BELL_THUNDER::Update_Process_Status(int button_event)
 	}
 	case PROCESS_USER_1:
 	{
-		if (button_event == KEY_LONG_NO_RELEASE)
+		if (button_event == KEY_LONG_NO_RELEASE || button_event == KEY_CLICK_ONE)
 		{
 			function_button_event = KEY_NONE;
 			Set_Process_Status(PROCESS_INDICATE_STOP);
@@ -835,7 +835,7 @@ void BELL_THUNDER::Update_Process_Status(int button_event)
 	}
 	case PROCESS_USER_2:
 	{
-		if (button_event == KEY_LONG_NO_RELEASE)
+		if (button_event == KEY_LONG_NO_RELEASE || button_event == KEY_CLICK_ONE)
 		{
 			function_button_event = KEY_NONE;
 			Set_Process_Status(PROCESS_INDICATE_STOP);
@@ -845,7 +845,7 @@ void BELL_THUNDER::Update_Process_Status(int button_event)
 	}
 	case PROCESS_USER_3:
 	{
-		if (button_event == KEY_LONG_NO_RELEASE)
+		if (button_event == KEY_LONG_NO_RELEASE || button_event == KEY_CLICK_ONE)
 		{
 			function_button_event = KEY_NONE;
 			Set_Process_Status(PROCESS_INDICATE_STOP);
@@ -855,7 +855,7 @@ void BELL_THUNDER::Update_Process_Status(int button_event)
 	}
 	case PROCESS_USER_4:
 	{
-		if (button_event == KEY_LONG_NO_RELEASE)
+		if (button_event == KEY_LONG_NO_RELEASE || button_event == KEY_CLICK_ONE)
 		{
 			function_button_event = KEY_NONE;
 			Set_Process_Status(PROCESS_INDICATE_STOP);

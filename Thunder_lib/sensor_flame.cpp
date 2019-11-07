@@ -19,6 +19,7 @@ int8_t SENSOR_FLAME::Get_Flame_Angle(unsigned char channel)
         CHECK_RANGE(ret, -45, 45);
         return ret;
     }else {
+        Serial.printf("flame error in %d iic channel", channel);
         return 0;
     }
 }
@@ -34,6 +35,7 @@ unsigned char SENSOR_FLAME::Get_Flame_Intensity(unsigned char channel)
     if(0 == read(FLAME_REG_INTENSITY, &read_intensity, 1, channel)){
         return read_intensity;
     }else {
+        Serial.printf("flame error in %d iic channel", channel);
         return 0;
     }
 }
