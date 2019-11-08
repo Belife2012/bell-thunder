@@ -11,7 +11,6 @@ SENSOR_COLOR::SENSOR_COLOR(int slave_address):
 // 初始化设置
 byte SENSOR_COLOR::Setup(unsigned char channel)
 {
-  CHECK_RANGE(channel, 1, 6);
   Serial.printf("\nstart Init Color Sensor...\n");
 
   byte rc;
@@ -76,7 +75,11 @@ byte SENSOR_COLOR::Setup(unsigned char channel)
   }
 
   Serial.printf("Color Sensor Init end\n\n");
-  device_detected[channel - 1] = 1;
+
+  unsigned char channel_index;
+  channel_index = ((channel == 0) || (channel > 6)) ? 0 : (channel - 1);
+  
+  device_detected[channel_index] = 1;
 
   return 0;
 }
@@ -247,13 +250,14 @@ uint8_t SENSOR_COLOR::Colour_Recognition(unsigned short *RGBC)
 byte SENSOR_COLOR::get_rawval(unsigned char *data, unsigned char channel)
 {
   byte rc;
-  CHECK_RANGE(channel, 1, 6);
   rc = read(BH1745NUC_RED_DATA_LSB, data, 8, channel);
 
+  unsigned char channel_index;
+  channel_index = ((channel == 0) || (channel > 6)) ? 0 : (channel - 1);
   // 如果读取数值失败，则标志设备未检测到，否则查看是否需要重新初始化设备
   if(rc != 0){
-    device_detected[channel - 1] = 0;
-  }else if(device_detected[channel - 1] == 0){
+    device_detected[channel_index] = 0;
+  }else if(device_detected[channel_index] == 0){
     Setup(channel);
     // 初始化完成后，不会重新读取，下一次的读取数值才是有效的
   }
