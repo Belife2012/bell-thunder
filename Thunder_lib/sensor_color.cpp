@@ -289,7 +289,7 @@ byte SENSOR_COLOR::Get_RGBC_Data(unsigned short *data, unsigned char channel)
  */
 uint16_t SENSOR_COLOR::Get_Red(uint8_t channel) 
 {
-  uint16_t data[4];
+  uint16_t data[4] = {0,0,0,0};
 
   Get_RGBC_Data(data, channel);
   return data[0];
@@ -302,7 +302,7 @@ uint16_t SENSOR_COLOR::Get_Red(uint8_t channel)
  */
 uint16_t SENSOR_COLOR::Get_Green(uint8_t channel) 
 {
-  uint16_t data[4];
+  uint16_t data[4] = {0,0,0,0};
 
   Get_RGBC_Data(data, channel);
   return data[1];
@@ -315,7 +315,7 @@ uint16_t SENSOR_COLOR::Get_Green(uint8_t channel)
  */
 uint16_t SENSOR_COLOR::Get_Blue(uint8_t channel) 
 {
-  uint16_t data[4];
+  uint16_t data[4] = {0,0,0,0};
 
   Get_RGBC_Data(data, channel);
   return data[2];
@@ -328,7 +328,7 @@ uint16_t SENSOR_COLOR::Get_Blue(uint8_t channel)
  */
 uint16_t SENSOR_COLOR::Get_Clear(uint8_t channel) 
 {
-  uint16_t data[4];
+  uint16_t data[4] = {0,0,0,0};
 
   Get_RGBC_Data(data, channel);
   return data[3];
@@ -346,9 +346,7 @@ uint16_t SENSOR_COLOR::Get_Clear(uint8_t channel)
  */
 uint8_t SENSOR_COLOR::Get_Color_Result(uint8_t sensorChannel)
 {    
-  unsigned short RGBC[4] = {
-      0
-  };
+  unsigned short RGBC[4] = {0,0,0,0};
   Get_RGBC_Data(RGBC, sensorChannel);
   return Colour_Recognition(RGBC);
 }

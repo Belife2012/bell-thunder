@@ -2539,6 +2539,7 @@ void BELL_THUNDER::Check_Protocol(void)
 		break;
 
 	case UART_GENERAL_COLOR_SENSOR: // 获取颜色传感器数据 RGBC分4个8位传
+		memset(RGBC, 0, sizeof(RGBC));
 		Sensor_Color.Get_RGBC_Data(RGBC);
 		Sensor_Color.RGBtoHSV(RGBC, HSV); // 计算HSV
 
@@ -2550,7 +2551,8 @@ void BELL_THUNDER::Check_Protocol(void)
 		Tx_Data[4] = (uint8_t)HSV[0]; //H
 		break;
 
-	case UART_GENERAL_COLOR_CARD: // 获取颜色传感器数据 RGBC分4个8位传
+	case UART_GENERAL_COLOR_CARD: // 获取颜色传感器色卡编号
+		memset(RGBC, 0, sizeof(RGBC));
 		Sensor_Color.Get_RGBC_Data(RGBC);
 
 		Tx_Data[0] = UART_GENERAL_COLOR_CARD;
