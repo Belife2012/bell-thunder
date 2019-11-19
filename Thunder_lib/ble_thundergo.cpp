@@ -272,10 +272,10 @@ void BLE_THUNDERGO::Start_Advertisement()
     std::string strServiceData = "";
     
     /* 广播包单元的格式：长度+类型+数据 */
-    strServiceData += (char)02;     // Len
-    strServiceData += (char)0x01;   // Type
-    strServiceData += (char)0x06;
-    oAdvertisementData.addData(strServiceData);
+    // strServiceData += (char)02;     // Len
+    // strServiceData += (char)0x01;   // Type
+    // strServiceData += (char)0x06;   // data,查看蓝牙协议的广播数据格式
+    // oAdvertisementData.addData(strServiceData);
 
     // pAdvertising->setAdvertisementData(oAdvertisementData);
     /////////////////////////////////////////////////////////////////////////////
@@ -294,15 +294,13 @@ void BLE_THUNDERGO::Start_Advertisement()
   {
     pService = pServer->createService(SERVICE_UUID);  // 创建BLE服务
     // 创建BLE特征
+    // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE_NR);   //PROPERTY_READ PROPERTY_WRITE  PROPERTY_NOTIFY PROPERTY_BROADCAST  PROPERTY_INDICATE PROPERTY_WRITE_NR
     pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX, 
                     BLECharacteristic::PROPERTY_NOTIFY 
                     | BLECharacteristic::PROPERTY_READ 
                     | BLECharacteristic::PROPERTY_WRITE 
                     | BLECharacteristic::PROPERTY_WRITE_NR );
-    // pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_TX,BLECharacteristic::PROPERTY_NOTIFY);
     pCharacteristic->addDescriptor(new BLE2902());
-    // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE_NR);   //PROPERTY_READ PROPERTY_WRITE  PROPERTY_NOTIFY PROPERTY_BROADCAST  PROPERTY_INDICATE PROPERTY_WRITE_NR
-    // BLECharacteristic *pCharacteristic = pService->createCharacteristic(CHARACTERISTIC_UUID_RX,BLECharacteristic::PROPERTY_WRITE);
     pCharacteristic->setCallbacks(new MyCallbacks()); // 接收到数据后执行的内容
 
     pService->start();  // 开启服务
