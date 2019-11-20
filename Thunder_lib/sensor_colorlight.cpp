@@ -54,7 +54,7 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = read_data[0];
         break;
     case DATA_HSV_H:
-        bakCode |= read(CLINE_IIC_REG_HSV_H, &read_data[0], 2, channel);
+        bakCode = read(CLINE_IIC_REG_HSV_H, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         // CHECK_RANGE(getValue, 0, 360);
@@ -65,14 +65,14 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = read_data[0];
         break;
     case DATA_HSV_V:
-        bakCode |= read(CLINE_IIC_REG_HSV_V, &read_data[0], 2, channel);
+        bakCode = read(CLINE_IIC_REG_HSV_V, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         CHECK_RANGE(getValue, 0, MAX_VALUE_CLEAR);
         getValue = getValue * 100 / MAX_VALUE_CLEAR;
         break;
     case DATA_COLOR_R:
-        bakCode |= read(CLINE_IIC_REG_COLOR_R, &read_data[0], 2, channel);
+        bakCode = read(CLINE_IIC_REG_COLOR_R, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         // Serial.printf("%d ", getValue);
@@ -80,7 +80,7 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = getValue * 255 / MAX_VALUE_RED;
         break;
     case DATA_COLOR_G:
-        bakCode |= read(CLINE_IIC_REG_COLOR_G, &read_data[0], 2, channel);
+        bakCode = read(CLINE_IIC_REG_COLOR_G, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         // Serial.printf("%d ", getValue);
@@ -88,7 +88,7 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
         getValue = getValue * 255 / MAX_VALUE_GREEN;
         break;
     case DATA_COLOR_B:
-        bakCode |= read(CLINE_IIC_REG_COLOR_B, &read_data[0], 2, channel);
+        bakCode = read(CLINE_IIC_REG_COLOR_B, &read_data[0], 2, channel);
         getValue = read_data[1];
         getValue = (getValue << 8) + read_data[0];
         // Serial.printf("%d ", getValue);
@@ -297,8 +297,29 @@ byte SENSOR_COLORLIGHT::Calibrate_Sensor(unsigned char channel)
 {
     byte calibrate_flag, ret;
 
+    float result_old[3];
+    float result[3];
+
+    Read_RGB_Scale(result_old, 1);
+
+	Serial.println("calibrate color light");
     calibrate_flag = 0x01;
     ret = write(CLINE_IIC_REG_CALIBRATE, &calibrate_flag, 1, channel);
+    if(ret != 0) 
+    {
+        Serial.println("Calibrate Fail");
+    }
 
+    for(;;)
+    {
+        Read_RGB_Scale(result, 1);
+        if(result[0] != result_old[0] || result[1] != result_old[1] || result[2] != result_old[2]) {
+            break;
+        }
+    }
+
+    delay(10);
+	Serial.println("Calibrate Success");
+    
     return ret;
 }
