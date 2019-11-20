@@ -308,6 +308,7 @@ byte SENSOR_COLORLIGHT::Calibrate_Sensor(unsigned char channel)
     if(ret != 0) 
     {
         Serial.println("Calibrate Fail");
+        return ret;
     }
 
     for(;;)
