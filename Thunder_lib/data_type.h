@@ -1,12 +1,18 @@
 #ifndef __DATA_TYPE_H__
 #define __DATA_TYPE_H__
 
-#define CHECK_RANGE(value, min, max) do{if( value > (max) ) { \
-                                          value = (max); \
-                                        } else if ( value < (min) ) { \
-                                          value = (min); \
+// value 限制在min 与 max的范围内
+#define CHECK_RANGE(value, min, max) do{if( (value) > (max) ) { \
+                                          (value) = (max); \
+                                        } else if ( (value) < (min) ) { \
+                                          (value) = (min); \
                                         } \
                                       } while(0)
+// 如果src 数值在min 与 max的范围内，将src 赋值给des ，否则des 不发生改变
+#define FILTER_RANGE(des, src, min, max) do{if( (src) <= (max) && (src) >= (min) ) { \
+                                              (des) = (src); \
+                                            } \
+                                          } while(0)
                                       
 typedef enum {
   PROGRAM_USER_1 = 0,

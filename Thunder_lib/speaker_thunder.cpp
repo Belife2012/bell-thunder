@@ -154,7 +154,7 @@ int SPEAKER_THUNDER::WT588_Busy_Check()
 }
 
 /**
- * @brief 物理上音量有15档，此函数输入有效范围 0~100 
+ * @brief 物理上音量有15档，此函数输入有效范围 0~15
  * 
  * @param data：最大音量的百分比
  */

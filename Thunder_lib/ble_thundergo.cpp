@@ -272,10 +272,10 @@ void BLE_THUNDERGO::Start_Advertisement()
     std::string strServiceData = "";
     
     /* 广播包单元的格式：长度+类型+数据 */
-    // strServiceData += (char)02;     // Len
-    // strServiceData += (char)0x01;   // Type
-    // strServiceData += (char)0x06;   // data,查看蓝牙协议的广播数据格式
-    // oAdvertisementData.addData(strServiceData);
+    strServiceData += (char)02;     // Len
+    strServiceData += (char)0x01;   // Type
+    strServiceData += (char)0x06;   // data,查看蓝牙协议的广播数据格式
+    oAdvertisementData.addData(strServiceData);
 
     // pAdvertising->setAdvertisementData(oAdvertisementData);
     /////////////////////////////////////////////////////////////////////////////

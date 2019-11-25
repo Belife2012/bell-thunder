@@ -35,19 +35,19 @@ int SENSOR_COLORLIGHT::Get_Result(unsigned char result_index, unsigned char chan
     {
     case RESULT_ENV:
         bakCode = read(CLINE_IIC_REG_ENV, &read_data[0], 1, channel);
-        getValue = read_data[0];
+        FILTER_RANGE(getValue, read_data[0], 0, 100);
         break;
     case RESULT_REFLECT_R:
         bakCode = read(CLINE_IIC_REG_REFLECT_R, &read_data[0], 1, channel);
-        getValue = read_data[0];
+        FILTER_RANGE(getValue, read_data[0], 0, 100);
         break;
     case RESULT_REFLECT_G:
         bakCode = read(CLINE_IIC_REG_REFLECT_G, &read_data[0], 1, channel);
-        getValue = read_data[0];
+        FILTER_RANGE(getValue, read_data[0], 0, 100);
         break;
     case RESULT_REFLECT_B:
         bakCode = read(CLINE_IIC_REG_REFLECT_B, &read_data[0], 1, channel);
-        getValue = read_data[0];
+        FILTER_RANGE(getValue, read_data[0], 0, 100);
         break;
     case RESULT_COLOR:
         bakCode = read(CLINE_IIC_REG_COLOR, &read_data[0], 1, channel);

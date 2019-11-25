@@ -119,6 +119,8 @@ void BELL_THUNDER::Setup_All(void)
 
 	Display_Screen.Setup(); // 初始化单色LED驱动IC配置
 
+	Speaker_Thunder.Set_Sound_Volume(100);
+	
 	Motor_Thunder.Setup_Motor();	 // 配置电机
 	Motor_Thunder.Setup_Motor_PID(); // 配置左右两个电机编码器
 	Stop_All();						 //
