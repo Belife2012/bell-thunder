@@ -113,14 +113,14 @@ void BELL_THUNDER::Setup_All(void)
 	Sensor_Color.Setup(1); // 配置颜色传感器
 	Sensor_Color.Setup(2); // 配置颜色传感器
 	Sensor_Color.Setup(3); // 配置颜色传感器
-	Sensor_Color.Setup(4); // 配置颜色传感器
+	// Sensor_Color.Setup(4); // 配置颜色传感器
 	Sensor_Color.Setup(5); // 配置颜色传感器
 	Sensor_Color.Setup(6); // 配置颜色传感器
 
 	Display_Screen.Setup(); // 初始化单色LED驱动IC配置
 
 	Speaker_Thunder.Set_Sound_Volume(100);
-	
+
 	Motor_Thunder.Setup_Motor();	 // 配置电机
 	Motor_Thunder.Setup_Motor_PID(); // 配置左右两个电机编码器
 	Stop_All();						 //

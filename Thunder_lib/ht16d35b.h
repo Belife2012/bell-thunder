@@ -6,6 +6,7 @@
 #define HT16D35B_DEVICE_ADDRESS_68            (0x68)    // 7bit Addrss
 #define HT16D35B_DEVICE_ADDRESS_69            (0x69)    // 7bit Addrss
 
+#define HT16D35B_SYSTEM_STATUS                (0x71)    // 状态
 #define HT16D35B_CONTROL_COM                  (0x41)    // COM 7个
 #define HT16D35B_CONTROL_ROW                  (0x42)    // ROW 28个
 

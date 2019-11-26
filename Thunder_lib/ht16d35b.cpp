@@ -85,29 +85,27 @@ byte HT16D35B::Setup(void)
 // 参数size --> 数据长度
 byte HT16D35B::LED_Show(const unsigned char *data, int size)
 {
-  byte rc, reg_value;
+  byte rc, reg_value[2]={0,0};
 
-  // 测试 HTHT16D35B IIC是否连上，是否需要重新Setup()
-  reg_value = 0xff;
-  rc = write(HT16D35B_CONTROL_COM, &reg_value, sizeof(reg_value)); //COM全开
-  if (rc != 0)
+  // 测试 HTHT16D35B IIC是否初始化，是否需要重新初始化
+  rc = read(HT16D35B_SYSTEM_STATUS, reg_value, 2); //COM全开
+  if(rc != 0)
+  {
+    return rc;
+  }
+
+  if (device_detected == 0 || (reg_value[1] & 0x01) == 0x00)
   {
   #ifdef PRINT_DEBUG_ERROR
-    Serial.printf("# HT16D35B IIC Error! \n");
+    Serial.printf("# HT16D35B IIC ReInit! \n");
   #endif
     device_detected = 0;
-    return (rc);
-  }else if(device_detected == 0){
     Setup();
   }
 
-  rc = write(HT16D35B_DISPLAY_RAM, data, size);
-
-  if (rc != 0)
+  if(device_detected == 1)
   {
-  #ifdef PRINT_DEBUG_ERROR
-    Serial.printf("### LED IIC Error! ###%d#### \n", rc);
-  #endif
+    rc = write(HT16D35B_DISPLAY_RAM, data, size);
   }
   
   return (rc);
