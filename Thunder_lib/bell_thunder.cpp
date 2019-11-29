@@ -415,7 +415,7 @@ void BELL_THUNDER::Update_Function_Timer()
 }
 
 /* 
- * 使能LED指示灯的PWM输出：通过查询 10ms计数器来实现PWM
+ * 使能LED指示灯的输出
  * 
  * @parameters: 
  * @return: 

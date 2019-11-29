@@ -1,5 +1,7 @@
 #include "sensor_flame.h"
 
+// #define DEBUG_SENSOR_FLAME
+
 /*---------------------------------------------------------------------------*/
 /*----------------------------- Thunder IDE API -----------------------------*/
 /*---------------------------------------------------------------------------*/
@@ -19,7 +21,9 @@ int8_t SENSOR_FLAME::Get_Flame_Angle(unsigned char channel)
         CHECK_RANGE(ret, -45, 45);
         return ret;
     }else {
+        #ifdef DEBUG_SENSOR_FLAME
         Serial.printf("flame error in %d iic channel", channel);
+        #endif
         return 0;
     }
 }
@@ -35,7 +39,9 @@ unsigned char SENSOR_FLAME::Get_Flame_Intensity(unsigned char channel)
     if(0 == read(FLAME_REG_INTENSITY, &read_intensity, 1, channel)){
         return read_intensity;
     }else {
+        #ifdef DEBUG_SENSOR_FLAME
         Serial.printf("flame error in %d iic channel", channel);
+        #endif
         return 0;
     }
 }
