@@ -61,14 +61,14 @@
 #define SCL_PIN 22 // SCL_PIN
 
 // 电池电压
-#if 1
+#if 0
 /* mV 干电池的设置 */
 #define BATTERY_RESTART_VALUE 5000
 #define BATTERY_LOW_VALUE 7000
 #else
-/* mV 镍氢电池的设置 */
-#define BATTERY_RESTART_VALUE 6500
-#define BATTERY_LOW_VALUE 7500
+/* mV 锂电池的设置 */
+#define BATTERY_RESTART_VALUE 3300
+#define BATTERY_LOW_VALUE 3300
 #endif
 #define BATTERY_FILTER_NUM 10
 #define BATTERY_ADC_PIN 35
