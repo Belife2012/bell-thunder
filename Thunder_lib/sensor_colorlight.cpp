@@ -300,7 +300,9 @@ byte SENSOR_COLORLIGHT::Calibrate_Sensor(unsigned char channel)
     float result_old[3];
     float result[3];
 
-    Read_RGB_Scale(result_old, 1);
+    Set_Operate_Mode(MODE_COLOR, channel);
+    delay(100);
+    Read_RGB_Scale(result_old, channel);
 
 	Serial.println("calibrate color light");
     calibrate_flag = 0x01;
@@ -310,17 +312,26 @@ byte SENSOR_COLORLIGHT::Calibrate_Sensor(unsigned char channel)
         Serial.println("Calibrate Fail");
         return ret;
     }
+    delay(500);
 
     for(;;)
     {
-        Read_RGB_Scale(result, 1);
+        delay(100);
+        Read_RGB_Scale(result, channel);
         if(result[0] != result_old[0] || result[1] != result_old[1] || result[2] != result_old[2]) {
             break;
         }
     }
 
-    delay(10);
-	Serial.println("Calibrate Success");
+    delay(100);
+    Read_RGB_Scale(result, channel);
+    if( (result[0] == 1.0 && result[1] == 1.0 && result[2] == 1.0)
+      || result[0] > 1.4 || result[1] > 1.4 || result[2] > 1.4
+      || result[0] < 0.6 || result[1] < 0.6 || result[2] < 0.6 ) {
+          Serial.printf("Calibrate Error: %3.2f %3.2f %3.2f\n", result[0], result[1], result[2]);
+          return 0xff;
+    }
+	Serial.printf("Calibrate Success: %3.2f %3.2f %3.2f\n", result[0], result[1], result[2]);
     
     return ret;
 }
