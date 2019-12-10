@@ -46,30 +46,38 @@ void SENSOR_IIC::IIC_Init()
  */
 inline void SENSOR_IIC::SELECT_IIC_CHANNEL(uint8_t channel) 
 {
-  Wire.beginTransmission(IIC_SELECTOR_ADDR);
-  switch (channel)
-  {
-    case 0: Wire.write(IIC_PORTNONE);
-            break;
-    case 1: Wire.write(IIC_PORT1);
-            break;
-    case 2: Wire.write(IIC_PORT2);
-            break;
-    case 3: Wire.write(IIC_PORT3);
-            break;
-    case 4: Wire.write(IIC_PORT4);
-            break;
-    case 5: Wire.write(IIC_PORTA);
-            break;
-    case 6: Wire.write(IIC_PORTB);
-            break;
-    default:
-      if(channel & 0x80){
-        Wire.write(IIC_PORTALL & channel);
-      }
-      break;
-  }
-  Wire.endTransmission(true);
+  uint8_t channel_value=0;
+  uint8_t ret=0;
+
+  do{
+    Wire.beginTransmission(IIC_SELECTOR_ADDR);
+    switch (channel)
+    {
+      case 0: channel_value = (IIC_PORTNONE);
+              break;
+      case 1: channel_value = (IIC_PORT1);
+              break;
+      case 2: channel_value = (IIC_PORT2);
+              break;
+      case 3: channel_value = (IIC_PORT3);
+              break;
+      case 4: channel_value = (IIC_PORT4);
+              break;
+      case 5: channel_value = (IIC_PORTA);
+              break;
+      case 6: channel_value = (IIC_PORTB);
+              break;
+      default:
+        if(channel & 0x80){
+          channel_value = (IIC_PORTALL & channel);
+        }
+        break;
+    }
+    if(channel_value != 0){
+      Wire.write(channel_value);
+    }
+    ret = Wire.endTransmission(true);
+  } while(ret != 0);
 
   i2c_channel = channel;
 }
