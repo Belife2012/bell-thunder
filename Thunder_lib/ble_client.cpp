@@ -33,6 +33,7 @@
 
 #endif
 
+static uint8_t nactiveAddr[6];
 static uint8_t storedServerAddr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 static BLEAdvertisedDevice* myServerDevice;
 static boolean connected = false;
@@ -132,14 +133,14 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
         if(advertisedPayload[advertisedPayload[0]+1+1] == 0x17){
           for(int i=3; i < 3+6; i++){
             // 手柄已经被绑定，但是广播中的绑定地址 与 本设备address不相同，则不进行连接
-            if(storedServerAddr[8-i] != advertisedPayload[advertisedPayload[0]+i]){
+            if(nactiveAddr[8-i] != advertisedPayload[advertisedPayload[0]+i]){
               return;
             }
           }
           Serial.println("Bonding Match");
         }else{
           Serial.println("No Bonding");
-          if( advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -60) ){
+          if( advertisedDevice.haveRSSI() && (advertisedDevice.getRSSI() > -55) ){
             Serial.println("Distance Appropriate");
           }else{
             Serial.println("Distance Too far");
@@ -193,7 +194,7 @@ bool connectToServer()
   pClient->setClientCallbacks(new MyBLEClientCallbacks());
 
   if(false == pClient->connect(myServerDevice->getAddress())){
-    Serial.println(" Fail to connecte server");
+    Serial.println(" - Fail to connecte server");
     return false;
   }
   Serial.println(" - Connected to server");
@@ -256,7 +257,7 @@ void BLE_CLIENT::Setup_Ble_Client()
     Serial.println("Read_Ble_Server_Mac Fail");
   }
   #else
-  memcpy(storedServerAddr, BLEDevice::getAddress().getNative(), sizeof(storedServerAddr));
+  memcpy(nactiveAddr, BLEDevice::getAddress().getNative(), sizeof(nactiveAddr));
   #endif
 
   // BLEDevice::init("");
@@ -301,10 +302,10 @@ void BLE_CLIENT::Connect_Ble_Server()
   // Now we connect to it. Once we are connected we set the connected flag to be true.
   delay(100);
   if (connectToServer()) {
-    Serial.println("connection OK");
+    Serial.println("connection OK\n");
     connected = true;
   } else {
-    Serial.println("connection Fail");
+    Serial.println("connection Fail\n");
   }
 }
 

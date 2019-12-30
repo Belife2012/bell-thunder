@@ -666,6 +666,7 @@ int BELL_THUNDER::Check_Function_Button_Value()
 	if (button_value != KEY_NONE)
 	{
 		function_button_event = button_value;
+		user_button_event = button_value;
 		Update_Process_Status(button_value);
 	}
 	return button_value;
@@ -675,10 +676,10 @@ bool BELL_THUNDER::Check_Function_Button_Event(int key_event)
 {
 	bool ret = false;
 
-	if (function_button_event == key_event)
+	if (user_button_event == key_event)
 	{
 		ret = true;
-		function_button_event = KEY_NONE;
+		user_button_event = KEY_NONE;
 	}
 
 	return ret;

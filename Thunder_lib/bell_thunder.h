@@ -182,6 +182,7 @@ private:
 	uint8_t button_status_record;
 	uint8_t button_active;
 	int function_button_event = KEY_NONE;
+	int user_button_event = KEY_NONE;
 
 	// 程序切换
 	int process_status = PROCESS_STOP;
