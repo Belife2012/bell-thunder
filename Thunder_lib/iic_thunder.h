@@ -44,12 +44,13 @@ private:
 public:
   typedef enum {
     PORT_1 = 1,
-    PORT_2 = 2,
-    PORT_3 = 3,
-    PORT_4 = 4,
-    PORT_A = 5,
-    PORT_B = 6,
-    PORT_U = 7
+    PORT_2,
+    PORT_3,
+    PORT_4,
+    PORT_A,
+    PORT_B,
+    PORT_P,
+    PORT_U,
   } enum_iic_port;
 
   SENSOR_IIC(int slave_address);

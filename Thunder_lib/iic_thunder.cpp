@@ -1,12 +1,13 @@
 #include "iic_thunder.h"
 
 #define IIC_PORTNONE   0x20 // 屏幕一直选通
-#define IIC_PORT1   0x21
-#define IIC_PORT2   0x22
-#define IIC_PORT3   0x24
-#define IIC_PORT4   0x60
-#define IIC_PORTB   0x28
-#define IIC_PORTA   0x30
+#define IIC_PORT1   0x01
+#define IIC_PORT2   0x02
+#define IIC_PORT3   0x04
+#define IIC_PORT4   0x40
+#define IIC_PORTB   0x08
+#define IIC_PORTA   0x10
+#define IIC_PORTP   0x20 // 屏幕接口
 #define IIC_PORTALL 0x7f // 全部选通是不包括 port4
 
 #define IIC_SELECTOR_ADDR   0x70 // TCA9548的地址是 0x70, 因为它的地址位A0 A1 A2都接地了
@@ -66,6 +67,8 @@ inline void SENSOR_IIC::SELECT_IIC_CHANNEL(uint8_t channel)
       case 5: channel_value = (IIC_PORTA);
               break;
       case 6: channel_value = (IIC_PORTB);
+              break;
+      case 7: channel_value = (IIC_PORTP);
               break;
       default:
         if(channel & 0x80){
