@@ -17,7 +17,7 @@ void LED_COLOR::Set_LED_Num(uint8_t number)
 {
   byte rc;
 
-  rc = write(XT1511_I2C_CONTROL_REG, &number, sizeof(number));
+  rc = write(XT1511_I2C_CONTROL_REG, &number, sizeof(number), PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -46,7 +46,7 @@ void LED_COLOR::Set_LED_Data(uint8_t address, uint8_t r, uint8_t g, uint8_t b)
   if (address > sizeof(LEDs_Data) / 3)
     return;
 
-  rc = write(address, rgb, sizeof(rgb));
+  rc = write(address, rgb, sizeof(rgb), PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -84,8 +84,7 @@ void LED_COLOR::Set_LEDs_Data(uint8_t address, const uint8_t *data, uint8_t size
     LEDs_Data[startIndex + i] = data[i] * 1 / 10;
   }
 
-  // rc = write(address, data, sizeof(data));
-  rc = write(address, &(LEDs_Data[startIndex]), size);
+  rc = write(address, &(LEDs_Data[startIndex]), size, PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -114,7 +113,7 @@ void LED_COLOR::LED_OFF(void)
   Set_LED_Dynamic(0xff);
   memset(LEDs_Data, 0, RGB_LED_DATA_SIZE);
 
-  write(XT1511_I2C_COM_OFF, NULL, 0);
+  write(XT1511_I2C_COM_OFF, NULL, 0, PORT_P);
 }
 
 /**
@@ -123,7 +122,7 @@ void LED_COLOR::LED_OFF(void)
  */
 void LED_COLOR::LED_Updata(void)
 {
-  write(XT1511_I2C_COM_UODATA, NULL, 0);
+  write(XT1511_I2C_COM_UODATA, NULL, 0, PORT_P);
 }
 
 // 0xA2  刷新预存数据 (指令预留)
@@ -134,7 +133,7 @@ void LED_COLOR::LED_Show(uint8_t number)
 
   reg = number;
 
-  rc = write(XT1511_I2C_COM_SHOW, &reg, sizeof(reg)); //COM全开
+  rc = write(XT1511_I2C_COM_SHOW, &reg, sizeof(reg), PORT_P); //COM全开
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -194,7 +193,7 @@ void LED_COLOR::LED_Flush_Static()
   if (ledDynamicIndex >= 10)
   {
     // 不能一次连续12个，分为两次写入
-    rc = write(0x01, LEDs_Data, 18);
+    rc = write(0x01, LEDs_Data, 18, PORT_P);
     if (rc != 0)
     {
       #ifdef DEBUG_COLOR_LEDS
@@ -202,7 +201,7 @@ void LED_COLOR::LED_Flush_Static()
       #endif
       return;
     }
-    rc = write(0x07, LEDs_Data + 18, 18);
+    rc = write(0x07, LEDs_Data + 18, 18, PORT_P);
     if (rc != 0)
     {
       #ifdef DEBUG_COLOR_LEDS
@@ -230,7 +229,7 @@ void LED_COLOR::LED_Flush_Breath()
     LEDs_DataResult[i] = (byte)((((float)LEDs_Data[i]) / 2) * (cos(ledDynamicIndex * 2 * PI / 200 - PI) + 1));
   }
   // 不能一次连续12个，分为两次写入
-  rc = write(0x01, LEDs_DataResult, 18);
+  rc = write(0x01, LEDs_DataResult, 18, PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -238,7 +237,7 @@ void LED_COLOR::LED_Flush_Breath()
     #endif
     return;
   }
-  rc = write(0x07, LEDs_DataResult + 18, 18);
+  rc = write(0x07, LEDs_DataResult + 18, 18, PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -262,7 +261,7 @@ void LED_COLOR::LED_Flush_Blink()
 
   if (ledDynamicIndex == 1)
   {
-    rc = write(0x01, LEDs_Data, 18);
+    rc = write(0x01, LEDs_Data, 18, PORT_P);
     if (rc != 0)
     {
       #ifdef DEBUG_COLOR_LEDS
@@ -270,7 +269,7 @@ void LED_COLOR::LED_Flush_Blink()
       #endif
       return;
     }
-    rc = write(0x07, LEDs_Data + 18, 18);
+    rc = write(0x07, LEDs_Data + 18, 18, PORT_P);
     if (rc != 0)
     {
       #ifdef DEBUG_COLOR_LEDS
@@ -282,7 +281,7 @@ void LED_COLOR::LED_Flush_Blink()
   }
   else if (ledDynamicIndex == BLINK_PERIOD)
   {
-    write(XT1511_I2C_COM_OFF, NULL, 0);
+    write(XT1511_I2C_COM_OFF, NULL, 0, PORT_P);
   }
   else if (ledDynamicIndex >= BLINK_PERIOD + BLINK_PERIOD)
   {
@@ -318,7 +317,7 @@ void LED_COLOR::LED_Flush_Roll()
     LEDs_DataResult[resultIndex * 3 + 2 + 18] = LEDs_Data[i * 3 + 2 + 18];
   }
   // 不能一次连续12个，分为两次写入
-  rc = write(0x01, LEDs_DataResult, 18);
+  rc = write(0x01, LEDs_DataResult, 18, PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
@@ -326,7 +325,7 @@ void LED_COLOR::LED_Flush_Roll()
     #endif
     return;
   }
-  rc = write(0x07, LEDs_DataResult + 18, 18);
+  rc = write(0x07, LEDs_DataResult + 18, 18, PORT_P);
   if (rc != 0)
   {
     #ifdef DEBUG_COLOR_LEDS
