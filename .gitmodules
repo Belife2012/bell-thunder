@@ -1,4 +1,0 @@
-[submodule "Thunder_lib/example/Arduino_InoDemo"]
-	path = Thunder_lib/example/Arduino_InoDemo
-	url = http://192.168.20.2:3000/ASSEMBING_CAR/Arduino_InoDemo.git
-	branch = master
